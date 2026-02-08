@@ -67,7 +67,7 @@ function App() {
       </p>
 
       {username === null && (
-        <UsernameModal session={session} onSuccess={fetchProfile} />
+        <UsernameModal userId={session.user.id} onSuccess={fetchProfile} />
       )}
 
       <button onClick={() => supabase.auth.signOut()}>Logout</button>
@@ -76,7 +76,7 @@ function App() {
 
       {/* App pages */}
       <Routes>
-        <Route path="/" element={<Onboarding />} />
+        <Route path="/" element={<Onboarding session={session} />} />
         <Route path="/recipes" element={<Recipes />} />
         <Route path="/recipes/new" element={<CreateRecipe />} />
       </Routes>

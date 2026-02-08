@@ -3,7 +3,7 @@ import { supabase } from "../supabase";
 import { useNavigate } from "react-router";
 import UsernameModal from "../components/UsernameModal";
 
-function Onboarding() {
+function Onboarding(props) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
@@ -50,7 +50,7 @@ function Onboarding() {
     <>
       {username === null && (
         <UsernameModal
-          session={supabase.auth.session()}
+          userId={props.session.user.id}
           onSuccess={fetchProfile}
         />
       )}

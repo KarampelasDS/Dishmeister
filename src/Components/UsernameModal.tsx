@@ -1,13 +1,13 @@
 import { useState } from "react";
+import type { CSSProperties } from "react";
 import { supabase } from "../supabase";
-import { type Session } from "@supabase/supabase-js";
 
 type Props = {
-  session: Session;
+  userId: string;
   onSuccess: () => void;
 };
 
-function UsernameModal({ session, onSuccess }: Props) {
+function UsernameModal({ userId, onSuccess }: Props) {
   const [usernameInput, setUsernameInput] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +22,7 @@ function UsernameModal({ session, onSuccess }: Props) {
 
     const { error } = await supabase.from("profiles").upsert(
       {
-        id: session.user.id,
+        id: userId,
         username: trimmed,
       },
       { onConflict: "id" },
@@ -62,7 +62,7 @@ export default UsernameModal;
 
 /* ---------- styles ---------- */
 
-const overlayStyle: React.CSSProperties = {
+const overlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
   background: "rgba(0,0,0,0.5)",
@@ -72,7 +72,7 @@ const overlayStyle: React.CSSProperties = {
   zIndex: 1000,
 };
 
-const modalStyle: React.CSSProperties = {
+const modalStyle: CSSProperties = {
   background: "#000000",
   padding: 24,
   borderRadius: 8,
