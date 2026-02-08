@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
 import { type Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { Routes, Route, Navigate } from "react-router";
 import Auth from "./pages/Auth";
+import CreateRecipe from "./pages/CreateRecipe";
+import UsernameModal from "./components/UsernameModal";
+import Onboarding from "./pages/Onboarding";
+import Recipes from "./pages/Recipes";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-
   const [username, setUsername] = useState<string | null>(null);
-  const [usernameInput, setUsernameInput] = useState<string>("");
 
   /* ---------------- AUTH ---------------- */
 
@@ -39,7 +42,7 @@ function App() {
       .single();
 
     if (error) {
-      console.error("Profile fetch failed:", error.message);
+      console.error(error.message);
       return;
     }
 
@@ -51,32 +54,6 @@ function App() {
     fetchProfile();
   }, [session]);
 
-  /* ---------------- UPDATE USERNAME ---------------- */
-
-  const submitUsername = async () => {
-    if (!session) return;
-
-    const trimmed = usernameInput.trim();
-
-    if (trimmed.length < 3) {
-      alert("Username must be at least 3 characters long");
-      return;
-    }
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({ username: trimmed })
-      .eq("id", session.user.id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setUsernameInput("");
-    fetchProfile();
-  };
-
   /* ---------------- UI ---------------- */
 
   if (loading) return <div>Loading...</div>;
@@ -84,28 +61,25 @@ function App() {
 
   return (
     <div style={{ padding: 24 }}>
+      {/* Global UI */}
       <p>
         Logged in as <strong>{username ?? "anonymous"}</strong>
       </p>
 
-      {username === null ? (
-        <div>
-          <p>You need to set a username</p>
-
-          <input
-            type="text"
-            placeholder="username"
-            value={usernameInput}
-            onChange={(e) => setUsernameInput(e.target.value)}
-          />
-
-          <button onClick={submitUsername}>Submit</button>
-        </div>
-      ) : (
-        <p>Your username is: {username}</p>
+      {username === null && (
+        <UsernameModal session={session} onSuccess={fetchProfile} />
       )}
 
       <button onClick={() => supabase.auth.signOut()}>Logout</button>
+
+      <hr />
+
+      {/* App pages */}
+      <Routes>
+        <Route path="/" element={<Onboarding />} />
+        <Route path="/recipes" element={<Recipes />} />
+        <Route path="/recipes/new" element={<CreateRecipe />} />
+      </Routes>
     </div>
   );
 }
