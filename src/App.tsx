@@ -1,17 +1,19 @@
 import { useEffect, useState } from "react";
 import { type Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
-import { Routes, Route, Navigate } from "react-router";
+import { Routes, Route } from "react-router";
 import Auth from "./pages/Auth";
 import CreateRecipe from "./pages/CreateRecipe";
-import UsernameModal from "./components/UsernameModal";
+import UsernameModal from "./Components/UsernameModal";
 import Onboarding from "./pages/Onboarding";
 import Recipes from "./pages/Recipes";
+import { useTheme } from "./Hooks/useTheme";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
+  const { themeState, toggleTheme } = useTheme();
 
   /* ---------------- AUTH ---------------- */
 
@@ -71,6 +73,7 @@ function App() {
       )}
 
       <button onClick={() => supabase.auth.signOut()}>Logout</button>
+      <button onClick={toggleTheme}>Toggle Dark Mode</button>
 
       <hr />
 
