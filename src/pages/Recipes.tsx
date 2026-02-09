@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 
 type Recipe = {
   id: string;
