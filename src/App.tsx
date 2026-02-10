@@ -8,6 +8,7 @@ import UsernameModal from "./Components/UsernameModal";
 import Onboarding from "./pages/Onboarding";
 import Recipes from "./pages/Recipes";
 import { useTheme } from "./Hooks/useTheme";
+import Header from "./Components/Header/Header";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -62,7 +63,8 @@ function App() {
   if (!session) return <Auth />;
 
   return (
-    <div style={{ padding: 24 }}>
+    <div>
+      <Header />
       {/* Global UI */}
       <p>
         Logged in as <strong>{username ?? "anonymous"}</strong>
