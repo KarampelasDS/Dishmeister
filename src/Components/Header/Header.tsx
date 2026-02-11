@@ -1,5 +1,6 @@
 import styles from "./Header.module.css";
 import AppLogo from "../AppLogo/AppLogo";
+import UserMenu from "./UserMenu/UserMenu";
 
 export default function Header(props: any) {
   return (
@@ -11,7 +12,7 @@ export default function Header(props: any) {
         <h1>searchbar</h1>
       </div>
       <div>
-        <h1>User</h1>
+        <UserMenu username={props.username} avatarUrl={props.avatarUrl} />
       </div>
     </div>
   );

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useNavigate } from "react-router";
-import UsernameModal from "../components/UsernameModal";
+import UsernameModal from "../Components/UsernameModal";
 
-function Onboarding(props) {
+function Onboarding(props: any) {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
@@ -46,16 +46,7 @@ function Onboarding(props) {
 
   if (loading) return <div>Loading...</div>;
 
-  return (
-    <>
-      {username === null && (
-        <UsernameModal
-          userId={props.session.user.id}
-          onSuccess={fetchProfile}
-        />
-      )}
-    </>
-  );
+  return <></>;
 }
 
 export default Onboarding;

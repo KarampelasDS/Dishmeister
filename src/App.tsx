@@ -14,6 +14,7 @@ function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
+  const [avatarUrl, setAvatarlUrl] = useState<string | null>(null);
   const { themeState, toggleTheme } = useTheme();
 
   /* ---------------- AUTH ---------------- */
@@ -40,16 +41,28 @@ function App() {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("username")
+      .select("username, avatar_url")
       .eq("id", session.user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error(error.message);
       return;
     }
 
-    setUsername(data.username);
+    if (!data) {
+      setUsername(null);
+      setAvatarlUrl(null);
+      return;
+    }
+
+    setUsername(data.username ?? null);
+
+    if (data.avatar_url) {
+      setAvatarlUrl(data.avatar_url);
+    } else {
+      setAvatarlUrl(null);
+    }
   };
 
   useEffect(() => {
@@ -64,7 +77,7 @@ function App() {
 
   return (
     <div>
-      <Header />
+      <Header username={username} avatarUrl={avatarUrl} />
       {/* Global UI */}
       <p>
         Logged in as <strong>{username ?? "anonymous"}</strong>
