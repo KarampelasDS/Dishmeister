@@ -9,13 +9,14 @@ import Onboarding from "./pages/Onboarding";
 import Recipes from "./pages/Recipes";
 import { useTheme } from "./Hooks/useTheme";
 import Header from "./Components/Header/Header";
+import Button from "./Components/Button/Button";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarlUrl] = useState<string | null>(null);
-  const { themeState, toggleTheme } = useTheme();
+  const { toggleTheme } = useTheme();
 
   /* ---------------- AUTH ---------------- */
 
@@ -89,8 +90,20 @@ function App() {
 
       <button onClick={() => supabase.auth.signOut()}>Logout</button>
       <button onClick={toggleTheme}>Toggle Dark Mode</button>
-
       <hr />
+
+      <div>
+        <Button
+          text="hi idiota"
+          textColor="#000"
+          fontSize={24}
+          backgroundColor="#c9c9c9"
+          disabledBackgroundColor="red"
+          outline="0px"
+          isActive={true}
+          onButtonClick={() => console.log("test")}
+        />
+      </div>
 
       {/* App pages */}
       <Routes>
