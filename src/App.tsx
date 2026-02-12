@@ -10,6 +10,7 @@ import Recipes from "./pages/Recipes";
 import { useTheme } from "./Hooks/useTheme";
 import Header from "./Components/Header/Header";
 import Button from "./Components/Button/Button";
+import Profile from "./pages/Profile";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -110,6 +111,7 @@ function App() {
         <Route path="/" element={<Onboarding session={session} />} />
         <Route path="/recipes" element={<Recipes />} />
         <Route path="/recipes/new" element={<CreateRecipe />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </div>
   );
