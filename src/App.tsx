@@ -11,15 +11,18 @@ import { useTheme } from "./Hooks/useTheme";
 import Header from "./Components/Header/Header";
 import Button from "./Components/Button/Button";
 import Profile from "./pages/Profile";
+import HomePage from "./pages/HomePage";
+import AuthModal from "./Components/AuthModal/AuthModal";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarlUrl] = useState<string | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const { toggleTheme } = useTheme();
 
-  /* ---------------- AUTH ---------------- */
+  /* ---------------- AUTH LISTENER ---------------- */
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -59,60 +62,68 @@ function App() {
     }
 
     setUsername(data.username ?? null);
-
-    if (data.avatar_url) {
-      setAvatarlUrl(data.avatar_url);
-    } else {
-      setAvatarlUrl(null);
-    }
+    setAvatarlUrl(data.avatar_url ?? null);
   };
 
   useEffect(() => {
-    if (!session) return;
-    fetchProfile();
+    if (session) {
+      fetchProfile();
+    } else {
+      setUsername(null);
+      setAvatarlUrl(null);
+    }
   }, [session]);
 
-  /* ---------------- UI ---------------- */
+  /* ---------------- LOADING ---------------- */
 
   if (loading) return <div>Loading...</div>;
-  if (!session) return <Auth />;
 
   return (
     <div>
-      <Header username={username} avatarUrl={avatarUrl} />
-      {/* Global UI */}
-      <p>
-        Logged in as <strong>{username ?? "anonymous"}</strong>
-      </p>
+      <Header
+        username={username}
+        avatarUrl={avatarUrl}
+        onLoginClick={() => setIsAuthOpen(true)}
+      />
 
-      {username === null && (
+      {session && username === null && (
         <UsernameModal userId={session.user.id} onSuccess={fetchProfile} />
       )}
 
-      <button onClick={() => supabase.auth.signOut()}>Logout</button>
-      <button onClick={toggleTheme}>Toggle Dark Mode</button>
-      <hr />
+      {/* DEV ONLY */}
+      {session && (
+        <button onClick={() => supabase.auth.signOut()}>Logout</button>
+      )}
 
-      <div>
-        <Button
-          text="hi idiota"
-          textColor="#000"
-          fontSize={24}
-          backgroundColor="#c9c9c9"
-          disabledBackgroundColor="red"
-          outline="0px"
-          isActive={true}
-          onButtonClick={() => console.log("test")}
-        />
-      </div>
+      <button onClick={toggleTheme}>Toggle Dark Mode</button>
+
+      <hr />
 
       {/* App pages */}
       <Routes>
-        <Route path="/" element={<Onboarding session={session} />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/recipes" element={<Recipes />} />
-        <Route path="/recipes/new" element={<CreateRecipe />} />
+        <Route
+          path="/recipes/new"
+          element={
+            session ? (
+              <CreateRecipe />
+            ) : (
+              <div>
+                <p>You must log in to create a recipe.</p>
+                <button onClick={() => setIsAuthOpen(true)}>Login</button>
+              </div>
+            )
+          }
+        />
         <Route path="/profile" element={<Profile />} />
       </Routes>
+
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onAuthSuccess={(session) => setSession(session)}
+      />
     </div>
   );
 }
