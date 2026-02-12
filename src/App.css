@@ -18,3 +18,7 @@ body {
   background: var(--bg);
   color: var(--text);
 }
+.statsBox{
+  display: flex;
+  gap: 16px;
+}

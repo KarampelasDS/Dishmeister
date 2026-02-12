@@ -1,0 +1,11 @@
+.profileWindow{
+    display: flex;
+    width: 579px;
+    height: 588px;
+    border: 1px solid #E0E0E0;
+    border-radius: 12px;
+}
+.statsBox{
+  display: flex;
+  gap: 16px;
+}
