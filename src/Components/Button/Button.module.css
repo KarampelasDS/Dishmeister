@@ -1,6 +1,8 @@
 .Container {
   border-radius: 14px;
-  font-family: "ui-sans-serif";
+  font-family: "Segoe UI";
+  font-weight: 600;
   width: 100%;
   color: var(--text);
+  padding: 12px;
 }

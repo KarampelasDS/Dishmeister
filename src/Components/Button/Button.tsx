@@ -11,6 +11,7 @@ interface ButtonProps {
   disabledBackgroundColor?: string;
   outline?: string;
   onButtonClick?: () => void;
+  type?: "button" | "submit" | "reset";
 }
 
 export default function Button({
@@ -23,18 +24,19 @@ export default function Button({
   disabledBackgroundColor,
   outline,
   onButtonClick,
+  type,
 }: ButtonProps) {
   const disabled = !isActive;
 
   return (
     <button
-      type="button"
+      type={type ?? "button"}
       disabled={disabled}
       className={styles.Container}
       style={{
         color: textColor,
         fontSize: fontSize,
-        backgroundColor: disabled ? disabledBackgroundColor : backgroundColor,
+        background: disabled ? disabledBackgroundColor : backgroundColor,
         border: outline,
         cursor: disabled ? "default" : "pointer",
       }}

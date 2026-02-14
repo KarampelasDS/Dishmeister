@@ -3,6 +3,7 @@ import { Mail, Lock, Eye, EyeOff, ChefHat } from "lucide-react";
 import { supabase } from "../../supabase";
 import type { Session } from "@supabase/supabase-js";
 import styles from "./AuthModal.module.css";
+import Button from "../Button/Button";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -104,20 +105,26 @@ export default function AuthModal({
 
         {/* TOGGLE */}
         <div className={styles.toggle}>
-          <button
-            type="button"
-            className={isLogin ? styles.activeTab : styles.tab}
-            onClick={() => setIsLogin(true)}
+          <Button
+            backgroundColor={
+              isLogin ? "linear-gradient(135deg, #ff6a00, #ff2e2e)" : "#ddd"
+            }
+            textColor={isLogin ? "#fff" : "#000"}
+            onButtonClick={() => setIsLogin(true)}
+            outline={"0px"}
           >
             Login
-          </button>
-          <button
-            type="button"
-            className={!isLogin ? styles.activeTab : styles.tab}
-            onClick={() => setIsLogin(false)}
+          </Button>
+          <Button
+            backgroundColor={
+              !isLogin ? "linear-gradient(135deg, #ff6a00, #ff2e2e)" : "#ddd"
+            }
+            textColor={!isLogin ? "#fff" : "#000"}
+            onButtonClick={() => setIsLogin(false)}
+            outline={"0px"}
           >
             Sign Up
-          </button>
+          </Button>
         </div>
 
         {/* FORM */}
@@ -155,9 +162,22 @@ export default function AuthModal({
 
           {error && <div className={styles.error}>{error}</div>}
 
-          <button type="submit" className={styles.submit} disabled={loading}>
-            {loading ? "Please wait..." : isLogin ? "Login" : "Create Account"}
-          </button>
+          <div className={styles.submit}>
+            <Button
+              backgroundColor={"linear-gradient(135deg, #ff6a00, #ff2e2e)"}
+              textColor={"#fff"}
+              onButtonClick={() => setIsLogin(true)}
+              isActive={!loading}
+              outline="0px"
+              type="submit"
+            >
+              {loading
+                ? "Please wait..."
+                : isLogin
+                  ? "Login"
+                  : "Create Account"}
+            </Button>
+          </div>
         </form>
 
         <button className={styles.close} onClick={onClose}>
