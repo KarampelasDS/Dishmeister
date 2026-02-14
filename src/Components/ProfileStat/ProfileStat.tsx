@@ -5,7 +5,7 @@ export default function ProfileStat(props: any){
         <div  
         className={styles.Container}
         style={{
-            backgroundColor: props.background,
+            background: props.background,
             border: props.outline
 
 

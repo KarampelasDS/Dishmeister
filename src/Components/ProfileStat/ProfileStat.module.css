@@ -4,6 +4,7 @@
     padding: 16px;
     border-radius: 14px;
     font-family: "Segoe UI";
+    background: var(--bg);
 }
 .icon{
     display: flex;
@@ -19,5 +20,5 @@
     font-size: 12px;
     margin: 0;
     text-align: center;
-    color: gray;
+    color: var(--text);
 }

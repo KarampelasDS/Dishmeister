@@ -93,18 +93,6 @@ function App() {
       <button onClick={toggleTheme}>Toggle Dark Mode</button>
       <hr />
 
-      <div>
-        <Button
-          text="hi idiota"
-          textColor="#000"
-          fontSize={24}
-          backgroundColor="#c9c9c9"
-          disabledBackgroundColor="red"
-          outline="0px"
-          isActive={true}
-          onButtonClick={() => console.log("test")}
-        />
-      </div>
 
       {/* App pages */}
       <Routes>

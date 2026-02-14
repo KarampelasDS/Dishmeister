@@ -1,22 +1,48 @@
 import styles from "./Button.module.css";
+import { ReactNode } from "react";
 
-export default function Button(props: any) {
+interface ButtonProps {
+  text?: string;
+  children?: ReactNode;
+  isActive?: boolean;
+  textColor?: string;
+  fontSize?: string;
+  backgroundColor?: string;
+  disabledBackgroundColor?: string;
+  outline?: string;
+  onButtonClick?: () => void;
+  type?: "button" | "submit" | "reset";
+}
+
+export default function Button({
+  text,
+  children,
+  isActive = true,
+  textColor,
+  fontSize,
+  backgroundColor,
+  disabledBackgroundColor,
+  outline,
+  onButtonClick,
+  type,
+}: ButtonProps) {
+  const disabled = !isActive;
+
   return (
     <button
-      disabled={!props.isActive}
+      type={type ?? "button"}
+      disabled={disabled}
       className={styles.Container}
       style={{
-        color: props.textColor,
-        fontSize: props.fontSize,
-        backgroundColor: props.isActive
-          ? props.backgroundColor
-          : props.disabledBackgroundColor,
-        border: props.outline,
-        cursor: props.isActive ? "pointer" : "default",
+        color: textColor,
+        fontSize: fontSize,
+        background: disabled ? disabledBackgroundColor : backgroundColor,
+        border: outline,
+        cursor: disabled ? "default" : "pointer",
       }}
-      onClick={props.onButtonClick}
+      onClick={disabled ? undefined : onButtonClick}
     >
-      {props.text}
+      {text ?? children}
     </button>
   );
 }

@@ -1,5 +1,10 @@
 .Container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   border-radius: 14px;
-  font-family: "ui-sans-serif";
+  font-family: "Segoe UI";
   width: 100%;
+  padding: 12px;
 }
