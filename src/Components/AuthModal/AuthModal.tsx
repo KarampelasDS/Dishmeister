@@ -166,7 +166,6 @@ export default function AuthModal({
             <Button
               backgroundColor={"linear-gradient(135deg, #ff6a00, #ff2e2e)"}
               textColor={"#fff"}
-              onButtonClick={() => setIsLogin(true)}
               isActive={!loading}
               outline="0px"
               type="submit"

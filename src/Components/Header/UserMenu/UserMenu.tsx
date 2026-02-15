@@ -41,7 +41,9 @@ export default function UserMenu({
 
         <img
           src={
-            avatarUrl ? `${avatarUrl}?t=${Date.now()}` : "/defaultAvatar.png"
+            avatarUrl
+              ? `https://yzoptrgtvvztujqwlgmo.supabase.co/storage/v1/object/public/avatars/${avatarUrl}?t=${Date.now()}`
+              : "/defaultAvatar.png"
           }
           alt="avatar"
           style={avatarStyle}

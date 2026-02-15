@@ -1,18 +1,15 @@
 import { useEffect, useState } from "react";
 import { type Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
-import { Routes, Route } from "react-router";
-import Auth from "./pages/Auth";
+import { Routes, Route, useLocation, useNavigate } from "react-router";
 import CreateRecipe from "./pages/CreateRecipe";
-import UsernameModal from "./Components/UsernameModal";
-import Onboarding from "./pages/Onboarding";
 import Recipes from "./pages/Recipes";
 import { useTheme } from "./Hooks/useTheme";
 import Header from "./Components/Header/Header";
-import Button from "./Components/Button/Button";
 import Profile from "./pages/Profile";
 import HomePage from "./pages/HomePage";
 import AuthModal from "./Components/AuthModal/AuthModal";
+import OnboardingModal from "./Components/OnboardingModal/OnboardingModal";
 
 function App() {
   const [session, setSession] = useState<Session | null>(null);
@@ -20,7 +17,11 @@ function App() {
   const [username, setUsername] = useState<string | null>(null);
   const [avatarUrl, setAvatarlUrl] = useState<string | null>(null);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+
   const { toggleTheme } = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   /* ---------------- AUTH LISTENER ---------------- */
 
@@ -39,6 +40,14 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  /* ---------------- OPEN MODAL VIA /auth ---------------- */
+
+  useEffect(() => {
+    if (location.pathname === "/auth") {
+      setIsAuthOpen(true);
+    }
+  }, [location.pathname]);
+
   /* ---------------- PROFILE ---------------- */
 
   const fetchProfile = async () => {
@@ -46,7 +55,7 @@ function App() {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("username, avatar_url")
+      .select("username, display_name, avatar_url")
       .eq("id", session.user.id)
       .maybeSingle();
 
@@ -55,14 +64,16 @@ function App() {
       return;
     }
 
-    if (!data) {
+    if (!data || !data.display_name) {
       setUsername(null);
       setAvatarlUrl(null);
+      setIsOnboardingOpen(true);
       return;
     }
 
-    setUsername(data.username ?? null);
+    setUsername(data.display_name);
     setAvatarlUrl(data.avatar_url ?? null);
+    setIsOnboardingOpen(false);
   };
 
   useEffect(() => {
@@ -71,10 +82,9 @@ function App() {
     } else {
       setUsername(null);
       setAvatarlUrl(null);
+      setIsOnboardingOpen(false);
     }
   }, [session]);
-
-  /* ---------------- LOADING ---------------- */
 
   if (loading) return <div>Loading...</div>;
 
@@ -86,11 +96,6 @@ function App() {
         onLoginClick={() => setIsAuthOpen(true)}
       />
 
-      {session && username === null && (
-        <UsernameModal userId={session.user.id} onSuccess={fetchProfile} />
-      )}
-
-      {/* DEV ONLY */}
       {session && (
         <button onClick={() => supabase.auth.signOut()}>Logout</button>
       )}
@@ -99,7 +104,6 @@ function App() {
 
       <hr />
 
-      {/* App pages */}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/recipes" element={<Recipes />} />
@@ -121,9 +125,26 @@ function App() {
 
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
-        onAuthSuccess={(session) => setSession(session)}
+        onClose={() => {
+          setIsAuthOpen(false);
+          if (location.pathname === "/auth") {
+            navigate("/");
+          }
+        }}
+        onAuthSuccess={(session) => {
+          setSession(session);
+          setIsAuthOpen(false);
+        }}
       />
+
+      {session && (
+        <OnboardingModal
+          userId={session.user.id}
+          isOpen={isOnboardingOpen}
+          onClose={() => setIsOnboardingOpen(false)}
+          onComplete={fetchProfile}
+        />
+      )}
     </div>
   );
 }
