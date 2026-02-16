@@ -8,14 +8,9 @@ import Button from "../Button/Button";
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAuthSuccess: (session: Session) => void;
 }
 
-export default function AuthModal({
-  isOpen,
-  onClose,
-  onAuthSuccess,
-}: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -59,7 +54,6 @@ export default function AuthModal({
         if (error) throw error;
 
         if (data.session) {
-          onAuthSuccess(data.session);
           onClose();
         }
       } else {
@@ -71,7 +65,6 @@ export default function AuthModal({
         if (error) throw error;
 
         if (data.session) {
-          onAuthSuccess(data.session);
           onClose();
         } else {
           setError(

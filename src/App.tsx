@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import { type Session } from "@supabase/supabase-js";
-import { supabase } from "./supabase";
+import { useState, useEffect } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router";
 import CreateRecipe from "./pages/CreateRecipe";
 import Recipes from "./pages/Recipes";
@@ -10,35 +8,17 @@ import Profile from "./pages/Profile";
 import HomePage from "./pages/HomePage";
 import AuthModal from "./Components/AuthModal/AuthModal";
 import OnboardingModal from "./Components/OnboardingModal/OnboardingModal";
+import { useAuth } from "./context/AuthProvider";
 
 function App() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [username, setUsername] = useState<string | null>(null);
-  const [avatarUrl, setAvatarlUrl] = useState<string | null>(null);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const { session, profile, loading, needsOnboarding, signOut } = useAuth();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const { toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
-
-  /* ---------------- AUTH LISTENER ---------------- */
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   /* ---------------- OPEN MODAL VIA /auth ---------------- */
 
@@ -48,57 +28,21 @@ function App() {
     }
   }, [location.pathname]);
 
-  /* ---------------- PROFILE ---------------- */
-
-  const fetchProfile = async () => {
-    if (!session) return;
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("username, display_name, avatar_url")
-      .eq("id", session.user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error(error.message);
-      return;
-    }
-
-    if (!data || !data.display_name) {
-      setUsername(null);
-      setAvatarlUrl(null);
-      setIsOnboardingOpen(true);
-      return;
-    }
-
-    setUsername(data.display_name);
-    setAvatarlUrl(data.avatar_url ?? null);
-    setIsOnboardingOpen(false);
-  };
-
   useEffect(() => {
-    if (session) {
-      fetchProfile();
-    } else {
-      setUsername(null);
-      setAvatarlUrl(null);
-      setIsOnboardingOpen(false);
-    }
-  }, [session]);
+    setIsOnboardingOpen(!!session && needsOnboarding);
+  }, [session, needsOnboarding]);
 
   if (loading) return <div>Loading...</div>;
 
   return (
     <div>
       <Header
-        username={username}
-        avatarUrl={avatarUrl}
+        username={profile?.display_name ?? null}
+        avatarUrl={profile?.avatar_url ?? null}
         onLoginClick={() => setIsAuthOpen(true)}
       />
 
-      {session && (
-        <button onClick={() => supabase.auth.signOut()}>Logout</button>
-      )}
+      {session && <button onClick={signOut}>Logout</button>}
 
       <button onClick={toggleTheme}>Toggle Dark Mode</button>
 
@@ -131,18 +75,15 @@ function App() {
             navigate("/");
           }
         }}
-        onAuthSuccess={(session) => {
-          setSession(session);
+        onAuthSuccess={() => {
           setIsAuthOpen(false);
         }}
       />
 
       {session && (
         <OnboardingModal
-          userId={session.user.id}
           isOpen={isOnboardingOpen}
           onClose={() => setIsOnboardingOpen(false)}
-          onComplete={fetchProfile}
         />
       )}
     </div>

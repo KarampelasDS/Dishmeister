@@ -1,24 +1,23 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../supabase";
 import styles from "./OnboardingModal.module.css";
 import Button from "../Button/Button";
-
-interface Props {
-  userId: string;
-  isOpen: boolean;
-  onClose: () => void;
-  onComplete: () => void;
-}
+import { useAuth } from "../../context/AuthProvider";
 
 const AVATAR_BUCKET = "avatars";
 const MAX_FILE_MB = 2;
 
-export default function OnboardingModal({
-  userId,
-  isOpen,
-  onClose,
-  onComplete,
-}: Props) {
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function OnboardingModal({ isOpen, onClose }: Props) {
+  const { session, refreshProfile } = useAuth();
+
+  // if modal is open but we have no session, something is wrong
+  const userId = session?.user.id;
+
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
@@ -40,9 +39,7 @@ export default function OnboardingModal({
     const url = URL.createObjectURL(avatarFile);
     setAvatarPreviewUrl(url);
 
-    return () => {
-      URL.revokeObjectURL(url);
-    };
+    return () => URL.revokeObjectURL(url);
   }, [avatarFile]);
 
   useEffect(() => {
@@ -60,6 +57,11 @@ export default function OnboardingModal({
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  if (!userId) {
+    // Don’t render the form if somehow opened without auth.
+    return null;
+  }
 
   const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
@@ -134,7 +136,7 @@ export default function OnboardingModal({
 
       if (error) throw error;
 
-      onComplete();
+      await refreshProfile();
       onClose();
     } catch (err: any) {
       setError(err.message || "Something went wrong");
