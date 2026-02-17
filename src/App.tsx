@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router";
-import CreateRecipe from "./pages/CreateRecipe";
+import CreateRecipePage from "./pages/CreateRecipePage";
 import Recipes from "./pages/Recipes";
 import { useTheme } from "./Hooks/useTheme";
 import Header from "./Components/Header/Header";
@@ -55,7 +55,7 @@ function App() {
           path="/recipes/new"
           element={
             session ? (
-              <CreateRecipe />
+              <CreateRecipePage />
             ) : (
               <div>
                 <p>You must log in to create a recipe.</p>
