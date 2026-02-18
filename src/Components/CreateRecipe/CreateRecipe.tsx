@@ -1,10 +1,15 @@
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { supabase } from "../../supabase";
 import Button from "../Button/Button";
 import styles from "./CreateRecipe.module.css";
 
 import countries from "i18n-iso-countries";
 import en from "i18n-iso-countries/langs/en.json";
+
+type Category = {
+  id: string;
+  name: string;
+};
 
 countries.registerLocale(en);
 
@@ -16,23 +21,9 @@ const countryOptions = Object.entries(
 
 const difficultyOptions = ["Easy", "Medium", "Hard"] as const;
 
-const categoryOptions = [
-  "Pasta",
-  "Dessert",
-  "Salad",
-  "Sushi",
-  "Breakfast",
-  "Pizza",
-  "Ramen",
-  "Main Course",
-  "Appetizer",
-  "Soup",
-] as const;
-
 const timeUnits = ["Min", "Hrs", "Sec"] as const;
 
 type Difficulty = (typeof difficultyOptions)[number];
-type Category = (typeof categoryOptions)[number];
 type TimeUnit = (typeof timeUnits)[number];
 
 function CreateRecipe() {
@@ -43,7 +34,8 @@ function CreateRecipe() {
   const [countryOfOrigin, setCountryOfOrigin] = useState<string | null>(null);
 
   const [difficulty, setDifficulty] = useState<Difficulty>("Medium");
-  const [category, setCategory] = useState<Category>("Main Course");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryId, setCategoryId] = useState<string>("");
 
   const [preparationTime, setPreparationTime] = useState<number | "">("");
   const [preparationUnit, setPreparationUnit] = useState<TimeUnit>("Min");
@@ -58,10 +50,26 @@ function CreateRecipe() {
 
   const [loading, setLoading] = useState(false);
 
-  // placeholder preview for now — you can replace with real upload preview later
   const [previewImage, setPreviewImage] = useState(
     "https://images.unsplash.com/photo-1521388825798-fec41108def2?auto=format&fit=crop&w=1400&q=80",
   );
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name")
+        .order("name", { ascending: true });
+
+      if (!error && data) {
+        setCategories(data);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   /* ---------------- INGREDIENTS ---------------- */
 
@@ -93,16 +101,7 @@ function CreateRecipe() {
     setInstructions(instructions.filter((_, i) => i !== index));
   };
 
-  /* ---------------- TIME NORMALIZATION ---------------- */
-  // You said you want uniformity. Good.
-  // Store *minutes* in DB consistently.
-  const toMinutes = (value: number, unit: TimeUnit) => {
-    if (unit === "Min") return value;
-    if (unit === "Hrs") return value * 60;
-    return value / 60; // Sec -> Min
-  };
-
-  /* ---------------- IMAGE PICKER (UI ONLY FOR NOW) ---------------- */
+  /* ---------------- IMAGE PICKER ---------------- */
 
   const openFilePicker = () => {
     fileInputRef.current?.click();
@@ -112,7 +111,6 @@ function CreateRecipe() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Strict type validation
     const allowedTypes = ["image/png", "image/jpeg"];
 
     if (!allowedTypes.includes(file.type)) {
@@ -121,7 +119,6 @@ function CreateRecipe() {
       return;
     }
 
-    // Optional: limit size (e.g. 5MB)
     const maxSizeMB = 5;
     if (file.size > maxSizeMB * 1024 * 1024) {
       alert("Image must be under 5MB.");
@@ -131,12 +128,12 @@ function CreateRecipe() {
 
     const objectUrl = URL.createObjectURL(file);
 
-    // Clean up previous blob URL if it exists
     if (previewImage.startsWith("blob:")) {
       URL.revokeObjectURL(previewImage);
     }
 
     setPreviewImage(objectUrl);
+    setImageFile(file);
   };
 
   /* ---------------- SUBMIT ---------------- */
@@ -146,6 +143,7 @@ function CreateRecipe() {
       .map((i) => i.trim())
       .filter(Boolean)
       .join("\n");
+
     const cleanedInstructions = instructions
       .map((i) => i.trim())
       .filter(Boolean)
@@ -156,16 +154,23 @@ function CreateRecipe() {
       !cleanedIngredients ||
       !cleanedInstructions ||
       preparationTime === "" ||
-      cookingTime === ""
+      cookingTime === "" ||
+      !categoryId
     ) {
       alert("All required fields must be filled");
       return;
     }
 
-    const prepMinutes = toMinutes(Number(preparationTime), preparationUnit);
-    const cookMinutes = toMinutes(Number(cookingTime), cookingUnit);
+    if (!imageFile) {
+      alert("Recipe image is required.");
+      return;
+    }
 
-    if (prepMinutes <= 0 || cookMinutes < 0 || servings <= 0) {
+    if (
+      Number(preparationTime) <= 0 ||
+      Number(cookingTime) < 0 ||
+      servings <= 0
+    ) {
       alert("Invalid numeric values");
       return;
     }
@@ -182,28 +187,59 @@ function CreateRecipe() {
       return;
     }
 
+    const fileExt = imageFile.name.split(".").pop();
+    const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("recipe-images")
+      .upload(filePath, imageFile, { upsert: false });
+
+    if (uploadError) {
+      alert(uploadError.message);
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.from("recipes").insert({
       author_id: user.id,
       title: title.trim(),
       description: description.trim() || null,
-      country_of_origin: countryOfOrigin, // ISO code or null
-      difficulty, // <-- add this column in DB if not already
-      category, // <-- add this column in DB if not already
-      preparation_minutes: prepMinutes,
-      cooking_time_minutes: cookMinutes,
+      country_of_origin: countryOfOrigin,
+      difficulty,
+      category_id: categoryId,
+      preparation_time: Number(preparationTime),
+      preparation_unit: preparationUnit,
+      cooking_time: Number(cookingTime),
+      cooking_unit: cookingUnit,
       servings,
       ingredients: cleanedIngredients,
       instructions: cleanedInstructions,
+      image_url: filePath,
     });
 
     setLoading(false);
 
     if (error) {
+      await supabase.storage.from("recipe-images").remove([filePath]);
+
       alert(error.message);
+      setLoading(false);
       return;
     }
 
     alert("Recipe created");
+    setTitle("");
+    setDescription("");
+    setIngredients([""]);
+    setInstructions([""]);
+    setImageFile(null);
+    setPreviewImage(
+      "https://images.unsplash.com/photo-1521388825798-fec41108def2?auto=format&fit=crop&w=1400&q=80",
+    );
+    setCategoryId("");
+    setPreparationTime("");
+    setCookingTime("");
+    setServings(4);
   };
 
   return (
@@ -219,7 +255,9 @@ function CreateRecipe() {
 
         {/* IMAGE */}
         <div className={styles.section}>
-          <label className={styles.label}>Recipe Image</label>
+          <label className={styles.label}>
+            Recipe Name <span className={styles.required}>*</span>
+          </label>
 
           <div
             className={styles.imageUpload}
@@ -391,12 +429,13 @@ function CreateRecipe() {
 
             <select
               className={styles.select}
-              value={category}
-              onChange={(e) => setCategory(e.target.value as Category)}
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
             >
-              {categoryOptions.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              <option value="">Select category</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>

@@ -2,6 +2,25 @@ body {
   font-family: "Segoe UI";
 }
 
+/* Chrome, Safari, Edge */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.input::placeholder,
+.textarea::placeholder,
+.timeInputWrapper input::placeholder {
+  color: var(--text);
+  opacity: 0.6;
+}
+
 .page {
   background: var(--bg);
   min-height: 100vh;
@@ -14,7 +33,7 @@ body {
   background: var(--bg);
   border-radius: 22px;
   padding: 2.25rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   box-shadow: 0 18px 60px rgba(0, 0, 0, 0.06);
 }
 
@@ -52,7 +71,7 @@ body {
   display: block;
   font-size: 0.92rem;
   font-weight: 700;
-  color: #374151;
+  color: var(--text);
   margin-bottom: 0.65rem;
 }
 
@@ -62,12 +81,13 @@ body {
   width: 100%;
   padding: 0.65rem;
   border-radius: 14px;
-  border: 1px solid #d1d5db;
-  background: #f9fafb;
+  border: 1px solid var(--border);
+  background: var(--header-bg);
   font-size: 0.95rem;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
+  color: var(--text);
 }
 
 .textarea {
@@ -80,7 +100,7 @@ body {
 .textarea:focus {
   outline: none;
   border-color: #f97316;
-  box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.15);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
 /* IMAGE */
@@ -90,8 +110,8 @@ body {
   aspect-ratio: 16 / 9;
   border-radius: 18px;
   overflow: hidden;
-  border: 2px dashed #f97316;
   cursor: pointer;
+  border: 2px dashed #434343;
 }
 
 .imageUpload img {
@@ -109,6 +129,11 @@ body {
   transition: opacity 0.2s ease;
   display: grid;
   place-items: center;
+}
+
+.imageUpload:hover,
+.imageUpload:focus-within {
+  border-color: #f97316;
 }
 
 .imageUpload:hover .imageOverlay,
@@ -166,10 +191,10 @@ body {
 
 .timeInputWrapper {
   display: flex;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border);
   border-radius: 14px;
   overflow: hidden;
-  background: #f9fafb;
+  background: var(--header-bg);
 }
 
 .timeInputWrapper input {
@@ -178,14 +203,24 @@ body {
   background: transparent;
   padding: 0.95rem 1.05rem;
   font-size: 0.95rem;
+  color: var(--text);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.timeInputWrapper:focus-within {
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
 .timeInputWrapper select {
   border: none;
-  background: #f3f4f6;
+  background: var(--header-bg);
   padding: 0 1rem;
   font-weight: 700;
   cursor: pointer;
+  color: var(--text);
 }
 
 .timeInputWrapper input:focus,
@@ -202,11 +237,12 @@ body {
 }
 
 .stepper button {
+  color: var(--text);
   width: 42px;
   height: 42px;
   border-radius: 14px;
   border: none;
-  background: #e5e7eb;
+  background: var(--header-bg);
   font-size: 1.2rem;
   cursor: pointer;
   transition:
@@ -216,7 +252,7 @@ body {
 
 .stepper button:hover {
   background: #f97316;
-  color: #ffffff;
+  color: var(--text);
 }
 
 .stepper span {
@@ -238,7 +274,7 @@ body {
   margin: 0;
   font-size: 1rem;
   font-weight: 800;
-  color: #111827;
+  color: var(--text);
 }
 
 .addLink {
@@ -278,7 +314,7 @@ body {
   height: 40px;
   border-radius: 14px;
   background: #f97316;
-  color: #fff;
+  color: white;
   display: grid;
   place-items: center;
   font-weight: 900;

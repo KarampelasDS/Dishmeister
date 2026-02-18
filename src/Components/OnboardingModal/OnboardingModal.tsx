@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../supabase";
 import styles from "./OnboardingModal.module.css";
 import Button from "../Button/Button";
@@ -13,6 +13,8 @@ interface Props {
 }
 
 export default function OnboardingModal({ isOpen, onClose }: Props) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const { session, refreshProfile } = useAuth();
 
   // if modal is open but we have no session, something is wrong
@@ -87,6 +89,9 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
       setAvatarFile(null);
       setAvatarPath(null);
       setError(validationError);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       return;
     }
 
@@ -176,6 +181,7 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
                   accept="image/*"
                   onChange={handleAvatarChange}
                   className={styles.fileInput}
+                  ref={fileInputRef}
                 />
               </label>
 
@@ -187,6 +193,9 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
                     setAvatarFile(null);
                     setAvatarPath(null);
                     setError(null);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = "";
+                    }
                   }}
                 >
                   Remove
