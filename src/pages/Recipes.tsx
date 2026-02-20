@@ -1,13 +1,22 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useNavigate } from "react-router";
+import RecipeCard from "../Components/RecipeCard/RecipeCard";
 
 type Recipe = {
   id: string;
   title: string;
   description: string | null;
-  created_at: string;
   author_id: string;
+  preparation_time: number;
+  cooking_time: number;
+  servings: number;
+  country_of_origin: string | null;
+  image_url: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  category_id: string;
+  preparation_unit: "Min" | "Hrs" | "Sec";
+  cooking_unit: "Min" | "Hrs" | "Sec";
 };
 
 const PAGE_SIZE = 10;
@@ -28,7 +37,9 @@ function Recipes() {
 
     const { data, error } = await supabase
       .from("recipes")
-      .select("id, title, description, created_at, author_id")
+      .select(
+        "id, title, description, author_id, preparation_time, cooking_time, servings, country_of_origin, image_url, difficulty, category_id, preparation_unit, cooking_unit",
+      )
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -57,9 +68,17 @@ function Recipes() {
 
       {!loading && recipes.length === 0 && <p>No recipes yet.</p>}
 
+      <RecipeCard />
+
       <ul style={{ listStyle: "none", padding: 0 }}>
         {recipes.map((recipe) => (
-          <li
+          <RecipeCard
+            key={recipe.id}
+            recipe={recipe}
+            onClick={() => navigate(`/recipes/${recipe.id}`)}
+          />
+
+          /*<li
             key={recipe.id}
             style={{
               border: "1px solid #ddd",
@@ -74,7 +93,7 @@ function Recipes() {
             {recipe.description && <p>{recipe.description}</p>}
 
             <small>{new Date(recipe.created_at).toLocaleDateString()}</small>
-          </li>
+          </li>*/
         ))}
       </ul>
 

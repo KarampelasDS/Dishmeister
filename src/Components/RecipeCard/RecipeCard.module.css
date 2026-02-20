@@ -1,0 +1,145 @@
+:root {
+  --card-bg: var(--header-bg, #fff);
+}
+
+.container {
+  max-width: 920px;
+  margin: 0 auto;
+  background: var(--card-bg);
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+}
+
+.header {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+}
+
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.headerOverlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1.25rem;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  color: #fff;
+}
+
+.title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+.badges {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.86rem;
+}
+
+.content {
+  padding: 1.25rem 1.5rem 1.5rem 1.5rem;
+}
+
+.authorRow {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.9rem;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid var(--bg);
+}
+
+.authorInfo {
+  flex: 1;
+}
+
+.authorName {
+  font-weight: 800;
+}
+
+.authorMeta {
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.metaCounts {
+  display: flex;
+  gap: 0.9rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.description {
+  margin: 1rem 0 1rem 0;
+  color: var(--text);
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.9rem;
+}
+
+.statCard {
+  background: var(--header-bg);
+  border-radius: 12px;
+  padding: 1rem;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.statValue {
+  font-weight: 900;
+  font-size: 1.35rem;
+}
+
+.statLabel {
+  font-size: 0.85rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.footer {
+  display: flex;
+  gap: 0.8rem;
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 860px) {
+  .statsRow {
+    grid-template-columns: 1fr;
+  }
+  .footer {
+    flex-direction: column;
+  }
+}
