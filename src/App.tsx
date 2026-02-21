@@ -46,8 +46,6 @@ function App() {
 
       <button onClick={toggleTheme}>Toggle Dark Mode</button>
 
-      <hr />
-
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/recipes" element={<Recipes />} />

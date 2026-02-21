@@ -7,18 +7,27 @@ type Recipe = {
   id: string;
   title: string;
   description: string | null;
-  author_id: string;
   preparation_time: number;
   cooking_time: number;
   servings: number;
   country_of_origin: string | null;
   image_url: string;
   difficulty: "Easy" | "Medium" | "Hard";
-  category_id: string;
   preparation_unit: "Min" | "Hrs" | "Sec";
   cooking_unit: "Min" | "Hrs" | "Sec";
-};
 
+  profiles: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    username: string | null;
+  };
+
+  categories: {
+    id: string;
+    name: string;
+  };
+};
 const PAGE_SIZE = 10;
 
 function Recipes() {
@@ -38,7 +47,30 @@ function Recipes() {
     const { data, error } = await supabase
       .from("recipes")
       .select(
-        "id, title, description, author_id, preparation_time, cooking_time, servings, country_of_origin, image_url, difficulty, category_id, preparation_unit, cooking_unit",
+        `
+    id,
+    title,
+    description,
+    preparation_time,
+    cooking_time,
+    servings,
+    country_of_origin,
+    image_url,
+    difficulty,
+    preparation_unit,
+    cooking_unit,
+    created_at,
+    profiles:author_id (
+      id,
+      display_name,
+      avatar_url,
+      username
+    ),
+    categories:category_id (
+      id,
+      name
+    )
+  `,
       )
       .order("created_at", { ascending: false })
       .range(from, to);
