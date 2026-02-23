@@ -4,6 +4,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 import { supabase } from "../../supabase";
+import { useEffect, useState } from "react";
 
 type Recipe = {
   id: string;
@@ -93,6 +94,10 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const preparation_unit = r?.preparation_unit ?? "Min";
   const cooking_unit = r?.cooking_unit ?? "Min";
 
+  const [currentReaction, setCurrentReaction] = useState<
+    "like" | "dislike" | null
+  >(null);
+
   const hasTimes = preparation_time > 0 || cooking_time > 0;
   const timeLabel = hasTimes
     ? convertTimeToMinutes(
@@ -113,6 +118,33 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     }
   };
 
+  const FetchReaction = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      console.log("You must be logged in to fetch reactions.");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("recipe_reactions")
+      .select("reaction")
+      .eq("recipe_id", r.id)
+      .eq("user_id", user.id)
+      .single();
+    console.log(data);
+    if (error) {
+      console.log(error);
+    }
+    if (data) {
+      setCurrentReaction(data.reaction);
+    }
+  };
+
+  useEffect(() => {
+    FetchReaction();
+  }, []);
+
   return (
     <article className={styles.container}>
       <header className={styles.header}>
@@ -128,6 +160,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             <span className={styles.badge}>🔥 {difficulty}</span>
             <span className={styles.badge}>👍 {likes}</span>
             <span className={styles.badge}>👎 {dislikes}</span>
+            {/*Just for testing*/}
+            <span className={styles.badge}>{currentReaction}</span>
           </div>
         </div>
       </header>
