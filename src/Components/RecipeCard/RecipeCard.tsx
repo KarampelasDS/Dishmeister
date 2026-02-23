@@ -3,6 +3,7 @@ import Button from "../Button/Button";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
+import { supabase } from "../../supabase";
 
 type Recipe = {
   id: string;
@@ -16,6 +17,8 @@ type Recipe = {
   difficulty: "Easy" | "Medium" | "Hard";
   preparation_unit: "Min" | "Hrs" | "Sec";
   cooking_unit: "Min" | "Hrs" | "Sec";
+  like_count: number;
+  dislike_count: number;
 
   profiles: {
     id: string;
@@ -36,14 +39,42 @@ interface RecipeCardProps {
 }
 
 export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
+  const convertTimeToMinutes = (
+    preparationTime: number,
+    cookingTime: number,
+    preparationUnit: string,
+    cookingUnit: string,
+  ) => {
+    let prepTime = preparationTime;
+    let cookTime = cookingTime;
+    if (preparationUnit === "Hrs") {
+      prepTime = prepTime * 60;
+    } else if (preparationUnit === "Sec") {
+      prepTime = prepTime / 60;
+    }
+    if (cookingUnit === "Hrs") {
+      cookTime = cookTime * 60;
+    } else if (cookingUnit === "Sec") {
+      cookTime = cookTime / 60;
+    }
+    const totalTimeMinutes = prepTime + cookTime;
+    if (totalTimeMinutes < 1) {
+      return "<1 Min";
+    } else if (totalTimeMinutes > 60) {
+      return `${(totalTimeMinutes / 60).toFixed()} Hr ${totalTimeMinutes % 60 > 0 ? `${totalTimeMinutes % 60} Min` : ""}`;
+    }
+    return `${totalTimeMinutes.toFixed()} Min`;
+  };
   const r = recipe as Recipe;
 
   const title = r?.title ?? "Creamy Carbonara";
   const cover = r?.image_url ?? r?.image_url ?? "/assets/pasta.jpg";
   const difficulty = r?.difficulty ?? "Medium";
-  const likes = r?.likes ?? "1,243 Likes";
+  const likes = r?.like_count ?? "1,243 Likes";
+  const dislikes = r?.dislike_count ?? "56 Dislikes";
   const authorName =
     r?.profiles?.display_name ?? r?.profiles?.username ?? "chef_marco";
+  const authorUsername = r?.profiles?.username;
 
   const authorAvatar = r?.profiles?.avatar_url
     ? r.profiles.avatar_url
@@ -64,8 +95,23 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
 
   const hasTimes = preparation_time > 0 || cooking_time > 0;
   const timeLabel = hasTimes
-    ? `${preparation_time} ${preparation_unit} prep • ${cooking_time} ${cooking_unit} cook`
+    ? convertTimeToMinutes(
+        preparation_time,
+        cooking_time,
+        preparation_unit,
+        cooking_unit,
+      )
     : "25 Min";
+
+  const reactToRecipe = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      alert("You must be logged in to react to a recipe.");
+      return;
+    }
+  };
 
   return (
     <article className={styles.container}>
@@ -80,7 +126,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           <div className={styles.badges}>
             <span className={styles.badge}>⏱ {timeLabel}</span>
             <span className={styles.badge}>🔥 {difficulty}</span>
-            <span className={styles.badge}>❤️ {likes}</span>
+            <span className={styles.badge}>👍 {likes}</span>
+            <span className={styles.badge}>👎 {dislikes}</span>
           </div>
         </div>
       </header>
@@ -94,7 +141,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           />
           <div className={styles.authorInfo}>
             <div className={styles.authorName}>{authorName}</div>
-            <div className={styles.authorMeta}>{"test"}</div>
+            <div className={styles.authorMeta}>{"@" + authorUsername}</div>
           </div>
           <div className={styles.metaCounts}>
             <div>💬 {comments}</div>

@@ -15,6 +15,8 @@ type Recipe = {
   difficulty: "Easy" | "Medium" | "Hard";
   preparation_unit: "Min" | "Hrs" | "Sec";
   cooking_unit: "Min" | "Hrs" | "Sec";
+  like_count: number;
+  dislike_count: number;
 
   profiles: {
     id: string;
@@ -60,6 +62,8 @@ function Recipes() {
     preparation_unit,
     cooking_unit,
     created_at,
+    like_count,
+    dislike_count,
     profiles:author_id (
       id,
       display_name,
@@ -99,8 +103,6 @@ function Recipes() {
       {loading && <p>Loading...</p>}
 
       {!loading && recipes.length === 0 && <p>No recipes yet.</p>}
-
-      <RecipeCard />
 
       <ul style={{ listStyle: "none", padding: 0 }}>
         {recipes.map((recipe) => (
