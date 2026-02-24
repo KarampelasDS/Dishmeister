@@ -17,6 +17,7 @@ type Recipe = {
   cooking_unit: "Min" | "Hrs" | "Sec";
   like_count: number;
   dislike_count: number;
+  current_user_reaction: "like" | "dislike" | null;
 
   profiles: {
     id: string;
@@ -30,6 +31,7 @@ type Recipe = {
     name: string;
   };
 };
+
 const PAGE_SIZE = 10;
 
 function Recipes() {
@@ -46,36 +48,46 @@ function Recipes() {
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
+    // get current user
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     const { data, error } = await supabase
       .from("recipes")
       .select(
         `
-    id,
-    title,
-    description,
-    preparation_time,
-    cooking_time,
-    servings,
-    country_of_origin,
-    image_url,
-    difficulty,
-    preparation_unit,
-    cooking_unit,
-    created_at,
-    like_count,
-    dislike_count,
-    profiles:author_id (
-      id,
-      display_name,
-      avatar_url,
-      username
-    ),
-    categories:category_id (
-      id,
-      name
-    )
-  `,
+        id,
+        title,
+        description,
+        preparation_time,
+        cooking_time,
+        servings,
+        country_of_origin,
+        image_url,
+        difficulty,
+        preparation_unit,
+        cooking_unit,
+        created_at,
+        like_count,
+        dislike_count,
+        profiles:author_id (
+          id,
+          display_name,
+          avatar_url,
+          username
+        ),
+        categories:category_id (
+          id,
+          name
+        ),
+        recipe_reactions!left (
+          reaction,
+          user_id
+        )
+      `,
       )
+      .eq("recipe_reactions.user_id", user?.id ?? "")
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -86,7 +98,12 @@ function Recipes() {
       return;
     }
 
-    setRecipes(data);
+    const transformed = data.map((recipe: any) => ({
+      ...recipe,
+      current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
+    }));
+
+    setRecipes(transformed);
     setHasMore(data.length === PAGE_SIZE);
   };
 
@@ -111,23 +128,6 @@ function Recipes() {
             recipe={recipe}
             onClick={() => navigate(`/recipes/${recipe.id}`)}
           />
-
-          /*<li
-            key={recipe.id}
-            style={{
-              border: "1px solid #ddd",
-              padding: 16,
-              marginBottom: 12,
-              cursor: "pointer",
-            }}
-            onClick={() => navigate(`/recipes/${recipe.id}`)}
-          >
-            <h3>{recipe.title}</h3>
-
-            {recipe.description && <p>{recipe.description}</p>}
-
-            <small>{new Date(recipe.created_at).toLocaleDateString()}</small>
-          </li>*/
         ))}
       </ul>
 

@@ -20,6 +20,7 @@ type Recipe = {
   cooking_unit: "Min" | "Hrs" | "Sec";
   like_count: number;
   dislike_count: number;
+  current_user_reaction: "like" | "dislike" | null;
 
   profiles: {
     id: string;
@@ -71,8 +72,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const title = r?.title ?? "Creamy Carbonara";
   const cover = r?.image_url ?? r?.image_url ?? "/assets/pasta.jpg";
   const difficulty = r?.difficulty ?? "Medium";
-  const likes = r?.like_count ?? "1,243 Likes";
-  const dislikes = r?.dislike_count ?? "56 Dislikes";
+  const [likes, setLikes] = useState<number>(r?.like_count ?? 0);
+  const [dislikes, setDislikes] = useState<number>(r?.dislike_count ?? 0);
   const authorName =
     r?.profiles?.display_name ?? r?.profiles?.username ?? "chef_marco";
   const authorUsername = r?.profiles?.username;
@@ -96,7 +97,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
 
   const [currentReaction, setCurrentReaction] = useState<
     "like" | "dislike" | null
-  >(null);
+  >(r.current_user_reaction);
 
   const hasTimes = preparation_time > 0 || cooking_time > 0;
   const timeLabel = hasTimes
@@ -108,7 +109,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
       )
     : "25 Min";
 
-  const reactToRecipe = async () => {
+  const handleReaction = async (reaction: "like" | "dislike") => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -116,34 +117,68 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
       alert("You must be logged in to react to a recipe.");
       return;
     }
-  };
+    // Save previous local state so we can revert on failure
+    const prevLikes = likes;
+    const prevDislikes = dislikes;
+    const prevReaction = currentReaction;
 
-  const FetchReaction = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      console.log("You must be logged in to fetch reactions.");
-      return;
+    // Determine whether the user is toggling off their current reaction
+    const isTogglingOff = currentReaction === reaction;
+    const newReaction = isTogglingOff ? null : reaction;
+
+    if (isTogglingOff) {
+      // User is toggling off their reaction
+      setCurrentReaction(null);
+      if (reaction === "like") {
+        setLikes((prev) => Math.max(0, prev - 1));
+      } else {
+        setDislikes((prev) => Math.max(0, prev - 1));
+      }
+    } else {
+      // User is setting a new reaction. If they had the opposite reaction,
+      // decrement that count and increment the new one. Use Math.max to avoid negatives.
+      if (currentReaction === "like" && reaction === "dislike") {
+        setLikes((prev) => Math.max(0, prev - 1));
+        setDislikes((prev) => prev + 1);
+      } else if (currentReaction === "dislike" && reaction === "like") {
+        setDislikes((prev) => Math.max(0, prev - 1));
+        setLikes((prev) => prev + 1);
+      } else {
+        // no previous reaction
+        if (reaction === "like") {
+          setLikes((prev) => prev + 1);
+        } else {
+          setDislikes((prev) => prev + 1);
+        }
+      }
+      setCurrentReaction(reaction);
     }
-    const { data, error } = await supabase
-      .from("recipe_reactions")
-      .select("reaction")
-      .eq("recipe_id", r.id)
-      .eq("user_id", user.id)
-      .single();
-    console.log(data);
+
+    // Persist change: delete when toggling off, otherwise upsert
+    let error: any = null;
+    if (newReaction === null) {
+      const res = await supabase
+        .from("recipe_reactions")
+        .delete()
+        .match({ user_id: user.id, recipe_id: r.id });
+      error = res.error;
+    } else {
+      const res = await supabase
+        .from("recipe_reactions")
+        .upsert(
+          { user_id: user.id, recipe_id: r.id, reaction: newReaction },
+          { onConflict: ["user_id", "recipe_id"] },
+        );
+      error = res.error;
+    }
     if (error) {
-      console.log(error);
-    }
-    if (data) {
-      setCurrentReaction(data.reaction);
+      // Revert local optimistic updates
+      setLikes(prevLikes);
+      setDislikes(prevDislikes);
+      setCurrentReaction(prevReaction);
+      alert(error.message);
     }
   };
-
-  useEffect(() => {
-    FetchReaction();
-  }, []);
 
   return (
     <article className={styles.container}>
@@ -158,10 +193,18 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           <div className={styles.badges}>
             <span className={styles.badge}>⏱ {timeLabel}</span>
             <span className={styles.badge}>🔥 {difficulty}</span>
-            <span className={styles.badge}>👍 {likes}</span>
-            <span className={styles.badge}>👎 {dislikes}</span>
-            {/*Just for testing*/}
-            <span className={styles.badge}>{currentReaction}</span>
+            <span
+              onClick={() => handleReaction("like")}
+              className={`${styles.badge} ${currentReaction === "like" ? styles.activebadge : ""}`}
+            >
+              👍 {likes}
+            </span>
+            <span
+              onClick={() => handleReaction("dislike")}
+              className={`${styles.badge} ${currentReaction === "dislike" ? styles.activebadge : ""}`}
+            >
+              👎 {dislikes}
+            </span>
           </div>
         </div>
       </header>
