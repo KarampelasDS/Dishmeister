@@ -112,7 +112,7 @@ function Recipes() {
   }, [page]);
 
   return (
-    <div style={{ maxWidth: 720 }}>
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "1rem" }}>
       <h1>Recipes</h1>
 
       <button onClick={() => navigate("/recipes/new")}>Create recipe</button>

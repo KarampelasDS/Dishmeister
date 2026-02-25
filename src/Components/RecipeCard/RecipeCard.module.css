@@ -35,7 +35,8 @@
   background: linear-gradient(
     180deg,
     rgba(0, 0, 0, 0) 0%,
-    rgba(0, 0, 0, 0.55) 100%
+    rgba(0, 0, 0, 0.55) 60%,
+    rgba(0, 0, 0, 0.75) 100%
   );
   color: #fff;
 }
@@ -59,6 +60,12 @@
   border-radius: 999px;
   font-weight: 700;
   font-size: 0.86rem;
+}
+
+.reactionButtons {
+  display: flex;
+  gap: 0.6rem;
+  margin-left: auto;
 }
 
 .activebadge {

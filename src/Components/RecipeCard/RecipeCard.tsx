@@ -87,7 +87,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     r?.description ??
     "Classic Italian pasta with egg, Pecorino and crispy pancetta. A family favorite!";
   const servings = r?.servings ?? 4;
-  const rating = r?.rating ?? 4.8;
+  const [rating, setRating] = useState<number>(r?.rating ?? 100);
   const category = r?.categories?.name ?? "Pasta";
 
   const preparation_time = r?.preparation_time ?? 0;
@@ -180,6 +180,19 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     }
   };
 
+  const CalculateRating = () => {
+    if (likes + dislikes > 0) {
+      const calculated = Math.round((likes / (likes + dislikes)) * 100);
+      setRating(calculated);
+    } else {
+      setRating(0);
+    }
+  };
+
+  useEffect(() => {
+    CalculateRating();
+  }, [likes, dislikes]);
+
   return (
     <article className={styles.container}>
       <header className={styles.header}>
@@ -193,18 +206,22 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           <div className={styles.badges}>
             <span className={styles.badge}>⏱ {timeLabel}</span>
             <span className={styles.badge}>🔥 {difficulty}</span>
-            <span
-              onClick={() => handleReaction("like")}
-              className={`${styles.badge} ${currentReaction === "like" ? styles.activebadge : ""}`}
-            >
-              👍 {likes}
-            </span>
-            <span
-              onClick={() => handleReaction("dislike")}
-              className={`${styles.badge} ${currentReaction === "dislike" ? styles.activebadge : ""}`}
-            >
-              👎 {dislikes}
-            </span>
+            <div className={styles.reactionButtons}>
+              <span
+                onClick={() => handleReaction("like")}
+                className={`${styles.badge} ${currentReaction === "like" ? styles.activebadge : ""}`}
+                style={{ cursor: "pointer" }}
+              >
+                👍 {likes}
+              </span>
+              <span
+                onClick={() => handleReaction("dislike")}
+                className={`${styles.badge} ${currentReaction === "dislike" ? styles.activebadge : ""}`}
+                style={{ cursor: "pointer" }}
+              >
+                👎 {dislikes}
+              </span>
+            </div>
           </div>
         </div>
       </header>
@@ -234,7 +251,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             <div className={styles.statLabel}>Servings</div>
           </div>
           <div className={styles.statCard}>
-            <div className={styles.statValue}>{rating}</div>
+            <div className={styles.statValue}>{`${rating}%`}</div>
             <div className={styles.statLabel}>Rating</div>
           </div>
           <div className={styles.statCard}>
