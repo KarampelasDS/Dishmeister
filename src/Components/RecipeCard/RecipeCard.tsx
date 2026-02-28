@@ -5,7 +5,17 @@ const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 import { supabase } from "../../supabase";
 import { useEffect, useState } from "react";
-import { ThumbsUp, ThumbsDown, Clock, ChefHat } from "lucide-react";
+import {
+  ThumbsUp,
+  ThumbsDown,
+  Clock,
+  ChefHat,
+  EllipsisVertical,
+  Bookmark,
+  Forward,
+  MessageSquareWarning,
+  Book,
+} from "lucide-react";
 
 type Recipe = {
   id: string;
@@ -78,6 +88,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     return `${minutes} Min`;
   };
   const r = recipe as Recipe;
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const title = r?.title ?? "Creamy Carbonara";
   const cover = r?.image_url ?? r?.image_url ?? "/assets/pasta.jpg";
@@ -211,6 +222,49 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           alt={title}
           className={styles.cover}
         />
+        <div className={styles.topRightMenu}>
+          <button
+            className={styles.menuButton}
+            aria-label="More options"
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            <EllipsisVertical color="white" size={24} />
+          </button>
+          {menuOpen && (
+            <div className={styles.menuDropdown}>
+              <button
+                className={styles.menuItem}
+                onClick={() => {
+                  console.log("save");
+                  setMenuOpen(false);
+                }}
+              >
+                <Bookmark />
+                Save
+              </button>
+              <button
+                className={styles.menuItem}
+                onClick={() => {
+                  console.log("share");
+                  setMenuOpen(false);
+                }}
+              >
+                <Forward />
+                Share
+              </button>
+              <button
+                className={styles.menuItem}
+                onClick={() => {
+                  console.log("report");
+                  setMenuOpen(false);
+                }}
+              >
+                <MessageSquareWarning color="#cd3131" />
+                Report
+              </button>
+            </div>
+          )}
+        </div>
         <div className={styles.headerOverlay}>
           <h3 className={styles.title}>{title}</h3>
           <div className={styles.badges}>
