@@ -48,25 +48,34 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     preparationUnit: string,
     cookingUnit: string,
   ) => {
-    let prepTime = preparationTime;
-    let cookTime = cookingTime;
-    if (preparationUnit === "Hrs") {
-      prepTime = prepTime * 60;
-    } else if (preparationUnit === "Sec") {
-      prepTime = prepTime / 60;
-    }
-    if (cookingUnit === "Hrs") {
-      cookTime = cookTime * 60;
-    } else if (cookingUnit === "Sec") {
-      cookTime = cookTime / 60;
-    }
-    const totalTimeMinutes = prepTime + cookTime;
-    if (totalTimeMinutes < 1) {
+    const toSeconds = (value: number, unit: string) => {
+      switch (unit) {
+        case "Hrs":
+          return value * 3600;
+        case "Min":
+          return value * 60;
+        case "Sec":
+        default:
+          return value;
+      }
+    };
+
+    const totalSeconds =
+      toSeconds(preparationTime, preparationUnit) +
+      toSeconds(cookingTime, cookingUnit);
+
+    if (totalSeconds < 60) {
       return "<1 Min";
-    } else if (totalTimeMinutes > 60) {
-      return `${(totalTimeMinutes / 60).toFixed()} Hr ${totalTimeMinutes % 60 > 0 ? `${totalTimeMinutes % 60} Min` : ""}`;
     }
-    return `${totalTimeMinutes.toFixed()} Min`;
+
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+    if (hours > 0) {
+      return `${hours} Hr${minutes > 0 ? ` ${minutes} Min` : ""}`;
+    }
+
+    return `${minutes} Min`;
   };
   const r = recipe as Recipe;
 

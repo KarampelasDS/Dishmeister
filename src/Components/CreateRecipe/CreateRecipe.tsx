@@ -116,6 +116,9 @@ function CreateRecipe() {
     if (!allowedTypes.includes(file.type)) {
       alert("Only PNG and JPEG files are allowed.");
       e.target.value = "";
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
       return;
     }
 
@@ -134,6 +137,11 @@ function CreateRecipe() {
 
     setPreviewImage(objectUrl);
     setImageFile(file);
+
+    e.target.value = "";
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   /* ---------------- SUBMIT ---------------- */
