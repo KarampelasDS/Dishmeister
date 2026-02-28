@@ -5,6 +5,7 @@ const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 import { supabase } from "../../supabase";
 import { useEffect, useState } from "react";
+import { ThumbsUp, ThumbsDown, Clock, ChefHat } from "lucide-react";
 
 type Recipe = {
   id: string;
@@ -204,22 +205,34 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
         <div className={styles.headerOverlay}>
           <h3 className={styles.title}>{title}</h3>
           <div className={styles.badges}>
-            <span className={styles.badge}>⏱ {timeLabel}</span>
-            <span className={styles.badge}>🔥 {difficulty}</span>
+            <span className={styles.badge}>
+              <Clock /> {timeLabel}
+            </span>
+            <span
+              className={`${styles.badge} ${
+                difficulty === "Easy"
+                  ? styles.easy
+                  : difficulty === "Medium"
+                    ? styles.medium
+                    : styles.hard
+              }`}
+            >
+              <ChefHat /> {difficulty}
+            </span>
             <div className={styles.reactionButtons}>
               <span
                 onClick={() => handleReaction("like")}
-                className={`${styles.badge} ${currentReaction === "like" ? styles.activebadge : ""}`}
+                className={`${styles.badge} ${styles.reactionBadge} ${currentReaction === "like" ? styles.activebadge : ""}`}
                 style={{ cursor: "pointer" }}
               >
-                👍 {likes}
+                <ThumbsUp className={styles.reactionButton} size={24} />
               </span>
               <span
                 onClick={() => handleReaction("dislike")}
-                className={`${styles.badge} ${currentReaction === "dislike" ? styles.activebadge : ""}`}
+                className={`${styles.badge} ${styles.reactionBadge} ${currentReaction === "dislike" ? styles.activebadge : ""}`}
                 style={{ cursor: "pointer" }}
               >
-                👎 {dislikes}
+                <ThumbsDown className={styles.reactionButton} size={24} />
               </span>
             </div>
           </div>

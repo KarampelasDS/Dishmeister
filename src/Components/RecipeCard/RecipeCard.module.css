@@ -42,7 +42,7 @@
 }
 
 .title {
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 -0.5rem 0;
   font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: -0.3px;
@@ -51,7 +51,7 @@
 .badges {
   display: flex;
   gap: 0.6rem;
-  align-items: center;
+  align-items: end;
 }
 
 .badge {
@@ -60,12 +60,25 @@
   border-radius: 999px;
   font-weight: 700;
   font-size: 0.86rem;
+  align-items: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  align-content: center;
+  display: flex;
+  gap: 0.3rem;
+}
+
+.reactionBadge:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .reactionButtons {
   display: flex;
   gap: 0.6rem;
   margin-left: auto;
+}
+
+.reactionButton {
+  padding: 10px 8px;
 }
 
 .activebadge {
@@ -146,11 +159,34 @@
   margin-top: 1.25rem;
 }
 
+.easy {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+.medium {
+  background: #ffedd5;
+  color: #c2410c;
+  border-color: #fed7aa;
+}
+.hard {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
 @media (max-width: 860px) {
   .statsRow {
     grid-template-columns: 1fr;
   }
   .footer {
     flex-direction: column;
+  }
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+  .reactionButton {
+    padding: 6px 4px;
   }
 }
