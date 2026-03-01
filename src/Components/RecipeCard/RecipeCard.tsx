@@ -5,6 +5,7 @@ const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 import { supabase } from "../../supabase";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import {
   ThumbsUp,
   ThumbsDown,
@@ -16,6 +17,7 @@ import {
   MessageSquareWarning,
   Book,
 } from "lucide-react";
+import { href } from "react-router";
 
 type Recipe = {
   id: string;
@@ -52,6 +54,7 @@ interface RecipeCardProps {
 }
 
 export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
+  const navigate = useNavigate();
   const convertTimeToMinutes = (
     preparationTime: number,
     cookingTime: number,
@@ -342,7 +345,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             backgroundColor={"linear-gradient(90deg,#ff7a18,#ef4444)"}
             textColor="#fff"
             fontSize="1rem"
-            onButtonClick={() => console.log("View recipe")}
+            onButtonClick={() => navigate(`/recipes/${r.id}`)}
             type="button"
             outline={"0px"}
           />

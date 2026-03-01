@@ -1,0 +1,326 @@
+.wrapper {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.backRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: #555;
+  cursor: pointer;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.card {
+  background: var(--bg);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.iconBtn svg {
+  width: 22px;
+  height: 22px;
+}
+.hero {
+  position: relative;
+  height: 500px;
+}
+
+.heroImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.headerOverlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1.25rem;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.4) 30%,
+    rgba(0, 0, 0, 0.55) 60%,
+    rgba(0, 0, 0, 0.75) 100%
+  );
+  color: #fff;
+}
+
+.badges {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.12);
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  align-items: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  gap: 0.4rem;
+}
+
+.badge svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+.easy {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.medium {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.hard {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.body {
+  padding: 24px;
+}
+
+.userRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.userInfo {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.userInfo .avatar {
+  width: 50px;
+  height: 50px;
+}
+
+.userInfo .username {
+  font-size: 1.1rem;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.username {
+  font-weight: 600;
+}
+
+.subText {
+  font-size: 12px;
+  color: #777;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.iconBtn {
+  background: #f2f2f2;
+  border: none;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.iconBtn:hover {
+  background: #e0e0e0;
+}
+
+.activeLike {
+  background: #ffe5e5;
+  color: #e63946;
+}
+
+.activeLike:hover {
+  background: #ffd6d6;
+}
+
+.activeDislike {
+  background: #ffe5e5;
+  color: #e63946;
+}
+
+.activeDislike:hover {
+  background: #ffd6d6;
+}
+
+.activeSave {
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+.activeSave:hover {
+  background: #fed7aa;
+}
+
+.title {
+  font-size: 26px;
+  margin-top: 12px;
+}
+
+.description {
+  color: var(--text);
+  margin-top: 6px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.statCard {
+  padding: 16px;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.statCard span {
+  font-size: 12px;
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+}
+
+.statValue {
+  font-size: 18px;
+  margin-top: 6px;
+}
+
+.blue {
+  background: #e7f1ff;
+}
+.green {
+  background: #e6f4ea;
+}
+.purple {
+  background: #f1e9f8;
+}
+.red {
+  background: #fdecea;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0 10px;
+  font-weight: 600;
+}
+
+.ingredientsBox {
+  background: #f5ede7;
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.ingredientsBox ul {
+  padding-left: 20px;
+}
+
+.ingredientsBox li {
+  margin-bottom: 8px;
+}
+
+.ingredientsBox li::marker {
+  color: #f97316;
+}
+
+.instructions {
+  margin-top: 10px;
+}
+
+.step {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.stepNumber {
+  width: 32px;
+  height: 32px;
+  background: #f97316;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.footer {
+  border-top: 1px solid #eee;
+  margin-top: 20px;
+  padding-top: 14px;
+  display: flex;
+  gap: 20px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+@media screen and (max-width: 768px) {
+  .wrapper {
+    padding: 10px;
+  }
+
+  .hero {
+    height: 300px;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .badges {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    justify-content: start;
+  }
+
+  .badge {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .iconBtn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .iconBtn svg {
+    width: 18px;
+    height: 18px;
+  }
+}

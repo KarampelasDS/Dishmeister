@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import AuthModal from "./Components/AuthModal/AuthModal";
 import OnboardingModal from "./Components/OnboardingModal/OnboardingModal";
 import { useAuth } from "./context/AuthProvider";
+import RecipePage from "./pages/RecipePage";
 
 function App() {
   const { session, profile, loading, needsOnboarding, signOut } = useAuth();
@@ -62,6 +63,7 @@ function App() {
             )
           }
         />
+        <Route path="/recipes/:id" element={<RecipePage />} />
         <Route path="/profile" element={<Profile />} />
       </Routes>
 
