@@ -12,14 +12,44 @@ import {
   ThumbsDown,
   CookingPot,
 } from "lucide-react";
+import { supabase } from "../../supabase";
 
 import styles from "./RecipeView.module.css";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 
+type Recipe = {
+  id: string;
+  title: string;
+  description: string | null;
+  preparation_time: number;
+  cooking_time: number;
+  servings: number;
+  country_of_origin: string | null;
+  image_url: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  preparation_unit: "Min" | "Hrs" | "Sec";
+  cooking_unit: "Min" | "Hrs" | "Sec";
+  like_count: number;
+  dislike_count: number;
+  current_user_reaction: "like" | "dislike" | null;
+
+  profiles: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    username: string | null;
+  };
+
+  categories: {
+    id: string;
+    name: string;
+  };
+};
+
 interface RecipeViewProps {
-  recipe: any;
+  recipe: Recipe;
   onBack: () => void;
   onUserClick: (username: string) => void;
 }
@@ -60,9 +90,9 @@ export default function RecipeView({
 
   const [likes, setLikes] = useState(recipe.like_count);
   const [dislikes, setDislikes] = useState(recipe.dislike_count);
-  const [reaction, setReaction] = useState<"like" | "dislike" | null>(
-    recipe.current_user_reaction,
-  );
+  const [currentReaction, setCurrentReaction] = useState<
+    "like" | "dislike" | null
+  >(recipe.current_user_reaction);
   const [isSaved, setIsSaved] = useState(false);
 
   const totalVotes = likes + dislikes;
@@ -78,29 +108,74 @@ export default function RecipeView({
     recipe.cooking_unit,
   );
 
-  const handleLike = () => {
-    if (reaction === "like") {
-      setReaction(null);
-      setLikes((prev: number) => prev - 1);
-    } else {
-      if (reaction === "dislike") {
-        setDislikes((prev: number) => prev - 1);
-      }
-      setReaction("like");
-      setLikes((prev: number) => prev + 1);
+  const handleReaction = async (reaction: "like" | "dislike") => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      alert("You must be logged in to react to a recipe.");
+      return;
     }
-  };
+    // Save previous local state so we can revert on failure
+    const prevLikes = likes;
+    const prevDislikes = dislikes;
+    const prevReaction = currentReaction;
 
-  const handleDislike = () => {
-    if (reaction === "dislike") {
-      setReaction(null);
-      setDislikes((prev: number) => prev - 1);
-    } else {
+    // Determine whether the user is toggling off their current reaction
+    const isTogglingOff = currentReaction === reaction;
+    const newReaction = isTogglingOff ? null : reaction;
+
+    if (isTogglingOff) {
+      // User is toggling off their reaction
+      setCurrentReaction(null);
       if (reaction === "like") {
-        setLikes((prev: number) => prev - 1);
+        setLikes((prev) => Math.max(0, prev - 1));
+      } else {
+        setDislikes((prev) => Math.max(0, prev - 1));
       }
-      setReaction("dislike");
-      setDislikes((prev: number) => prev + 1);
+    } else {
+      // User is setting a new reaction. If they had the opposite reaction,
+      // decrement that count and increment the new one. Use Math.max to avoid negatives.
+      if (currentReaction === "like" && reaction === "dislike") {
+        setLikes((prev) => Math.max(0, prev - 1));
+        setDislikes((prev) => prev + 1);
+      } else if (currentReaction === "dislike" && reaction === "like") {
+        setDislikes((prev) => Math.max(0, prev - 1));
+        setLikes((prev) => prev + 1);
+      } else {
+        // no previous reaction
+        if (reaction === "like") {
+          setLikes((prev) => prev + 1);
+        } else {
+          setDislikes((prev) => prev + 1);
+        }
+      }
+      setCurrentReaction(reaction);
+    }
+
+    // Persist change: delete when toggling off, otherwise upsert
+    let error: any = null;
+    if (newReaction === null) {
+      const res = await supabase
+        .from("recipe_reactions")
+        .delete()
+        .match({ user_id: user.id, recipe_id: recipe.id });
+      error = res.error;
+    } else {
+      const res = await supabase
+        .from("recipe_reactions")
+        .upsert(
+          { user_id: user.id, recipe_id: recipe.id, reaction: newReaction },
+          { onConflict: ["user_id", "recipe_id"] },
+        );
+      error = res.error;
+    }
+    if (error) {
+      // Revert local optimistic updates
+      setLikes(prevLikes);
+      setDislikes(prevDislikes);
+      setCurrentReaction(prevReaction);
+      alert(error.message);
     }
   };
 
@@ -127,7 +202,7 @@ export default function RecipeView({
           <div className={styles.headerOverlay}>
             <div className={styles.badges}>
               <span className={styles.badge}>
-                <ChefHat size={16} /> {prepTime}
+                <Clock size={16} /> {prepTime}
               </span>
               <span className={styles.badge}>
                 <CookingPot size={16} /> {cookTime}
@@ -171,18 +246,18 @@ export default function RecipeView({
             <div className={styles.actions}>
               <button
                 className={`${styles.iconBtn} ${
-                  reaction === "like" ? styles.activeLike : ""
+                  currentReaction === "like" ? styles.activeLike : ""
                 }`}
-                onClick={handleLike}
+                onClick={() => handleReaction("like")}
               >
                 <ThumbsUp size={18} />
               </button>
 
               <button
                 className={`${styles.iconBtn} ${
-                  reaction === "dislike" ? styles.activeDislike : ""
+                  currentReaction === "dislike" ? styles.activeDislike : ""
                 }`}
-                onClick={handleDislike}
+                onClick={() => handleReaction("dislike")}
               >
                 <ThumbsDown size={18} />
               </button>

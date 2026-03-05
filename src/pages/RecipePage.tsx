@@ -42,10 +42,40 @@ export default function RecipePage() {
     if (!id) return;
 
     const fetchRecipe = async () => {
+      // get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       const { data, error } = await supabase
         .from("recipes")
-        .select("*, profiles(*), categories(*)")
+        .select(
+          `
+        id,
+        title,
+        description,
+        preparation_time,
+        cooking_time,
+        servings,
+        country_of_origin,
+        image_url,
+        difficulty,
+        preparation_unit,
+        cooking_unit,
+        like_count,
+        dislike_count,
+        ingredients,
+        instructions,
+        profiles(*),
+        categories(*),
+        recipe_reactions!left (
+          reaction,
+          user_id
+        )
+      `,
+        )
         .eq("id", id)
+        .eq("recipe_reactions.user_id", user?.id ?? "")
         .single();
 
       if (error) {
@@ -54,7 +84,12 @@ export default function RecipePage() {
         return;
       }
 
-      setRecipe(data);
+      const transformed = {
+        ...data,
+        current_user_reaction: data.recipe_reactions?.[0]?.reaction ?? null,
+      };
+
+      setRecipe(transformed);
       setLoading(false);
     };
 
