@@ -3,6 +3,7 @@ import { supabase } from "../../supabase";
 import styles from "./OnboardingModal.module.css";
 import Button from "../Button/Button";
 import { useAuth } from "../../context/AuthProvider";
+import PhotoEditor from "../PhotoEditor/PhotoEditor";
 
 const AVATAR_BUCKET = "avatars";
 const MAX_FILE_MB = 2;
@@ -17,7 +18,6 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
 
   const { session, refreshProfile } = useAuth();
 
-  // if modal is open but we have no session, something is wrong
   const userId = session?.user.id;
 
   const [username, setUsername] = useState("");
@@ -25,6 +25,8 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
   const [bio, setBio] = useState("");
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarEditorOpen, setAvatarEditorOpen] = useState<boolean>(false);
+  const [fileKey, setFileKey] = useState(0);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const [avatarPath, setAvatarPath] = useState<string | null>(null);
 
@@ -37,7 +39,6 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
       setAvatarPreviewUrl(null);
       return;
     }
-
     const url = URL.createObjectURL(avatarFile);
     setAvatarPreviewUrl(url);
 
@@ -61,7 +62,6 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
   if (!isOpen) return null;
 
   if (!userId) {
-    // Don’t render the form if somehow opened without auth.
     return null;
   }
 
@@ -89,14 +89,16 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
       setAvatarFile(null);
       setAvatarPath(null);
       setError(validationError);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    setFileKey((k) => k + 1);
     setAvatarFile(file);
     setAvatarPath(null);
+    setAvatarEditorOpen(true);
   };
 
   const uploadAvatarIfNeeded = async () => {
@@ -192,6 +194,7 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
                   onClick={() => {
                     setAvatarFile(null);
                     setAvatarPath(null);
+                    setAvatarEditorOpen(false);
                     setError(null);
                     if (fileInputRef.current) {
                       fileInputRef.current.value = "";
@@ -203,6 +206,31 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
               )}
             </div>
           </div>
+
+          {avatarEditorOpen && avatarFile && (
+            <PhotoEditor
+              key={fileKey}
+              onClose={() => setAvatarEditorOpen(false)}
+              onSave={async (canvas) => {
+                if (!canvas) return;
+
+                const blob = await new Promise<Blob | null>((resolve) =>
+                  canvas.toBlob(resolve, "image/png", 0.9),
+                );
+
+                if (!blob) return;
+
+                const file = new File([blob], "avatar.png", {
+                  type: "image/png",
+                });
+
+                setAvatarFile(file);
+                setAvatarEditorOpen(false);
+              }}
+              onChangePhoto={() => fileInputRef.current?.click()}
+              imageFile={avatarFile}
+            />
+          )}
 
           <label>
             Username <span>*</span>
