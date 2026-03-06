@@ -147,15 +147,11 @@ function CreateRecipe() {
   /* ---------------- SUBMIT ---------------- */
 
   const submitRecipe = async () => {
-    const cleanedIngredients = ingredients
-      .map((i) => i.trim())
-      .filter(Boolean)
-      .join("\n");
+    const cleanedIngredients = ingredients.map((i) => i.trim()).filter(Boolean);
 
     const cleanedInstructions = instructions
       .map((i) => i.trim())
-      .filter(Boolean)
-      .join("\n");
+      .filter(Boolean);
 
     if (
       !title.trim() ||

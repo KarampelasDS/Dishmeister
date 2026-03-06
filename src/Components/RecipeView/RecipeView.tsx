@@ -375,11 +375,9 @@ export default function RecipeView({
 
             <div className={styles.ingredientsBox}>
               <ul>
-                {recipe.ingredients
-                  ?.split("\n")
-                  .map((item: string, i: number) => (
-                    <li key={i}>{item}</li>
-                  ))}
+                {recipe.ingredients?.map((item: string, i: number) => (
+                  <li key={i}>{item}</li>
+                ))}
               </ul>
             </div>
           </section>
@@ -392,14 +390,12 @@ export default function RecipeView({
             </div>
 
             <div className={styles.instructions}>
-              {recipe.instructions
-                ?.split("\n")
-                .map((step: string, i: number) => (
-                  <div key={i} className={styles.step}>
-                    <div className={styles.stepNumber}>{i + 1}</div>
-                    <p>{step}</p>
-                  </div>
-                ))}
+              {recipe.instructions?.map((step: string, i: number) => (
+                <div key={i} className={styles.step}>
+                  <div className={styles.stepNumber}>{i + 1}</div>
+                  <p>{step}</p>
+                </div>
+              ))}
             </div>
           </section>
 
