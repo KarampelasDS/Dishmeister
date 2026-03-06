@@ -7,9 +7,15 @@ export default function ProfileCard(props: any){
     return(
         <div className={styles.profileWindow}>
             <div className={styles.banner}>
-              
+                <div className={styles.profilePic}>
+              <img src=""/>
+              </div>
             </div>
             <div className={styles.profileInfo}>
+              <h1>@KOKER </h1>
+              <p>i make Food 🍳🍔🍰</p>
+            </div>
+            <div className={styles.profileStats}>
                 <div className={styles.statsBox}>
                   <ProfileStat
                     stat="Followers"
