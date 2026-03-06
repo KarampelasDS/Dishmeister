@@ -11,6 +11,9 @@ import {
   MessageCircle,
   ThumbsDown,
   CookingPot,
+  EllipsisVertical,
+  Forward,
+  MessageSquareWarning,
 } from "lucide-react";
 import { supabase } from "../../supabase";
 
@@ -59,9 +62,14 @@ export default function RecipeView({
   onBack,
   onUserClick,
 }: RecipeViewProps) {
-  const convertTimeToMinutes = (time: number, unit: string) => {
-    const toSeconds = (value: number, timeUnit: string) => {
-      switch (timeUnit) {
+  const convertTimeToMinutes = (
+    preparationTime: number,
+    cookingTime: number,
+    preparationUnit: string,
+    cookingUnit: string,
+  ) => {
+    const toSeconds = (value: number, unit: string) => {
+      switch (unit) {
         case "Hrs":
           return value * 3600;
         case "Min":
@@ -72,7 +80,9 @@ export default function RecipeView({
       }
     };
 
-    const totalSeconds = toSeconds(time, unit);
+    const totalSeconds =
+      toSeconds(preparationTime, preparationUnit) +
+      toSeconds(cookingTime, cookingUnit);
 
     if (totalSeconds < 60) {
       return "<1 Min";
@@ -94,6 +104,7 @@ export default function RecipeView({
     "like" | "dislike" | null
   >(recipe.current_user_reaction);
   const [isSaved, setIsSaved] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const totalVotes = likes + dislikes;
   const likePercentage =
@@ -105,6 +116,13 @@ export default function RecipeView({
   );
   const cookTime = convertTimeToMinutes(
     recipe.cooking_time,
+    recipe.cooking_unit,
+  );
+
+  const timeLabel = convertTimeToMinutes(
+    recipe.preparation_time,
+    recipe.cooking_time,
+    recipe.preparation_unit,
     recipe.cooking_unit,
   );
 
@@ -198,15 +216,57 @@ export default function RecipeView({
             alt={recipe.title}
             className={styles.heroImage}
           />
-
+          <div className={styles.topRightMenu}>
+            <button
+              className={styles.menuButton}
+              aria-label="More options"
+              onClick={() => setMenuOpen((o) => !o)}
+            >
+              <EllipsisVertical color="white" size={24} />
+            </button>
+            {menuOpen && (
+              <div className={styles.menuDropdown}>
+                <button
+                  className={styles.menuItem}
+                  onClick={() => {
+                    console.log("save");
+                    setMenuOpen(false);
+                  }}
+                >
+                  <Bookmark />
+                  Save
+                </button>
+                <button
+                  className={styles.menuItem}
+                  onClick={() => {
+                    console.log("share");
+                    setMenuOpen(false);
+                  }}
+                >
+                  <Forward />
+                  Share
+                </button>
+                <button
+                  className={styles.menuItem}
+                  onClick={() => {
+                    console.log("report");
+                    setMenuOpen(false);
+                  }}
+                >
+                  <MessageSquareWarning color="#cd3131" />
+                  Report
+                </button>
+              </div>
+            )}
+          </div>
           <div className={styles.headerOverlay}>
             <div className={styles.badges}>
               <span className={styles.badge}>
-                <Clock size={16} /> {prepTime}
+                <Clock size={16} /> {timeLabel}
               </span>
-              <span className={styles.badge}>
+              {/*<span className={styles.badge}>
                 <CookingPot size={16} /> {cookTime}
-              </span>
+              </span>*/}
               <span
                 className={`${styles.badge} ${
                   recipe.difficulty === "Easy"
