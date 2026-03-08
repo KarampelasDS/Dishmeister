@@ -4,7 +4,7 @@ import CreateRecipePage from "./pages/CreateRecipePage";
 import Recipes from "./pages/Recipes";
 import { useTheme } from "./Hooks/useTheme";
 import Header from "./Components/Header/Header";
-import Profile from "./pages/Profile";
+import ProfilePage from "./pages/ProfilePage";
 import HomePage from "./pages/HomePage";
 import AuthModal from "./Components/AuthModal/AuthModal";
 import OnboardingModal from "./Components/OnboardingModal/OnboardingModal";
@@ -64,7 +64,7 @@ function App() {
           }
         />
         <Route path="/recipes/:id" element={<RecipePage />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:username" element={<ProfilePage />} />
       </Routes>
 
       <AuthModal

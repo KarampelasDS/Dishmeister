@@ -1,76 +1,78 @@
-.profileWindow{
+.profileWindow {
   margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    justify-content:space-between;
-    max-width: 56rem;
-    height: 562px;
-    border: 1px solid #E0E0E0;
-    border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  max-width: 56rem;
+  height: 562px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
 }
-.profileStats{
+.profileStats {
   padding: 22px;
 }
-.profileInfo{
-  padding: 70px 22px 0 22px;
-  margin: 0;
-  font-family: "Segoe UI";
+.profileInfo {
+  padding: 64px 24px 0 24px;
+  font-family: "Segoe UI", sans-serif;
   color: var(--text);
 }
-.profileInfo h1{
+
+.profileInfo .displayName {
+  font-size: 1.6rem;
   font-weight: 700;
-  font-size: 1.875rem;
-  padding: 0;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 2px 0;
+  line-height: 1.2;
+  color: var(--text);
 }
-.profileInfo p{
-  font-size: 16px;
+
+.profileInfo .username {
+  font-size: 0.9rem;
+  font-weight: 500;
   color: oklch(63.6% 0.02 256.802);
-  padding: 0;
-  margin: 0;
+  margin: 0 0 10px 0;
+  letter-spacing: 0.01em;
 }
-.banner{
+
+.profileInfo .bio {
+  font-size: 0.95rem;
+  color: oklch(55% 0.02 256.802);
+  margin: 0;
+  line-height: 1.55;
+  max-width: 480px;
+}
+.banner {
   justify-self: flex-start;
   width: 100%;
   height: 160px;
   border-top-left-radius: 11px;
   border-top-right-radius: 11px;
-   background: linear-gradient(
-    135deg,
-    #ff7a18,
-    #ff4d6d,
-    #d946ef
-  );
+  background: linear-gradient(135deg, #ff7a18, #ff4d6d, #d946ef);
   position: relative;
 }
-.statsBox{
+.statsBox {
   justify-content: center;
   display: flex;
   gap: 16px;
   margin-bottom: 24px;
 }
-.buttonsContainer{
+.buttonsContainer {
   display: flex;
   justify-content: space-evenly;
   gap: 20px;
 }
-.followButton{
+.followButton {
   width: 48%;
   height: 48px;
 }
-.followButton button:hover{
-  transform: translateY(-3px);
-  box-shadow: 0 10px 25px rgba(249,115,22,0.2);
-}
-.contactButton{
+.contactButton {
   width: 48%;
   height: 48px;
 }
-.contactButton button:hover{
+.contactButton button:hover {
   background-color: #a9a7a7 !important;
   transition: all 0.2s ease;
 }
-.profilePic{
+.profilePic {
   position: absolute;
   top: 90px;
   left: 20px;
@@ -78,7 +80,7 @@
   height: 8rem;
   border-radius: 50%;
   border: 4px solid white;
-  box-shadow: 
-  0 20px 25px -5px rgba(0, 0, 0, 0.1),
-  0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
