@@ -1,15 +1,17 @@
 :root {
-  --bg: #ffffff;
+  --bg: #f9fafb;
   --text: #364153;
   --primary: #ff6900;
   --border: #e5e7eb;
+  --header-bg: #ffffff;
 }
 
 [data-theme="dark"] {
-  --bg: #262626;
-  --text: #d1d5dc;
+  --bg: #030712;
+  --text: #fff;
   --primary: #ff6900;
   --border: #364153;
+  --header-bg: #101828;
 }
 
 body {

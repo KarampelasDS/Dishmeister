@@ -1,0 +1,134 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.container {
+  width: 640px;
+  background: white;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  padding: 22px 24px;
+  background: linear-gradient(90deg, #ff7a00, #ff2d55);
+  color: white;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.header p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.closeButton {
+  background: rgba(255, 255, 255, 0.25);
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.editorContainer {
+  padding: 20px;
+}
+
+.editorWrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+/* grid overlay */
+.gridOverlay {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  pointer-events: none;
+}
+
+.gridOverlay div {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* sliders */
+
+.sliderContainer {
+  margin: 10px 20px;
+  background: #e7f1ff;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.sliderContainerPurple {
+  margin: 10px 20px;
+  background: #efe5ff;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sliderRow input {
+  flex: 1;
+  padding: 0;
+}
+
+.value {
+  color: #1976ff;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.valuePurple {
+  color: #8b3dff;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.gridButtonWrapper {
+  display: flex;
+  max-width: 300px;
+  justify-content: center;
+  margin: auto;
+}
+
+.gridButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+}

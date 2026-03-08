@@ -1,106 +1,91 @@
-import { useEffect, useState } from "react";
-import { type Session } from "@supabase/supabase-js";
-import { supabase } from "./supabase";
-import { Routes, Route } from "react-router";
-import Auth from "./pages/Auth";
-import CreateRecipe from "./pages/CreateRecipe";
-import UsernameModal from "./Components/UsernameModal";
-import Onboarding from "./pages/Onboarding";
+import { useState, useEffect } from "react";
+import { Routes, Route, useLocation, useNavigate } from "react-router";
+import CreateRecipePage from "./pages/CreateRecipePage";
 import Recipes from "./pages/Recipes";
 import { useTheme } from "./Hooks/useTheme";
 import Header from "./Components/Header/Header";
-import Button from "./Components/Button/Button";
 import Profile from "./pages/Profile";
+import HomePage from "./pages/HomePage";
+import AuthModal from "./Components/AuthModal/AuthModal";
+import OnboardingModal from "./Components/OnboardingModal/OnboardingModal";
+import { useAuth } from "./context/AuthProvider";
+import RecipePage from "./pages/RecipePage";
 
 function App() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [username, setUsername] = useState<string | null>(null);
-  const [avatarUrl, setAvatarlUrl] = useState<string | null>(null);
+  const { session, profile, loading, needsOnboarding, signOut } = useAuth();
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+
   const { toggleTheme } = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  /* ---------------- AUTH ---------------- */
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  /* ---------------- PROFILE ---------------- */
-
-  const fetchProfile = async () => {
-    if (!session) return;
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("username, avatar_url")
-      .eq("id", session.user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error(error.message);
-      return;
-    }
-
-    if (!data) {
-      setUsername(null);
-      setAvatarlUrl(null);
-      return;
-    }
-
-    setUsername(data.username ?? null);
-
-    if (data.avatar_url) {
-      setAvatarlUrl(data.avatar_url);
-    } else {
-      setAvatarlUrl(null);
-    }
-  };
+  /* ---------------- OPEN MODAL VIA /auth ---------------- */
 
   useEffect(() => {
-    if (!session) return;
-    fetchProfile();
-  }, [session]);
+    if (location.pathname === "/auth") {
+      setIsAuthOpen(true);
+    }
+  }, [location.pathname]);
 
-  /* ---------------- UI ---------------- */
+  useEffect(() => {
+    setIsOnboardingOpen(!!session && needsOnboarding);
+  }, [session, needsOnboarding]);
 
   if (loading) return <div>Loading...</div>;
-  if (!session) return <Auth />;
 
   return (
     <div>
-      <Header username={username} avatarUrl={avatarUrl} />
-      {/* Global UI */}
-      <p>
-        Logged in as <strong>{username ?? "anonymous"}</strong>
-      </p>
+      <Header
+        username={profile?.display_name ?? null}
+        avatarUrl={profile?.avatar_url ?? null}
+        onLoginClick={() => setIsAuthOpen(true)}
+      />
 
-      {username === null && (
-        <UsernameModal userId={session.user.id} onSuccess={fetchProfile} />
-      )}
+      {session && <button onClick={signOut}>Logout</button>}
 
-      <button onClick={() => supabase.auth.signOut()}>Logout</button>
       <button onClick={toggleTheme}>Toggle Dark Mode</button>
-      <hr />
 
-
-      {/* App pages */}
       <Routes>
-        <Route path="/" element={<Onboarding session={session} />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/recipes" element={<Recipes />} />
-        <Route path="/recipes/new" element={<CreateRecipe />} />
+        <Route
+          path="/recipes/new"
+          element={
+            session ? (
+              <CreateRecipePage />
+            ) : (
+              <div>
+                <p>You must log in to create a recipe.</p>
+                <button onClick={() => setIsAuthOpen(true)}>Login</button>
+              </div>
+            )
+          }
+        />
+        <Route path="/recipes/:id" element={<RecipePage />} />
         <Route path="/profile" element={<Profile />} />
       </Routes>
+
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => {
+          setIsAuthOpen(false);
+          if (location.pathname === "/auth") {
+            navigate("/");
+          }
+        }}
+        onAuthSuccess={() => {
+          setIsAuthOpen(false);
+        }}
+      />
+
+      {session && (
+        <OnboardingModal
+          isOpen={isOnboardingOpen}
+          onClose={() => setIsOnboardingOpen(false)}
+        />
+      )}
     </div>
   );
 }

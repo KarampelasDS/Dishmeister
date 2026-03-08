@@ -4,8 +4,39 @@
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--border);
+  background-color: var(--header-bg);
+}
+.appLogoContainerDesktop {
+  margin: 5px;
 }
 
-.HeaderContainer > div {
-  padding: 0px 10px;
+.searchBarContainerDesktop {
+  margin: 5px;
+}
+
+.userMenuContainerDesktop {
+  margin: 5px;
+}
+
+.burgerMenu {
+  display: none;
+}
+
+@media only screen and (max-width: 640px) {
+  .searchBarContainerDesktop {
+    display: none;
+  }
+
+  .userMenuContainerDesktop {
+    display: none;
+  }
+
+  .appLogoContainerDesktop {
+    margin: 20px 5px;
+  }
+
+  .burgerMenu {
+    display: block;
+    margin: 20px 5px;
+  }
 }

@@ -37,11 +37,13 @@ export default function UserMenu({
   return (
     <div style={containerStyle} ref={menuRef}>
       <div style={triggerStyle} onClick={() => setOpen((prev) => !prev)}>
-        <span>{username}</span>
+        <span>{username ? username : "Guest"}</span>
 
         <img
           src={
-            avatarUrl ? `${avatarUrl}?t=${Date.now()}` : "/default-avatar.png"
+            avatarUrl
+              ? `https://yzoptrgtvvztujqwlgmo.supabase.co/storage/v1/object/public/avatars/${avatarUrl}?t=${Date.now()}`
+              : "/defaultAvatar.png"
           }
           alt="avatar"
           style={avatarStyle}
