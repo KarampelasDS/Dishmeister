@@ -1,6 +1,11 @@
 .Container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   border-radius: 14px;
   font-family: "Segoe UI";
+  width: 100%;
   font-weight: 600;
   width: 100%;
   color: var(--text);

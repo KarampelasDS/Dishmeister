@@ -1,0 +1,24 @@
+.Container{
+    width: 25%;
+    height: 76px;
+    padding: 16px;
+    border-radius: 14px;
+    font-family: "Segoe UI";
+    background: var(--bg);
+}
+.icon{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.Container h2{
+    font-size: 20px;
+    text-align: center;
+    margin: 0;
+}
+.Container p{
+    font-size: 12px;
+    margin: 0;
+    text-align: center;
+    color: var(--text);
+}
