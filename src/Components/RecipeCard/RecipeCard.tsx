@@ -15,9 +15,7 @@ import {
   Bookmark,
   Forward,
   MessageSquareWarning,
-  Book,
 } from "lucide-react";
-import { href } from "react-router";
 
 type Recipe = {
   id: string;
@@ -311,10 +309,32 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             className={styles.avatar}
             src={`${supabaseAvatarUrl}${authorAvatar}`}
             alt={authorName}
+            onClick={() => {
+              navigate(`/profile/${authorUsername}`);
+            }}
+            style={{ cursor: "pointer" }}
           />
           <div className={styles.authorInfo}>
-            <div className={styles.authorName}>{authorName}</div>
-            <div className={styles.authorMeta}>{"@" + authorUsername}</div>
+            <div className={styles.authorName}>
+              <span
+                onClick={() => {
+                  navigate(`/profile/${authorUsername}`);
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                {authorName}
+              </span>
+            </div>
+            <div className={styles.authorMeta}>
+              <span
+                onClick={() => {
+                  navigate(`/profile/${authorUsername}`);
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                {"@" + authorUsername}
+              </span>
+            </div>
           </div>
           <div className={styles.metaCounts}>
             <div>💬 {comments}</div>

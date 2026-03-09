@@ -5,14 +5,6 @@ import { Mail } from "lucide-react";
 
 //finish profile card design
 
-type profileCardProps = {
-  id: string;
-  username: string;
-  avatar_url: string;
-  display_name: string;
-  bio: string;
-};
-
 export default function ProfileCard({
   profile,
 }: {
@@ -48,7 +40,7 @@ export default function ProfileCard({
           />
           <ProfileStat
             stat="Recipes"
-            statAmount="50"
+            statAmount={profile?.recipe_count.toString() || "0"}
             outline="1px solid #dbeafe"
           />
           <ProfileStat
