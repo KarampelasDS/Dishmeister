@@ -371,13 +371,15 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           />
 
           <Button
-            text={"Save"}
             backgroundColor="#fff"
             textColor="#374151"
             outline={`1px solid var(--border)`}
             onButtonClick={() => console.log("Save recipe")}
             type="button"
-          />
+          >
+            <Bookmark />
+            Save
+          </Button>
         </div>
       </section>
     </article>
