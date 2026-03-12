@@ -31,22 +31,30 @@ export default function ProfileCard({
           <ProfileStat
             stat="Followers"
             statAmount="5000"
-            outline="1px solid #dbeafe"
+            border="1px solid var(--stat1-border)"
+            background="var(--stat1-bg)"
+            iconColor="var(--stat1-icon)"
           />
           <ProfileStat
             stat="Following"
             statAmount="50"
-            outline="1px solid #dbeafe"
+            border="1px solid var(--stat2-border)"
+            background="var(--stat2-bg)"
+            iconColor="var(--stat2-icon)"
           />
           <ProfileStat
             stat="Recipes"
             statAmount={profile?.recipe_count.toString() || "0"}
-            outline="1px solid #dbeafe"
+            border="1px solid var(--stat3-border)"
+            background="var(--stat3-bg)"
+            iconColor="var(--stat3-icon)"
           />
           <ProfileStat
             stat="Likes"
             statAmount="50"
-            outline="1px solid #dbeafe"
+            border="1px solid var(--stat4-border)"
+            background="var(--stat4-bg)"
+            iconColor="var(--stat4-icon)"
           />
         </div>
 

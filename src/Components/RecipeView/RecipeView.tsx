@@ -16,7 +16,7 @@ import {
   MessageSquareWarning,
 } from "lucide-react";
 import { supabase } from "../../supabase";
-
+import ProfileStat from "../ProfileStat/ProfileStat";
 import styles from "./RecipeView.module.css";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
@@ -342,28 +342,37 @@ export default function RecipeView({
 
           {/* STAT CARDS */}
           <div className={styles.statsGrid}>
-            <div className={`${styles.statCard} ${styles.blue}`}>
-              <Users size={18} />
-              <div className={styles.statValue}>{recipe.servings}</div>
-              <span>Servings</span>
-            </div>
+            <ProfileStat
+              stat="Servings"
+              statAmount={recipe.servings.toString()}
+              border="2px solid var(--stat1-border)"
+              background="var(--stat1-bg)"
+              iconColor="var(--stat1-icon)"
+            />
 
-            <div className={`${styles.statCard} ${styles.green}`}>
-              <div className={styles.statValue}>{likePercentage}%</div>
-              <span>Liked</span>
-            </div>
+            <ProfileStat
+              stat="Rating"
+              statAmount={likePercentage.toString() + "%"}
+              border="2px solid var(--stat2-border)"
+              background="var(--stat2-bg)"
+              iconColor="var(--stat2-icon)"
+            />
 
-            <div className={`${styles.statCard} ${styles.purple}`}>
-              <UtensilsCrossed size={18} />
-              <div className={styles.statValue}>{recipe.categories.name}</div>
-              <span>Category</span>
-            </div>
+            <ProfileStat
+              stat="Category"
+              statAmount={recipe.categories.name}
+              border="2px solid var(--stat3-border)"
+              background="var(--stat3-bg)"
+              iconColor="var(--stat3-icon)"
+            />
 
-            <div className={`${styles.statCard} ${styles.red}`}>
-              <MessageCircle size={18} />
-              <div className={styles.statValue}>0</div>
-              <span>Comments</span>
-            </div>
+            <ProfileStat
+              stat="Comments"
+              statAmount={0}
+              border="2px solid var(--stat4-border)"
+              background="var(--stat4-bg)"
+              iconColor="var(--stat4-icon)"
+            />
           </div>
 
           {/* INGREDIENTS */}
