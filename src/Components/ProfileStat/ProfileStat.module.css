@@ -22,3 +22,21 @@
   text-align: center;
   color: var(--text);
 }
+
+@media only screen and (max-width: 600px) {
+  .Container {
+    width: 100%;
+    height: auto;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .Container h2 {
+    font-size: 18px;
+  }
+  .Container p {
+    display: none;
+  }
+}

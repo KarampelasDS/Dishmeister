@@ -6,6 +6,7 @@ const supabaseAvatarUrl = import.meta.env
 import { supabase } from "../../supabase";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import ProfileStat from "../ProfileStat/ProfileStat";
 import {
   ThumbsUp,
   ThumbsDown,
@@ -345,18 +346,29 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
         <p className={styles.description}>{description}</p>
 
         <div className={styles.statsRow}>
-          <div className={styles.statCard}>
-            <div className={styles.statValue}>{servings}</div>
-            <div className={styles.statLabel}>Servings</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statValue}>{`${rating}%`}</div>
-            <div className={styles.statLabel}>Rating</div>
-          </div>
-          <div className={styles.statCard}>
-            <div className={styles.statValue}>{category}</div>
-            <div className={styles.statLabel}>Category</div>
-          </div>
+          <ProfileStat
+            stat="Servings"
+            statAmount={recipe.servings.toString()}
+            border="2px solid var(--stat1-border)"
+            background="var(--stat1-bg)"
+            iconColor="var(--stat1-icon)"
+          />
+
+          <ProfileStat
+            stat="Rating"
+            statAmount={rating.toString() + "%"}
+            border="2px solid var(--stat2-border)"
+            background="var(--stat2-bg)"
+            iconColor="var(--stat2-icon)"
+          />
+
+          <ProfileStat
+            stat="Category"
+            statAmount={recipe.categories.name}
+            border="2px solid var(--stat3-border)"
+            background="var(--stat3-bg)"
+            iconColor="var(--stat3-icon)"
+          />
         </div>
 
         <div className={styles.footer}>

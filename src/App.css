@@ -12,9 +12,9 @@
   --stat2-bg: #f0fdf4;
   --stat2-border: #329f5a;
   --stat2-icon: #329f5a;
-  --stat3-bg: #fdf2f8;
-  --stat3-border: #b67fe9;
-  --stat3-icon: #b67fe9;
+  --stat3-bg: #fcf9e5;
+  --stat3-border: #e6cc3d;
+  --stat3-icon: #dec42f;
   --stat4-bg: #fef2f2;
   --stat4-border: #e29368;
   --stat4-icon: #e29368;
@@ -34,12 +34,12 @@
   --stat2-bg: #184429;
   --stat2-border: #457958;
   --stat2-icon: #54926a;
-  --stat3-bg: #552140;
-  --stat3-border: #736186;
-  --stat3-icon: #8c76a3;
-  --stat4-bg: #632e2e;
-  --stat4-border: #926739;
-  --stat4-icon: #a87743;
+  --stat3-bg: #5c5521;
+  --stat3-border: #928c63;
+  --stat3-icon: #9d987b;
+  --stat4-bg: #4b2529;
+  --stat4-border: #925b39;
+  --stat4-icon: #a86143;
 }
 
 body {

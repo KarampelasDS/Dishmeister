@@ -238,6 +238,9 @@
   .statsRow {
     grid-template-columns: 1fr;
   }
+  .statsRow > * {
+    width: 92% !important;
+  }
   .footer {
     flex-direction: column;
   }
