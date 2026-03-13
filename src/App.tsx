@@ -41,11 +41,8 @@ function App() {
         username={profile?.display_name ?? null}
         avatarUrl={profile?.avatar_url ?? null}
         onLoginClick={() => setIsAuthOpen(true)}
+        onToggleDarkMode={() => toggleTheme()}
       />
-
-      {session && <button onClick={signOut}>Logout</button>}
-
-      <button onClick={toggleTheme}>Toggle Dark Mode</button>
 
       <Routes>
         <Route path="/" element={<HomePage />} />

@@ -13,7 +13,11 @@ export default function Header(props: any) {
         <h1>searchbar</h1>
       </div>
       <div className={styles.userMenuContainerDesktop}>
-        <UserMenu username={props.username} avatarUrl={props.avatarUrl} />
+        <UserMenu
+          username={props.username}
+          avatarUrl={props.avatarUrl}
+          onToggleDarkMode={props.onToggleDarkMode}
+        />
       </div>
       <div className={styles.burgerMenu}>
         <BurgerMenu />
