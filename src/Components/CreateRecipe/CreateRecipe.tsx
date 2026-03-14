@@ -147,16 +147,26 @@ function CreateRecipe() {
   /* ---------------- SUBMIT ---------------- */
 
   const submitRecipe = async () => {
-    const cleanedIngredients = ingredients.map((i) => i.trim()).filter(Boolean);
+    const hasEmptyIngredient = ingredients.some((i) => !i.trim());
+    const hasEmptyInstruction = instructions.some((i) => !i.trim());
 
-    const cleanedInstructions = instructions
-      .map((i) => i.trim())
-      .filter(Boolean);
+    if (hasEmptyIngredient) {
+      alert("All ingredient fields must be filled in.");
+      return;
+    }
+
+    if (hasEmptyInstruction) {
+      alert("All instruction steps must be filled in.");
+      return;
+    }
+
+    const cleanedIngredients = ingredients.map((i) => i.trim());
+    const cleanedInstructions = instructions.map((i) => i.trim());
 
     if (
       !title.trim() ||
-      !cleanedIngredients ||
-      !cleanedInstructions ||
+      cleanedIngredients.length === 0 ||
+      cleanedInstructions.length === 0 ||
       preparationTime === "" ||
       cookingTime === "" ||
       !categoryId
