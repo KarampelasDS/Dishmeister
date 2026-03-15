@@ -13,6 +13,9 @@ type profileType = {
   display_name: string;
   bio: string;
   recipe_count: number;
+  follower_count: number;
+  following_count: number;
+  total_likes: number;
 };
 
 export default function Profile() {
@@ -37,11 +40,6 @@ export default function Profile() {
         return;
       }
 
-      const { count } = await supabase
-        .from("recipes")
-        .select("*", { count: "exact", head: true })
-        .eq("author_id", data.id);
-
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -57,7 +55,7 @@ export default function Profile() {
         setIsFollowing(!!followRow);
       }
 
-      setProfile({ ...data, recipe_count: count ?? 0 });
+      setProfile(data);
       setLoading(false);
     };
 

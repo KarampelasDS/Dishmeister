@@ -35,14 +35,14 @@ export default function ProfileCard({
         <div className={styles.statsBox}>
           <ProfileStat
             stat="Followers"
-            statAmount="5000"
+            statAmount={profile?.follower_count.toString() || "0"}
             border="1px solid var(--stat1-border)"
             background="var(--stat1-bg)"
             iconColor="var(--stat1-icon)"
           />
           <ProfileStat
             stat="Following"
-            statAmount="50"
+            statAmount={profile?.following_count.toString() || "0"}
             border="1px solid var(--stat2-border)"
             background="var(--stat2-bg)"
             iconColor="var(--stat2-icon)"
@@ -56,7 +56,7 @@ export default function ProfileCard({
           />
           <ProfileStat
             stat="Likes"
-            statAmount="50"
+            statAmount={profile?.total_likes.toString() || "0"}
             border="1px solid var(--stat4-border)"
             background="var(--stat4-bg)"
             iconColor="var(--stat4-icon)"
