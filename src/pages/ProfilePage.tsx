@@ -19,6 +19,8 @@ export default function Profile() {
   const { username } = useParams<{ username: string }>();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<profileType | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+
   useEffect(() => {
     if (!username) return;
 
@@ -40,11 +42,69 @@ export default function Profile() {
         .select("*", { count: "exact", head: true })
         .eq("author_id", data.id);
 
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: followRow } = await supabase
+          .from("follows")
+          .select("follower_id")
+          .eq("follower_id", user.id)
+          .eq("following_id", data.id)
+          .maybeSingle();
+
+        setIsFollowing(!!followRow);
+      }
+
       setProfile({ ...data, recipe_count: count ?? 0 });
       setLoading(false);
     };
 
     fetchProfile();
   }, [username]);
-  return <ProfileCard profile={profile} />;
+
+  const handleFollow = async () => {
+    if (!profile) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      alert("User not authenticated");
+      return;
+    }
+
+    if (isFollowing) {
+      const { error } = await supabase
+        .from("follows")
+        .delete()
+        .eq("follower_id", user.id)
+        .eq("following_id", profile.id);
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+      setIsFollowing(false);
+    } else {
+      const { error } = await supabase
+        .from("follows")
+        .insert({ follower_id: user.id, following_id: profile.id });
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+      setIsFollowing(true);
+    }
+  };
+
+  return (
+    <ProfileCard
+      profile={profile}
+      isFollowing={isFollowing}
+      followFunction={handleFollow}
+    />
+  );
 }

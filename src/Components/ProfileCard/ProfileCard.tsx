@@ -7,11 +7,16 @@ import { Mail } from "lucide-react";
 
 export default function ProfileCard({
   profile,
+  isFollowing,
+  followFunction,
 }: {
   profile: profileType | null;
+  isFollowing: boolean;
+  followFunction: () => void;
 }) {
   const supabaseAvatarUrl = import.meta.env
     .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
+
   return (
     <div className={styles.profileWindow}>
       <div className={styles.banner}>
@@ -61,11 +66,16 @@ export default function ProfileCard({
         <div className={styles.buttonsContainer}>
           <div className={styles.followButton}>
             <Button
-              text="Follow"
-              backgroundColor="linear-gradient(135deg, #ff6a00, #ff2e2e)"
-              textColor="#fff"
-              outline="0px "
+              text={isFollowing ? "Following" : "Follow"}
+              backgroundColor={
+                isFollowing
+                  ? "#e5e7eb"
+                  : "linear-gradient(135deg, #ff6a00, #ff2e2e)"
+              }
+              textColor={isFollowing ? "#374151" : "#fff"}
+              outline="0px"
               isActive={true}
+              onButtonClick={followFunction}
             />
           </div>
           <div className={styles.contactButton}>
