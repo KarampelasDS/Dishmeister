@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../../supabase";
 import { useNavigate } from "react-router";
+import styles from "./UserMenu.module.css";
 
 type Props = {
   username: string;
@@ -35,8 +36,8 @@ export default function UserMenu({
   }, []);
 
   return (
-    <div style={containerStyle} ref={menuRef}>
-      <div style={triggerStyle} onClick={() => setOpen((prev) => !prev)}>
+    <div className={styles.container} ref={menuRef}>
+      <div className={styles.trigger} onClick={() => setOpen((prev) => !prev)}>
         <span>{username ? username : "Guest"}</span>
 
         <img
@@ -46,12 +47,12 @@ export default function UserMenu({
               : "/defaultAvatar.png"
           }
           alt="avatar"
-          style={avatarStyle}
+          className={styles.avatar}
         />
       </div>
 
       {open && (
-        <div style={dropdownStyle}>
+        <div className={styles.dropdown}>
           <MenuItem onClick={() => navigate("/settings")}>
             Account Settings
           </MenuItem>
@@ -91,34 +92,3 @@ function MenuItem({
     </div>
   );
 }
-
-/* ---------- styles ---------- */
-
-const containerStyle: React.CSSProperties = {
-  position: "relative",
-};
-
-const triggerStyle: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  cursor: "pointer",
-};
-
-const avatarStyle: React.CSSProperties = {
-  width: 36,
-  height: 36,
-  borderRadius: "50%",
-  objectFit: "cover",
-};
-
-const dropdownStyle: React.CSSProperties = {
-  position: "absolute",
-  right: 0,
-  top: "calc(100% + 8px)",
-  background: "#1a1a1a",
-  borderRadius: 12,
-  minWidth: 220,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-  overflow: "hidden",
-};
