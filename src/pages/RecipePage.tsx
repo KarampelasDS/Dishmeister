@@ -18,6 +18,8 @@ type Recipe = {
   like_count: number;
   dislike_count: number;
   current_user_reaction: "like" | "dislike" | null;
+  is_saved: boolean;
+  save_count: number;
   profiles: {
     id: string;
     display_name: string | null;
@@ -66,12 +68,18 @@ export default function RecipePage() {
         dislike_count,
         ingredients,
         instructions,
-        profiles(*),
+        save_count,
+        profiles!recipes_author_id_fkey(*),
         categories(*),
         recipe_reactions!left (
           reaction,
           user_id
-        )
+        ),
+        recipe_saves!left (
+        recipe_id,
+        saved_by
+      )
+          
       `,
         )
         .eq("id", id)
@@ -87,6 +95,7 @@ export default function RecipePage() {
       const transformed = {
         ...data,
         current_user_reaction: data.recipe_reactions?.[0]?.reaction ?? null,
+        is_saved: data.recipe_saves?.[0]?.recipe_id !== undefined,
       };
 
       setRecipe(transformed);

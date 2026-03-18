@@ -37,6 +37,8 @@ type Recipe = {
   like_count: number;
   dislike_count: number;
   current_user_reaction: "like" | "dislike" | null;
+  is_saved: boolean;
+  save_count: number;
 
   profiles: {
     id: string;
@@ -103,7 +105,8 @@ export default function RecipeView({
   const [currentReaction, setCurrentReaction] = useState<
     "like" | "dislike" | null
   >(recipe.current_user_reaction);
-  const [isSaved, setIsSaved] = useState(false);
+  const [isSaved, setIsSaved] = useState(recipe.is_saved);
+  const [saveCount, setSaveCount] = useState<number>(recipe.save_count);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const totalVotes = likes + dislikes;
@@ -197,8 +200,49 @@ export default function RecipeView({
     }
   };
 
-  const handleSave = () => {
-    setIsSaved((prev: boolean) => !prev);
+  const handleSave = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      alert("You must be logged in to react to a recipe.");
+      return;
+    }
+    const prevSaved = isSaved;
+    const prevSaveCount = saveCount;
+    let error: any = null;
+
+    // Optimistically update UI
+    if (isSaved) {
+      setSaveCount((prev) => Math.max(0, prev - 1));
+      setIsSaved(false);
+      const res = await supabase
+        .from("recipe_saves")
+        .delete()
+        .match({ recipe_id: recipe.id, saved_by: user.id });
+      error = res.error;
+      if (error) {
+        // Revert optimistic update on failure
+        setSaveCount(prevSaveCount);
+        setIsSaved(prevSaved);
+        alert(error.message);
+        return;
+      }
+    } else {
+      setSaveCount((prev) => prev + 1);
+      setIsSaved(true);
+      const res = await supabase
+        .from("recipe_saves")
+        .upsert({ recipe_id: recipe.id, saved_by: user.id });
+      error = res.error;
+      if (error) {
+        // Revert optimistic update on failure
+        setSaveCount(prevSaveCount);
+        setIsSaved(prevSaved);
+        alert(error.message);
+        return;
+      }
+    }
   };
 
   return (
@@ -229,12 +273,12 @@ export default function RecipeView({
                 <button
                   className={styles.menuItem}
                   onClick={() => {
-                    console.log("save");
+                    handleSave();
                     setMenuOpen(false);
                   }}
                 >
                   <Bookmark />
-                  Save
+                  {isSaved ? "Unsave" : "Save"}
                 </button>
                 <button
                   className={styles.menuItem}
@@ -412,7 +456,7 @@ export default function RecipeView({
           <div className={styles.footer}>
             <span>{likes.toLocaleString()} likes</span>
             <span>0 comments</span>
-            <span>432 saves</span>
+            <span>{saveCount} Saves</span>
           </div>
         </div>
       </div>
