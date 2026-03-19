@@ -18,6 +18,8 @@ type Recipe = {
   like_count: number;
   dislike_count: number;
   current_user_reaction: "like" | "dislike" | null;
+  is_saved: boolean;
+  save_count: number;
 
   profiles: {
     id: string;
@@ -71,20 +73,15 @@ function Recipes() {
         created_at,
         like_count,
         dislike_count,
-        profiles:author_id (
-          id,
-          display_name,
-          avatar_url,
-          username
-        ),
-        categories:category_id (
-          id,
-          name
-        ),
+        profiles!recipes_author_id_fkey(*),
+        categories(*),
         recipe_reactions!left (
           reaction,
           user_id
-        )
+        ),
+        recipe_saves!left (
+        recipe_id,
+        saved_by)
       `,
       )
       .eq("recipe_reactions.user_id", user?.id ?? "")
@@ -101,6 +98,8 @@ function Recipes() {
     const transformed = data.map((recipe: any) => ({
       ...recipe,
       current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
+      is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
+      save_count: recipe.recipe_saves?.length ?? 0,
     }));
 
     setRecipes(transformed);

@@ -14,6 +14,7 @@ import {
   ChefHat,
   EllipsisVertical,
   Bookmark,
+  BookmarkCheck,
   Forward,
   MessageSquareWarning,
 } from "lucide-react";
@@ -112,7 +113,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const servings = r?.servings ?? 4;
   const [rating, setRating] = useState<number>(r?.rating ?? 100);
   const category = r?.categories?.name ?? "Pasta";
-
+  const [isSaved, setIsSaved] = useState<boolean>(r?.is_saved ?? false);
+  const [saveCount, setSaveCount] = useState<number>(r?.save_count ?? 0);
   const preparation_time = r?.preparation_time ?? 0;
   const cooking_time = r?.cooking_time ?? 0;
   const preparation_unit = r?.preparation_unit ?? "Min";
@@ -203,6 +205,51 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     }
   };
 
+  const handleSave = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      alert("You must be logged in to save a recipe.");
+      return;
+    }
+    const prevSaved = isSaved;
+    const prevSaveCount = saveCount;
+    let error: any = null;
+
+    // Optimistically update UI
+    if (isSaved) {
+      setSaveCount((prev) => Math.max(0, prev - 1));
+      setIsSaved(false);
+      const res = await supabase
+        .from("recipe_saves")
+        .delete()
+        .match({ recipe_id: recipe.id, saved_by: user.id });
+      error = res.error;
+      if (error) {
+        // Revert optimistic update on failure
+        setSaveCount(prevSaveCount);
+        setIsSaved(prevSaved);
+        alert(error.message);
+        return;
+      }
+    } else {
+      setSaveCount((prev) => prev + 1);
+      setIsSaved(true);
+      const res = await supabase
+        .from("recipe_saves")
+        .upsert({ recipe_id: recipe.id, saved_by: user.id });
+      error = res.error;
+      if (error) {
+        // Revert optimistic update on failure
+        setSaveCount(prevSaveCount);
+        setIsSaved(prevSaved);
+        alert(error.message);
+        return;
+      }
+    }
+  };
+
   const CalculateRating = () => {
     if (likes + dislikes > 0) {
       const calculated = Math.round((likes / (likes + dislikes)) * 100);
@@ -237,12 +284,12 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
               <button
                 className={styles.menuItem}
                 onClick={() => {
-                  console.log("save");
+                  handleSave();
                   setMenuOpen(false);
                 }}
               >
-                <Bookmark />
-                Save
+                {isSaved ? <BookmarkCheck /> : <Bookmark />}
+                {isSaved ? "Unsave" : "Save"}
               </button>
               <button
                 className={styles.menuItem}
@@ -339,7 +386,9 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           </div>
           <div className={styles.metaCounts}>
             <div>💬 {comments}</div>
-            <div>🔖 {saves}</div>
+            <div>
+              <Bookmark /> {saveCount}
+            </div>
           </div>
         </div>
 
@@ -386,11 +435,11 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             backgroundColor="#fff"
             textColor="#374151"
             outline={`1px solid var(--border)`}
-            onButtonClick={() => console.log("Save recipe")}
+            onButtonClick={() => handleSave()}
             type="button"
           >
-            <Bookmark />
-            Save
+            {isSaved ? <BookmarkCheck /> : <Bookmark />}
+            {isSaved ? "Unsave" : "Save"}
           </Button>
         </div>
       </section>

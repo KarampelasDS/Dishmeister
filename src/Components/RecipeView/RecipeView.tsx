@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   ThumbsUp,
   Bookmark,
+  BookmarkCheck,
   Share2,
   Clock,
   ChefHat,
@@ -205,7 +206,7 @@ export default function RecipeView({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      alert("You must be logged in to react to a recipe.");
+      alert("You must be logged in to save a recipe.");
       return;
     }
     const prevSaved = isSaved;
@@ -277,7 +278,7 @@ export default function RecipeView({
                     setMenuOpen(false);
                   }}
                 >
-                  <Bookmark />
+                  {isSaved ? <BookmarkCheck /> : <Bookmark />}
                   {isSaved ? "Unsave" : "Save"}
                 </button>
                 <button
@@ -372,7 +373,7 @@ export default function RecipeView({
                 }`}
                 onClick={handleSave}
               >
-                <Bookmark size={18} />
+                {isSaved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
               </button>
 
               <button className={styles.iconBtn}>
