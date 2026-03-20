@@ -17,6 +17,7 @@ import {
   BookmarkCheck,
   Forward,
   MessageSquareWarning,
+  MessageCircle,
 } from "lucide-react";
 
 type Recipe = {
@@ -34,6 +35,7 @@ type Recipe = {
   like_count: number;
   dislike_count: number;
   current_user_reaction: "like" | "dislike" | null;
+  comment_count: number;
 
   profiles: {
     id: string;
@@ -105,7 +107,6 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const authorAvatar = r?.profiles?.avatar_url
     ? r.profiles.avatar_url
     : "/assets/avatar.jpg";
-  const comments = r?.comments ?? 0;
   const saves = r?.saves ?? 0;
   const description =
     r?.description ??
@@ -119,6 +120,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const cooking_time = r?.cooking_time ?? 0;
   const preparation_unit = r?.preparation_unit ?? "Min";
   const cooking_unit = r?.cooking_unit ?? "Min";
+  const comment_count = r?.comment_count ?? 0;
 
   const [currentReaction, setCurrentReaction] = useState<
     "like" | "dislike" | null
@@ -385,7 +387,9 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             </div>
           </div>
           <div className={styles.metaCounts}>
-            <div>💬 {comments}</div>
+            <div>
+              <MessageCircle /> {comment_count}
+            </div>
             <div>
               <Bookmark /> {saveCount}
             </div>

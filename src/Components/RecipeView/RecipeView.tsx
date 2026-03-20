@@ -7,18 +7,17 @@ import {
   Share2,
   Clock,
   ChefHat,
-  Users,
   UtensilsCrossed,
-  MessageCircle,
   ThumbsDown,
-  CookingPot,
   EllipsisVertical,
   Forward,
   MessageSquareWarning,
 } from "lucide-react";
 import { supabase } from "../../supabase";
 import ProfileStat from "../ProfileStat/ProfileStat";
+import CommentsSection from "../CommentsSection/CommentsSection";
 import styles from "./RecipeView.module.css";
+
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
@@ -40,30 +39,54 @@ type Recipe = {
   current_user_reaction: "like" | "dislike" | null;
   is_saved: boolean;
   save_count: number;
-
+  comment_count: number;
   profiles: {
     id: string;
     display_name: string | null;
     avatar_url: string | null;
     username: string | null;
   };
-
   categories: {
     id: string;
     name: string;
   };
 };
 
+type Comment = {
+  id: string;
+  content: string;
+  created_at: string;
+  like_count: number;
+  dislike_count: number;
+  current_user_reaction: "like" | "dislike" | null;
+  profiles: {
+    id: string;
+    username: string | null;
+    display_name: string | null;
+    avatar_url: string | null;
+  };
+};
+
 interface RecipeViewProps {
   recipe: Recipe;
+  comments: Comment[];
+  currentUserAvatar: string | null;
+  currentUserId: string | null;
   onBack: () => void;
   onUserClick: (username: string) => void;
+  onCommentAdded: () => void;
+  onCommentDeleted: (commentId: string) => void;
 }
 
 export default function RecipeView({
   recipe,
+  comments,
+  currentUserAvatar,
+  currentUserId,
   onBack,
   onUserClick,
+  onCommentAdded,
+  onCommentDeleted,
 }: RecipeViewProps) {
   const convertTimeToMinutes = (
     preparationTime: number,
@@ -109,19 +132,13 @@ export default function RecipeView({
   const [isSaved, setIsSaved] = useState(recipe.is_saved);
   const [saveCount, setSaveCount] = useState<number>(recipe.save_count);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [commentsCount, setCommentsCount] = useState<number>(
+    recipe.comment_count,
+  );
 
   const totalVotes = likes + dislikes;
   const likePercentage =
     totalVotes === 0 ? 0 : Math.round((likes / totalVotes) * 100);
-
-  const prepTime = convertTimeToMinutes(
-    recipe.preparation_time,
-    recipe.preparation_unit,
-  );
-  const cookTime = convertTimeToMinutes(
-    recipe.cooking_time,
-    recipe.cooking_unit,
-  );
 
   const timeLabel = convertTimeToMinutes(
     recipe.preparation_time,
@@ -138,17 +155,14 @@ export default function RecipeView({
       alert("You must be logged in to react to a recipe.");
       return;
     }
-    // Save previous local state so we can revert on failure
     const prevLikes = likes;
     const prevDislikes = dislikes;
     const prevReaction = currentReaction;
 
-    // Determine whether the user is toggling off their current reaction
     const isTogglingOff = currentReaction === reaction;
     const newReaction = isTogglingOff ? null : reaction;
 
     if (isTogglingOff) {
-      // User is toggling off their reaction
       setCurrentReaction(null);
       if (reaction === "like") {
         setLikes((prev) => Math.max(0, prev - 1));
@@ -156,8 +170,6 @@ export default function RecipeView({
         setDislikes((prev) => Math.max(0, prev - 1));
       }
     } else {
-      // User is setting a new reaction. If they had the opposite reaction,
-      // decrement that count and increment the new one. Use Math.max to avoid negatives.
       if (currentReaction === "like" && reaction === "dislike") {
         setLikes((prev) => Math.max(0, prev - 1));
         setDislikes((prev) => prev + 1);
@@ -165,7 +177,6 @@ export default function RecipeView({
         setDislikes((prev) => Math.max(0, prev - 1));
         setLikes((prev) => prev + 1);
       } else {
-        // no previous reaction
         if (reaction === "like") {
           setLikes((prev) => prev + 1);
         } else {
@@ -175,7 +186,6 @@ export default function RecipeView({
       setCurrentReaction(reaction);
     }
 
-    // Persist change: delete when toggling off, otherwise upsert
     let error: any = null;
     if (newReaction === null) {
       const res = await supabase
@@ -193,7 +203,6 @@ export default function RecipeView({
       error = res.error;
     }
     if (error) {
-      // Revert local optimistic updates
       setLikes(prevLikes);
       setDislikes(prevDislikes);
       setCurrentReaction(prevReaction);
@@ -213,7 +222,6 @@ export default function RecipeView({
     const prevSaveCount = saveCount;
     let error: any = null;
 
-    // Optimistically update UI
     if (isSaved) {
       setSaveCount((prev) => Math.max(0, prev - 1));
       setIsSaved(false);
@@ -223,7 +231,6 @@ export default function RecipeView({
         .match({ recipe_id: recipe.id, saved_by: user.id });
       error = res.error;
       if (error) {
-        // Revert optimistic update on failure
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
         alert(error.message);
@@ -237,7 +244,6 @@ export default function RecipeView({
         .upsert({ recipe_id: recipe.id, saved_by: user.id });
       error = res.error;
       if (error) {
-        // Revert optimistic update on failure
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
         alert(error.message);
@@ -309,9 +315,6 @@ export default function RecipeView({
               <span className={styles.badge}>
                 <Clock size={16} /> {timeLabel}
               </span>
-              {/*<span className={styles.badge}>
-                <CookingPot size={16} /> {cookTime}
-              </span>*/}
               <span
                 className={`${styles.badge} ${
                   recipe.difficulty === "Easy"
@@ -394,7 +397,6 @@ export default function RecipeView({
               background="var(--stat1-bg)"
               iconColor="var(--stat1-icon)"
             />
-
             <ProfileStat
               stat="Rating"
               statAmount={likePercentage.toString() + "%"}
@@ -402,7 +404,6 @@ export default function RecipeView({
               background="var(--stat2-bg)"
               iconColor="var(--stat2-icon)"
             />
-
             <ProfileStat
               stat="Category"
               statAmount={recipe.categories.name}
@@ -410,10 +411,9 @@ export default function RecipeView({
               background="var(--stat3-bg)"
               iconColor="var(--stat3-icon)"
             />
-
             <ProfileStat
               stat="Comments"
-              statAmount={0}
+              statAmount={comments.length.toString()}
               border="2px solid var(--stat4-border)"
               background="var(--stat4-bg)"
               iconColor="var(--stat4-icon)"
@@ -426,7 +426,6 @@ export default function RecipeView({
               <ChefHat color="#f97316" size={26} />
               Ingredients
             </div>
-
             <div className={styles.ingredientsBox}>
               <ul>
                 {recipe.ingredients?.map((item: string, i: number) => (
@@ -442,7 +441,6 @@ export default function RecipeView({
               <UtensilsCrossed color="#f97316" size={26} />
               Instructions
             </div>
-
             <div className={styles.instructions}>
               {recipe.instructions?.map((step: string, i: number) => (
                 <div key={i} className={styles.step}>
@@ -456,9 +454,26 @@ export default function RecipeView({
           {/* FOOTER */}
           <div className={styles.footer}>
             <span>{likes.toLocaleString()} likes</span>
-            <span>0 comments</span>
-            <span>{saveCount} Saves</span>
+            <span>{commentsCount} comments</span>
+            <span>{saveCount} saves</span>
           </div>
+
+          {/* COMMENTS */}
+          <CommentsSection
+            comments={comments}
+            currentUserAvatar={currentUserAvatar}
+            currentUserId={currentUserId}
+            recipeId={recipe.id}
+            onCommentAdded={() => {
+              setCommentsCount((prev) => prev + 1);
+              onCommentAdded();
+            }}
+            onCommentDeleted={(commentId) => {
+              setCommentsCount((prev) => prev - 1);
+              onCommentDeleted(commentId);
+            }}
+            onUserClick={onUserClick}
+          />
         </div>
       </div>
     </div>

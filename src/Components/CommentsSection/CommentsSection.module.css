@@ -1,0 +1,35 @@
+.section {
+  margin-top: 32px;
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.heading h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.empty {
+  font-size: 0.875rem;
+  color: #a1a1aa;
+  padding: 16px 0;
+  margin: 0;
+}

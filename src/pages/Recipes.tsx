@@ -20,7 +20,7 @@ type Recipe = {
   current_user_reaction: "like" | "dislike" | null;
   is_saved: boolean;
   save_count: number;
-
+  comment_count: number;
   profiles: {
     id: string;
     display_name: string | null;
@@ -73,6 +73,8 @@ function Recipes() {
         created_at,
         like_count,
         dislike_count,
+        save_count,
+        comment_count,
         profiles!recipes_author_id_fkey(*),
         categories(*),
         recipe_reactions!left (
@@ -99,7 +101,6 @@ function Recipes() {
       ...recipe,
       current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
       is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
-      save_count: recipe.recipe_saves?.length ?? 0,
     }));
 
     setRecipes(transformed);
