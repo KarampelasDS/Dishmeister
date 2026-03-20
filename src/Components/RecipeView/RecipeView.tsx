@@ -413,7 +413,7 @@ export default function RecipeView({
             />
             <ProfileStat
               stat="Comments"
-              statAmount={comments.length.toString()}
+              statAmount={commentsCount.toString()}
               border="2px solid var(--stat4-border)"
               background="var(--stat4-bg)"
               iconColor="var(--stat4-icon)"
