@@ -10,12 +10,16 @@ interface AddCommentProps {
   recipeId: string;
   currentUserAvatar: string | null;
   onCommentAdded: () => void;
+  parentId?: string;
+  placeholder?: string;
 }
 
 export default function AddComment({
   recipeId,
   currentUserAvatar,
   onCommentAdded,
+  parentId,
+  placeholder = "Add a comment...",
 }: AddCommentProps) {
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -49,6 +53,7 @@ export default function AddComment({
       recipe_id: recipeId,
       author_id: user.id,
       content: trimmed,
+      parent_id: parentId ?? null,
     });
     setSubmitting(false);
 
@@ -83,7 +88,7 @@ export default function AddComment({
         <textarea
           ref={textareaRef}
           className={styles.textarea}
-          placeholder="Add a comment..."
+          placeholder={placeholder}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}

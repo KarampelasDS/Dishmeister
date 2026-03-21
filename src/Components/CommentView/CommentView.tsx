@@ -5,8 +5,12 @@ import {
   EllipsisVertical,
   Trash2,
   MessageSquareWarning,
+  MessageCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { supabase } from "../../supabase";
+import AddComment from "../AddComment/AddComment";
 import styles from "./CommentView.module.css";
 
 const supabaseAvatarUrl = import.meta.env
@@ -18,6 +22,7 @@ interface Comment {
   created_at: string;
   like_count: number;
   dislike_count: number;
+  parent_id: string | null;
   current_user_reaction: "like" | "dislike" | null;
   profiles: {
     id: string;
@@ -25,12 +30,16 @@ interface Comment {
     display_name: string | null;
     avatar_url: string | null;
   };
+  replies: Comment[];
 }
 
 interface CommentViewProps {
   comment: Comment;
   currentUserId: string | null;
+  currentUserAvatar: string | null;
+  recipeId: string;
   onCommentDeleted: (commentId: string) => void;
+  onReplyAdded: () => void;
   onUserClick: (username: string) => void;
 }
 
@@ -54,7 +63,10 @@ function timeAgo(dateStr: string): string {
 export default function CommentView({
   comment,
   currentUserId,
+  currentUserAvatar,
+  recipeId,
   onCommentDeleted,
+  onReplyAdded,
   onUserClick,
 }: CommentViewProps) {
   const [likes, setLikes] = useState(comment.like_count);
@@ -63,13 +75,20 @@ export default function CommentView({
     "like" | "dislike" | null
   >(comment.current_user_reaction);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [repliesOpen, setRepliesOpen] = useState(false);
+  const [reacting, setReacting] = useState(false);
 
   const handleReaction = async (reaction: "like" | "dislike") => {
+    if (reacting) return;
+    setReacting(true);
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
       alert("You must be logged in to react.");
+      setReacting(false);
       return;
     }
 
@@ -79,7 +98,6 @@ export default function CommentView({
     const isTogglingOff = currentReaction === reaction;
     const newReaction = isTogglingOff ? null : reaction;
 
-    // Optimistic update
     if (isTogglingOff) {
       setCurrentReaction(null);
       if (reaction === "like") setLikes((p) => Math.max(0, p - 1));
@@ -121,25 +139,17 @@ export default function CommentView({
       setCurrentReaction(prevReaction);
       alert(error.message);
     }
+
+    setReacting(false);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     setMenuOpen(false);
-    // Optimistically remove
     onCommentDeleted(comment.id);
-
-    const { error } = await supabase
-      .from("comments")
-      .delete()
-      .match({ id: comment.id });
-
-    if (error) {
-      // Revert by re-adding — parent refetches via onCommentAdded reuse
-      alert(error.message);
-    }
   };
 
   const isOwnComment = currentUserId === comment.profiles.id;
+  const replyCount = comment.replies.length;
 
   return (
     <div className={styles.wrapper}>
@@ -155,6 +165,7 @@ export default function CommentView({
       />
 
       <div className={styles.body}>
+        {/* HEADER */}
         <div className={styles.header}>
           <div
             className={styles.userInfo}
@@ -199,14 +210,17 @@ export default function CommentView({
           )}
         </div>
 
+        {/* CONTENT */}
         <p className={styles.content}>{comment.content}</p>
 
+        {/* REACTIONS + REPLY BUTTON */}
         <div className={styles.reactions}>
           <button
             className={`${styles.reactionBtn} ${
               currentReaction === "like" ? styles.activeLike : ""
             }`}
             onClick={() => handleReaction("like")}
+            disabled={reacting}
           >
             <ThumbsUp size={14} />
             <span>{likes}</span>
@@ -217,11 +231,102 @@ export default function CommentView({
               currentReaction === "dislike" ? styles.activeDislike : ""
             }`}
             onClick={() => handleReaction("dislike")}
+            disabled={reacting}
           >
             <ThumbsDown size={14} />
             <span>{dislikes}</span>
           </button>
+
+          <button
+            className={`${styles.reactionBtn} ${replyOpen ? styles.activeReply : ""}`}
+            onClick={() => setReplyOpen((o) => !o)}
+          >
+            <MessageCircle size={14} />
+            <span>Reply</span>
+          </button>
         </div>
+
+        {/* INLINE REPLY INPUT */}
+        {replyOpen && (
+          <div className={styles.replyInput}>
+            <AddComment
+              recipeId={recipeId}
+              currentUserAvatar={currentUserAvatar}
+              parentId={comment.id}
+              placeholder={`Reply to ${comment.profiles.display_name ?? comment.profiles.username}...`}
+              onCommentAdded={() => {
+                setReplyOpen(false);
+                setRepliesOpen(true);
+                onReplyAdded();
+              }}
+            />
+          </div>
+        )}
+
+        {/* VIEW REPLIES TOGGLE */}
+        {replyCount > 0 && (
+          <button
+            className={styles.repliesToggle}
+            onClick={() => setRepliesOpen((o) => !o)}
+          >
+            {repliesOpen ? (
+              <>
+                <ChevronUp size={14} />
+                Hide replies
+              </>
+            ) : (
+              <>
+                <ChevronDown size={14} />
+                {replyCount} {replyCount === 1 ? "Reply" : "Replies"}
+              </>
+            )}
+          </button>
+        )}
+
+        {/* REPLIES LIST */}
+        {repliesOpen && replyCount > 0 && (
+          <div className={styles.repliesList}>
+            {comment.replies.map((reply) => (
+              <div key={reply.id} className={styles.replyWrapper}>
+                <img
+                  src={
+                    reply.profiles.avatar_url
+                      ? `${supabaseAvatarUrl}${reply.profiles.avatar_url}`
+                      : "/default-avatar.png"
+                  }
+                  alt={reply.profiles.display_name ?? "User"}
+                  className={styles.replyAvatar}
+                  onClick={() => onUserClick(reply.profiles.username ?? "")}
+                />
+                <div className={styles.replyBody}>
+                  <div className={styles.header}>
+                    <div
+                      className={styles.userInfo}
+                      onClick={() => onUserClick(reply.profiles.username ?? "")}
+                    >
+                      <span className={styles.displayName}>
+                        {reply.profiles.display_name ?? reply.profiles.username}
+                      </span>
+                      <span className={styles.timestamp}>
+                        {timeAgo(reply.created_at)}
+                      </span>
+                    </div>
+                    {currentUserId === reply.profiles.id && (
+                      <button
+                        className={styles.menuBtn}
+                        onClick={() => onCommentDeleted(reply.id)}
+                        aria-label="Delete reply"
+                      >
+                        <Trash2 size={14} color="#cd3131" />
+                      </button>
+                    )}
+                  </div>
+                  <p className={styles.content}>{reply.content}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

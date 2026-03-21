@@ -20,7 +20,6 @@ type Recipe = {
   current_user_reaction: "like" | "dislike" | null;
   is_saved: boolean;
   save_count: number;
-  comment_count: number;
   profiles: {
     id: string;
     display_name: string | null;
@@ -41,6 +40,7 @@ type Comment = {
   created_at: string;
   like_count: number;
   dislike_count: number;
+  parent_id: string | null;
   current_user_reaction: "like" | "dislike" | null;
   profiles: {
     id: string;
@@ -93,7 +93,6 @@ export default function RecipePage() {
           ingredients,
           instructions,
           save_count,
-          comment_count,
           profiles!recipes_author_id_fkey(*),
           categories(*),
           recipe_reactions!left(reaction, user_id),
@@ -149,6 +148,7 @@ export default function RecipePage() {
           created_at,
           like_count,
           dislike_count,
+          parent_id,
           profiles!comments_author_id_fkey(
             id,
             username,
@@ -192,8 +192,16 @@ export default function RecipePage() {
   if (loading) return <div>Loading...</div>;
   if (!recipe) return <div>Recipe not found</div>;
 
-  const handleCommentDeleted = (commentId: string) => {
+  const handleCommentDeleted = async (commentId: string) => {
     setComments((prev) => prev.filter((c) => c.id !== commentId));
+    const { error } = await supabase
+      .from("comments")
+      .delete()
+      .match({ id: commentId });
+    if (error) {
+      await fetchComments();
+      alert(error.message);
+    }
   };
 
   return (

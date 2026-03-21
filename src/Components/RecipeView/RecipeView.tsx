@@ -39,7 +39,6 @@ type Recipe = {
   current_user_reaction: "like" | "dislike" | null;
   is_saved: boolean;
   save_count: number;
-  comment_count: number;
   profiles: {
     id: string;
     display_name: string | null;
@@ -132,9 +131,8 @@ export default function RecipeView({
   const [isSaved, setIsSaved] = useState(recipe.is_saved);
   const [saveCount, setSaveCount] = useState<number>(recipe.save_count);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [commentsCount, setCommentsCount] = useState<number>(
-    recipe.comment_count,
-  );
+  const [reacting, setReacting] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const totalVotes = likes + dislikes;
   const likePercentage =
@@ -148,11 +146,15 @@ export default function RecipeView({
   );
 
   const handleReaction = async (reaction: "like" | "dislike") => {
+    if (reacting) return;
+    setReacting(true);
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
       alert("You must be logged in to react to a recipe.");
+      setReacting(false);
       return;
     }
     const prevLikes = likes;
@@ -208,14 +210,19 @@ export default function RecipeView({
       setCurrentReaction(prevReaction);
       alert(error.message);
     }
+    setReacting(false);
   };
 
   const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
       alert("You must be logged in to save a recipe.");
+      setSaving(false);
       return;
     }
     const prevSaved = isSaved;
@@ -234,6 +241,7 @@ export default function RecipeView({
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
         alert(error.message);
+        setSaving(false);
         return;
       }
     } else {
@@ -247,9 +255,11 @@ export default function RecipeView({
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
         alert(error.message);
+        setSaving(false);
         return;
       }
     }
+    setSaving(false);
   };
 
   return (
@@ -357,6 +367,7 @@ export default function RecipeView({
                   currentReaction === "like" ? styles.activeLike : ""
                 }`}
                 onClick={() => handleReaction("like")}
+                disabled={reacting}
               >
                 <ThumbsUp size={18} />
               </button>
@@ -366,6 +377,7 @@ export default function RecipeView({
                   currentReaction === "dislike" ? styles.activeDislike : ""
                 }`}
                 onClick={() => handleReaction("dislike")}
+                disabled={reacting}
               >
                 <ThumbsDown size={18} />
               </button>
@@ -375,6 +387,7 @@ export default function RecipeView({
                   isSaved ? styles.activeSave : ""
                 }`}
                 onClick={handleSave}
+                disabled={saving}
               >
                 {isSaved ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
               </button>
@@ -413,7 +426,7 @@ export default function RecipeView({
             />
             <ProfileStat
               stat="Comments"
-              statAmount={commentsCount.toString()}
+              statAmount={comments.length.toString()}
               border="2px solid var(--stat4-border)"
               background="var(--stat4-bg)"
               iconColor="var(--stat4-icon)"
@@ -454,7 +467,7 @@ export default function RecipeView({
           {/* FOOTER */}
           <div className={styles.footer}>
             <span>{likes.toLocaleString()} likes</span>
-            <span>{commentsCount} comments</span>
+            <span>{comments.length} comments</span>
             <span>{saveCount} saves</span>
           </div>
 
@@ -464,14 +477,8 @@ export default function RecipeView({
             currentUserAvatar={currentUserAvatar}
             currentUserId={currentUserId}
             recipeId={recipe.id}
-            onCommentAdded={() => {
-              setCommentsCount((prev) => prev + 1);
-              onCommentAdded();
-            }}
-            onCommentDeleted={(commentId) => {
-              setCommentsCount((prev) => prev - 1);
-              onCommentDeleted(commentId);
-            }}
+            onCommentAdded={onCommentAdded}
+            onCommentDeleted={onCommentDeleted}
             onUserClick={onUserClick}
           />
         </div>

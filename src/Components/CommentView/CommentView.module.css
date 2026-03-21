@@ -4,7 +4,6 @@
   padding: 16px 0;
   border-bottom: 1px solid var(--border, #f0f0f0);
   position: relative;
-  color: var(--text);
 }
 
 .wrapper:last-child {
@@ -50,6 +49,7 @@
 .displayName {
   font-size: 0.875rem;
   font-weight: 600;
+  color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -61,7 +61,7 @@
 
 .timestamp {
   font-size: 0.775rem;
-  color: var(--text-muted, #a1a1aa);
+  color: var(--text-muted);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -70,7 +70,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--text-muted, #a1a1aa);
+  color: var(--text-muted);
   padding: 4px;
   border-radius: 6px;
   display: flex;
@@ -83,7 +83,6 @@
 }
 
 .menuBtn:hover {
-  background: var(--bg);
   color: var(--text);
 }
 
@@ -111,7 +110,7 @@
   cursor: pointer;
   font-size: 0.875rem;
   font-family: inherit;
-  color: var(--text-primary, #18181b);
+  color: var(--text);
   text-align: left;
   transition: background 0.15s;
 }
@@ -123,6 +122,7 @@
 .content {
   font-size: 0.9rem;
   line-height: 1.6;
+  color: var(--text);
   margin: 0 0 10px 0;
   word-break: break-word;
 }
@@ -140,7 +140,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--text-muted, #a1a1aa);
+  color: var(--text-muted);
   font-size: 0.8rem;
   font-family: inherit;
   padding: 4px 8px;
@@ -151,8 +151,8 @@
 }
 
 .reactionBtn:hover {
-  background: var(--hover-bg, #f4f4f5);
-  color: var(--text-primary, #18181b);
+  background: var(--bg-secondary);
+  color: var(--text);
 }
 
 .reactionBtn.activeLike {
@@ -160,5 +160,66 @@
 }
 
 .reactionBtn.activeDislike {
+  color: #f97316;
+}
+
+.reactionBtn.replyInput {
+  margin-top: 10px;
+}
+
+.repliesToggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #f97316;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 6px 0;
+  margin-top: 4px;
+  transition: opacity 0.15s;
+}
+
+.repliesToggle:hover {
+  opacity: 0.75;
+}
+
+.repliesList {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 4px;
+  border-left: 2px solid var(--border, #f0f0f0);
+}
+
+.replyWrapper {
+  display: flex;
+  gap: 10px;
+}
+
+.replyAvatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.replyAvatar:hover {
+  opacity: 0.85;
+}
+
+.replyBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.activeReply {
   color: #f97316;
 }

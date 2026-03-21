@@ -9,6 +9,7 @@ interface Comment {
   created_at: string;
   like_count: number;
   dislike_count: number;
+  parent_id: string | null;
   current_user_reaction: "like" | "dislike" | null;
   profiles: {
     id: string;
@@ -16,6 +17,7 @@ interface Comment {
     display_name: string | null;
     avatar_url: string | null;
   };
+  replies: Comment[];
 }
 
 interface CommentsSectionProps {
@@ -37,11 +39,24 @@ export default function CommentsSection({
   onCommentDeleted,
   onUserClick,
 }: CommentsSectionProps) {
+  // Group replies under their parent
+  const repliesMap: Record<string, Comment[]> = {};
+  comments.forEach((c) => {
+    if (c.parent_id) {
+      if (!repliesMap[c.parent_id]) repliesMap[c.parent_id] = [];
+      repliesMap[c.parent_id].push(c);
+    }
+  });
+
+  const topLevel = comments
+    .filter((c) => c.parent_id === null)
+    .map((c) => ({ ...c, replies: repliesMap[c.id] ?? [] }));
+
   return (
     <section className={styles.section}>
       <div className={styles.heading}>
         <MessageCircle color="#f97316" size={22} />
-        <h2>Comments ({comments.length})</h2>
+        <h2>Comments ({topLevel.length})</h2>
       </div>
 
       <AddComment
@@ -52,16 +67,19 @@ export default function CommentsSection({
 
       <div className={styles.divider} />
 
-      {comments.length === 0 ? (
+      {topLevel.length === 0 ? (
         <p className={styles.empty}>No comments yet. Be the first!</p>
       ) : (
         <div className={styles.list}>
-          {comments.map((comment) => (
+          {topLevel.map((comment) => (
             <CommentView
               key={comment.id}
               comment={comment}
               currentUserId={currentUserId}
+              currentUserAvatar={currentUserAvatar}
+              recipeId={recipeId}
               onCommentDeleted={onCommentDeleted}
+              onReplyAdded={onCommentAdded}
               onUserClick={onUserClick}
             />
           ))}
