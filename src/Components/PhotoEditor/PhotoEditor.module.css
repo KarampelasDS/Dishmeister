@@ -70,8 +70,21 @@
   grid-template-rows: 1fr 1fr;
   pointer-events: none;
 }
+.gridOverlayRecipe {
+  position: absolute;
+  width: 640px;
+  height: 400px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  pointer-events: none;
+}
 
 .gridOverlay div {
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.gridOverlayRecipe div {
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 

@@ -5,6 +5,7 @@ import styles from "./CreateRecipe.module.css";
 
 import countries from "i18n-iso-countries";
 import en from "i18n-iso-countries/langs/en.json";
+import PhotoEditor from "../PhotoEditor/PhotoEditor";
 
 type Category = {
   id: string;
@@ -50,11 +51,13 @@ function CreateRecipe() {
 
   const [loading, setLoading] = useState(false);
 
-  const [previewImage, setPreviewImage] = useState(
+  const [previewImage, setPreviewImage] = useState<string | null>(
     "https://images.unsplash.com/photo-1521388825798-fec41108def2?auto=format&fit=crop&w=1400&q=80",
   );
 
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
+  const [fileKey, setFileKey] = useState(0);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -102,6 +105,16 @@ function CreateRecipe() {
   };
 
   /* ---------------- IMAGE PICKER ---------------- */
+  useEffect(() => {
+    if (!imageFile) {
+      if (previewImage) URL.revokeObjectURL(previewImage);
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setPreviewImage(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
 
   const openFilePicker = () => {
     fileInputRef.current?.click();
@@ -135,13 +148,14 @@ function CreateRecipe() {
       URL.revokeObjectURL(previewImage);
     }
 
-    setPreviewImage(objectUrl);
-    setImageFile(file);
-
     e.target.value = "";
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+    setFileKey((k) => k + 1);
+    setPhotoEditorOpen(true);
+    setPreviewImage(objectUrl);
+    setImageFile(file);
   };
 
   /* ---------------- SUBMIT ---------------- */
@@ -257,308 +271,339 @@ function CreateRecipe() {
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.card}>
-        {/* HEADER */}
-        <div className={styles.headerRow}>
-          <h1 className={styles.title}>Create New Recipe</h1>
-          <div className={styles.headerIcon} aria-hidden="true">
-            +
+    <>
+      <div className={styles.page}>
+        <div className={styles.card}>
+          {/* HEADER */}
+          <div className={styles.headerRow}>
+            <h1 className={styles.title}>Create New Recipe</h1>
+            <div className={styles.headerIcon} aria-hidden="true">
+              +
+            </div>
           </div>
-        </div>
 
-        {/* IMAGE */}
-        <div className={styles.section}>
-          <label className={styles.label}>
-            Recipe Name <span className={styles.required}>*</span>
-          </label>
+          {/* IMAGE */}
+          <div className={styles.section}>
+            <label className={styles.label}>
+              Recipe Name <span className={styles.required}>*</span>
+            </label>
 
-          <div
-            className={styles.imageUpload}
-            role="button"
-            tabIndex={0}
-            onClick={openFilePicker}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") openFilePicker();
-            }}
-          >
-            <img src={previewImage} alt="Recipe preview" />
+            <div
+              className={styles.imageUpload}
+              role="button"
+              tabIndex={0}
+              onClick={openFilePicker}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") openFilePicker();
+              }}
+            >
+              <img src={previewImage} alt="Recipe preview" />
 
-            {/* Hover overlay */}
-            <div className={styles.imageOverlay}>
-              <div className={styles.overlayInner}>
-                <div className={styles.overlayIcon} aria-hidden="true">
-                  🖼️
+              {/* Hover overlay */}
+              <div className={styles.imageOverlay}>
+                <div className={styles.overlayInner}>
+                  <div className={styles.overlayIcon} aria-hidden="true">
+                    🖼️
+                  </div>
+                  <div className={styles.overlayText}>
+                    Click to upload image
+                  </div>
                 </div>
-                <div className={styles.overlayText}>Click to upload image</div>
+              </div>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png, image/jpeg"
+              className={styles.hiddenFileInput}
+              onChange={onFilePicked}
+            />
+          </div>
+
+          {/* NAME */}
+          <div className={styles.section}>
+            <label className={styles.label}>
+              Recipe Name <span className={styles.required}>*</span>
+            </label>
+
+            <input
+              className={styles.input}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g., Creamy Carbonara"
+            />
+          </div>
+
+          {/* DESCRIPTION */}
+          <div className={styles.section}>
+            <label className={styles.label}>
+              Description <span className={styles.required}>*</span>
+            </label>
+
+            <textarea
+              className={styles.textarea}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Tell us about your recipe..."
+            />
+          </div>
+
+          {/* GRID: TIME + DIFFICULTY + CATEGORY */}
+          <div className={styles.grid3}>
+            <div className={styles.timeGroup}>
+              <label className={styles.label}>
+                Prep Time <span className={styles.required}>*</span>
+              </label>
+
+              <div className={styles.timeInputWrapper}>
+                <input
+                  type="number"
+                  value={preparationTime}
+                  min={1}
+                  onChange={(e) =>
+                    setPreparationTime(
+                      e.target.value === "" ? "" : Number(e.target.value),
+                    )
+                  }
+                />
+                <select
+                  value={preparationUnit}
+                  onChange={(e) =>
+                    setPreparationUnit(e.target.value as TimeUnit)
+                  }
+                >
+                  {timeUnits.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className={styles.timeGroup}>
+              <label className={styles.label}>
+                Cook Time <span className={styles.required}>*</span>
+              </label>
+
+              <div className={styles.timeInputWrapper}>
+                <input
+                  type="number"
+                  value={cookingTime}
+                  min={0}
+                  onChange={(e) =>
+                    setCookingTime(
+                      e.target.value === "" ? "" : Number(e.target.value),
+                    )
+                  }
+                />
+                <select
+                  value={cookingUnit}
+                  onChange={(e) => setCookingUnit(e.target.value as TimeUnit)}
+                >
+                  {timeUnits.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className={styles.label}>
+                Servings<span className={styles.required}>*</span>
+              </label>
+
+              <div className={styles.stepper}>
+                <button
+                  type="button"
+                  onClick={() => setServings(Math.max(1, servings - 1))}
+                  aria-label="Decrease servings"
+                >
+                  –
+                </button>
+                <span>{servings}</span>
+                <button
+                  type="button"
+                  onClick={() => setServings(servings + 1)}
+                  aria-label="Increase servings"
+                >
+                  +
+                </button>
               </div>
             </div>
           </div>
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png, image/jpeg"
-            className={styles.hiddenFileInput}
-            onChange={onFilePicked}
-          />
-        </div>
+          <div className={styles.grid2}>
+            <div>
+              <label className={styles.label}>
+                Difficulty <span className={styles.required}>*</span>
+              </label>
 
-        {/* NAME */}
-        <div className={styles.section}>
-          <label className={styles.label}>
-            Recipe Name <span className={styles.required}>*</span>
-          </label>
-
-          <input
-            className={styles.input}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g., Creamy Carbonara"
-          />
-        </div>
-
-        {/* DESCRIPTION */}
-        <div className={styles.section}>
-          <label className={styles.label}>
-            Description <span className={styles.required}>*</span>
-          </label>
-
-          <textarea
-            className={styles.textarea}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Tell us about your recipe..."
-          />
-        </div>
-
-        {/* GRID: TIME + DIFFICULTY + CATEGORY */}
-        <div className={styles.grid3}>
-          <div className={styles.timeGroup}>
-            <label className={styles.label}>
-              Prep Time <span className={styles.required}>*</span>
-            </label>
-
-            <div className={styles.timeInputWrapper}>
-              <input
-                type="number"
-                value={preparationTime}
-                min={1}
-                onChange={(e) =>
-                  setPreparationTime(
-                    e.target.value === "" ? "" : Number(e.target.value),
-                  )
-                }
-              />
               <select
-                value={preparationUnit}
-                onChange={(e) => setPreparationUnit(e.target.value as TimeUnit)}
+                className={styles.select}
+                value={difficulty}
+                onChange={(e) => setDifficulty(e.target.value as Difficulty)}
               >
-                {timeUnits.map((u) => (
-                  <option key={u} value={u}>
-                    {u}
+                {difficultyOptions.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className={styles.label}>
+                Category <span className={styles.required}>*</span>
+              </label>
+
+              <select
+                className={styles.select}
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+              >
+                <option value="">Select category</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          <div className={styles.timeGroup}>
-            <label className={styles.label}>
-              Cook Time <span className={styles.required}>*</span>
-            </label>
-
-            <div className={styles.timeInputWrapper}>
-              <input
-                type="number"
-                value={cookingTime}
-                min={0}
-                onChange={(e) =>
-                  setCookingTime(
-                    e.target.value === "" ? "" : Number(e.target.value),
-                  )
-                }
-              />
-              <select
-                value={cookingUnit}
-                onChange={(e) => setCookingUnit(e.target.value as TimeUnit)}
-              >
-                {timeUnits.map((u) => (
-                  <option key={u} value={u}>
-                    {u}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className={styles.label}>
-              Servings<span className={styles.required}>*</span>
-            </label>
-
-            <div className={styles.stepper}>
-              <button
-                type="button"
-                onClick={() => setServings(Math.max(1, servings - 1))}
-                aria-label="Decrease servings"
-              >
-                –
-              </button>
-              <span>{servings}</span>
-              <button
-                type="button"
-                onClick={() => setServings(servings + 1)}
-                aria-label="Increase servings"
-              >
-                +
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className={styles.grid2}>
-          <div>
-            <label className={styles.label}>
-              Difficulty <span className={styles.required}>*</span>
-            </label>
-
+          {/* COUNTRY */}
+          <div className={styles.section}>
+            <label className={styles.label}>Country of origin</label>
             <select
               className={styles.select}
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+              value={countryOfOrigin ?? ""}
+              onChange={(e) => setCountryOfOrigin(e.target.value || null)}
             >
-              {difficultyOptions.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className={styles.label}>
-              Category <span className={styles.required}>*</span>
-            </label>
-
-            <select
-              className={styles.select}
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-            >
-              <option value="">Select category</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
+              <option value="">Select country</option>
+              {countryOptions.map((c) => (
+                <option key={c.code} value={c.code}>
                   {c.name}
                 </option>
               ))}
             </select>
           </div>
-        </div>
 
-        {/* COUNTRY */}
-        <div className={styles.section}>
-          <label className={styles.label}>Country of origin</label>
-          <select
-            className={styles.select}
-            value={countryOfOrigin ?? ""}
-            onChange={(e) => setCountryOfOrigin(e.target.value || null)}
-          >
-            <option value="">Select country</option>
-            {countryOptions.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.name}
-              </option>
+          {/* INGREDIENTS */}
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <label className={styles.label}>
+                Ingredients <span className={styles.required}>*</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={addIngredient}
+                className={styles.addLink}
+              >
+                + Add Ingredient
+              </button>
+            </div>
+
+            {ingredients.map((ingredient, index) => (
+              <div key={index} className={styles.dynamicRow}>
+                <input
+                  className={styles.input}
+                  value={ingredient}
+                  onChange={(e) => updateIngredient(index, e.target.value)}
+                  placeholder={`Ingredient ${index + 1}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeIngredient(index)}
+                  className={styles.removeBtn}
+                  aria-label="Remove ingredient"
+                >
+                  ×
+                </button>
+              </div>
             ))}
-          </select>
-        </div>
-
-        {/* INGREDIENTS */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <label className={styles.label}>
-              Ingredients <span className={styles.required}>*</span>
-            </label>
-
-            <button
-              type="button"
-              onClick={addIngredient}
-              className={styles.addLink}
-            >
-              + Add Ingredient
-            </button>
           </div>
 
-          {ingredients.map((ingredient, index) => (
-            <div key={index} className={styles.dynamicRow}>
-              <input
-                className={styles.input}
-                value={ingredient}
-                onChange={(e) => updateIngredient(index, e.target.value)}
-                placeholder={`Ingredient ${index + 1}`}
-              />
+          {/* INSTRUCTIONS */}
+          <div className={styles.section}>
+            <div className={styles.sectionHeader}>
+              <label className={styles.label}>
+                Instructions <span className={styles.required}>*</span>
+              </label>
+
               <button
                 type="button"
-                onClick={() => removeIngredient(index)}
-                className={styles.removeBtn}
-                aria-label="Remove ingredient"
+                onClick={addInstruction}
+                className={styles.addLink}
               >
-                ×
+                + Add Step
               </button>
             </div>
-          ))}
-        </div>
 
-        {/* INSTRUCTIONS */}
-        <div className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <label className={styles.label}>
-              Instructions <span className={styles.required}>*</span>
-            </label>
-
-            <button
-              type="button"
-              onClick={addInstruction}
-              className={styles.addLink}
-            >
-              + Add Step
-            </button>
+            {instructions.map((instruction, index) => (
+              <div key={index} className={styles.dynamicRow}>
+                <div className={styles.stepIndex}>{index + 1}</div>
+                <textarea
+                  className={styles.textarea}
+                  value={instruction}
+                  onChange={(e) => updateInstruction(index, e.target.value)}
+                  placeholder={`Step ${index + 1}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeInstruction(index)}
+                  className={styles.removeBtn}
+                  aria-label="Remove instruction"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
           </div>
 
-          {instructions.map((instruction, index) => (
-            <div key={index} className={styles.dynamicRow}>
-              <div className={styles.stepIndex}>{index + 1}</div>
-              <textarea
-                className={styles.textarea}
-                value={instruction}
-                onChange={(e) => updateInstruction(index, e.target.value)}
-                placeholder={`Step ${index + 1}`}
-              />
-              <button
-                type="button"
-                onClick={() => removeInstruction(index)}
-                className={styles.removeBtn}
-                aria-label="Remove instruction"
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* FOOTER */}
-        <div className={styles.footer}>
-          <Button
-            text={loading ? "Saving..." : "Publish Recipe"}
-            isActive={!loading}
-            backgroundColor="linear-gradient(135deg,#f97316,#ef4444)"
-            textColor="#fff"
-            onButtonClick={submitRecipe}
-            outline="0px"
-          />
+          {/* FOOTER */}
+          <div className={styles.footer}>
+            <Button
+              text={loading ? "Saving..." : "Publish Recipe"}
+              isActive={!loading}
+              backgroundColor="linear-gradient(135deg,#f97316,#ef4444)"
+              textColor="#fff"
+              onButtonClick={submitRecipe}
+              outline="0px"
+            />
+          </div>
         </div>
       </div>
-    </div>
+      {photoEditorOpen && imageFile && (
+        <PhotoEditor
+          mode={"recipe"}
+          key={fileKey}
+          onClose={() => setPhotoEditorOpen(false)}
+          onSave={async (canvas) => {
+            if (!canvas) return;
+
+            const blob = await new Promise<Blob | null>((resolve) =>
+              canvas.toBlob(resolve, "image/png", 0.9),
+            );
+
+            if (!blob) return;
+
+            const file = new File([blob], "avatar.png", {
+              type: "image/png",
+            });
+
+            setImageFile(file);
+            setPhotoEditorOpen(false);
+          }}
+          onChangePhoto={() => fileInputRef.current?.click()}
+          imageFile={imageFile}
+        />
+      )}
+    </>
   );
 }
 

@@ -9,6 +9,7 @@ interface PhotoEditorProps {
   onClose?: () => void;
   onSave?: (canvas: HTMLCanvasElement | null) => void;
   onChangePhoto?: () => void;
+  mode?: "profile" | "recipe";
 }
 
 export default function PhotoEditor({
@@ -16,6 +17,7 @@ export default function PhotoEditor({
   onSave,
   onChangePhoto,
   imageFile,
+  mode,
 }: PhotoEditorProps) {
   const editorRef = useRef<AvatarEditor | null>(null);
 
@@ -34,8 +36,11 @@ export default function PhotoEditor({
         {/* Header */}
         <div className={styles.header}>
           <div>
-            <h2>Edit Profile Picture</h2>
-            <p>Upload and crop your avatar</p>
+            <h2>Edit {mode === "recipe" ? "Recipe" : "Profile"} Picture</h2>
+            <p>
+              Upload and crop your{" "}
+              {mode === "recipe" ? "recipe picture" : "avatar"}
+            </p>
           </div>
 
           <button className={styles.closeButton} onClick={onClose}>
@@ -49,17 +54,23 @@ export default function PhotoEditor({
             <AvatarEditor
               ref={editorRef}
               image={imageFile}
-              width={260}
-              height={260}
+              width={mode === "recipe" ? 350 : 260}
+              height={mode === "recipe" ? 200 : 260}
               border={80}
-              borderRadius={999}
+              borderRadius={mode === "recipe" ? 20 : 999}
               scale={zoom}
               rotate={rotation}
               color={[0, 0, 0, 0.6]}
             />
 
             {grid && (
-              <div className={styles.gridOverlay}>
+              <div
+                className={
+                  mode === "recipe"
+                    ? styles.gridOverlayRecipe
+                    : styles.gridOverlay
+                }
+              >
                 <div />
                 <div />
                 <div />
@@ -77,7 +88,7 @@ export default function PhotoEditor({
             <input
               type="range"
               min={1}
-              max={3}
+              max={10}
               step={0.01}
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
@@ -136,7 +147,7 @@ export default function PhotoEditor({
             textColor="#fff"
             outline="0px"
           >
-            Save Avatar
+            Save {mode === "recipe" ? "Photo" : "Avatar"}
           </Button>
         </div>
       </div>

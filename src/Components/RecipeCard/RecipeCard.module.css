@@ -9,7 +9,8 @@
   border-radius: 18px;
   overflow: hidden;
   border: 1px solid var(--border);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
 }
 
 .header {
