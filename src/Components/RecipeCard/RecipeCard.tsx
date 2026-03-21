@@ -121,6 +121,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const preparation_unit = r?.preparation_unit ?? "Min";
   const cooking_unit = r?.cooking_unit ?? "Min";
   const comment_count = r?.comment_count ?? 0;
+  const [isReacting, setIsReacting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [currentReaction, setCurrentReaction] = useState<
     "like" | "dislike" | null
@@ -137,6 +139,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     : "25 Min";
 
   const handleReaction = async (reaction: "like" | "dislike") => {
+    if (isReacting) return;
+    setIsReacting(true);
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -205,21 +209,25 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
       setCurrentReaction(prevReaction);
       alert(error.message);
     }
+    setIsReacting(false);
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
       alert("You must be logged in to save a recipe.");
+      setIsSaving(false);
       return;
     }
     const prevSaved = isSaved;
     const prevSaveCount = saveCount;
     let error: any = null;
 
-    // Optimistically update UI
     if (isSaved) {
       setSaveCount((prev) => Math.max(0, prev - 1));
       setIsSaved(false);
@@ -229,10 +237,10 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
         .match({ recipe_id: recipe.id, saved_by: user.id });
       error = res.error;
       if (error) {
-        // Revert optimistic update on failure
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
         alert(error.message);
+        setIsSaving(false);
         return;
       }
     } else {
@@ -243,13 +251,14 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
         .upsert({ recipe_id: recipe.id, saved_by: user.id });
       error = res.error;
       if (error) {
-        // Revert optimistic update on failure
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
         alert(error.message);
+        setIsSaving(false);
         return;
       }
     }
+    setIsSaving(false);
   };
 
   const CalculateRating = () => {
@@ -289,8 +298,9 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
                   handleSave();
                   setMenuOpen(false);
                 }}
+                disabled={isSaving}
               >
-                {isSaved ? <BookmarkCheck /> : <Bookmark />}
+                {isSaved ? <BookmarkCheck color="#f59e0b" /> : <Bookmark />}
                 {isSaved ? "Unsave" : "Save"}
               </button>
               <button
@@ -441,8 +451,9 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             outline={`1px solid var(--border)`}
             onButtonClick={() => handleSave()}
             type="button"
+            isActive={!isSaving}
           >
-            {isSaved ? <BookmarkCheck /> : <Bookmark />}
+            {isSaved ? <BookmarkCheck color="#f59e0b" /> : <Bookmark />}
             {isSaved ? "Unsave" : "Save"}
           </Button>
         </div>
