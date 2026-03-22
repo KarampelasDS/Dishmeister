@@ -10,6 +10,7 @@ import AuthModal from "./Components/AuthModal/AuthModal";
 import OnboardingModal from "./Components/OnboardingModal/OnboardingModal";
 import { useAuth } from "./context/AuthProvider";
 import RecipePage from "./pages/RecipePage";
+import SavedRecipes from "./pages/SavedRecipes";
 
 function App() {
   const { session, profile, loading, needsOnboarding, signOut } = useAuth();
@@ -47,6 +48,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/recipes" element={<Recipes />} />
+        <Route path="/saved" element={<SavedRecipes />} />
         <Route
           path="/recipes/new"
           element={
