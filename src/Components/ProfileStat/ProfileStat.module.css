@@ -25,18 +25,20 @@
 
 @media only screen and (max-width: 600px) {
   .Container {
-    width: 100%;
+    width: 90%;
     height: auto;
     padding: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 6px;
+    flex-direction: column;
   }
   .Container h2 {
     font-size: 18px;
   }
-  .Container p {
-    display: none;
+  .header {
+    display: flex;
+    gap: 6px;
   }
 }

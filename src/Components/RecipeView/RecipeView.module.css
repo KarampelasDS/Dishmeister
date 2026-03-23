@@ -360,7 +360,11 @@
   }
 
   .statsGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(1, 1fr);
+  }
+
+  .statsGrid div {
+    margin: auto;
   }
 
   .badges {
