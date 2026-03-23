@@ -23,6 +23,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<profileType | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [canFollow, setCanFollow] = useState(true);
 
   useEffect(() => {
     if (!username) return;
@@ -73,15 +74,26 @@ export default function Profile() {
       return;
     }
 
+    const oldProfile = profile;
+    setCanFollow(false);
+
     if (isFollowing) {
       const { error } = await supabase
         .from("follows")
         .delete()
         .eq("follower_id", user.id)
         .eq("following_id", profile.id);
+      setProfile((prevProfile) => {
+        if (!prevProfile) return null;
+        return {
+          ...prevProfile,
+          follower_count: prevProfile.follower_count - 1,
+        };
+      });
 
       if (error) {
         console.error(error);
+        setProfile(oldProfile);
         return;
       }
       setIsFollowing(false);
@@ -89,13 +101,22 @@ export default function Profile() {
       const { error } = await supabase
         .from("follows")
         .insert({ follower_id: user.id, following_id: profile.id });
+      setProfile((prevProfile) => {
+        if (!prevProfile) return null;
+        return {
+          ...prevProfile,
+          follower_count: prevProfile.follower_count + 1,
+        };
+      });
 
       if (error) {
         console.error(error);
+        setProfile(oldProfile);
         return;
       }
       setIsFollowing(true);
     }
+    setCanFollow(true);
   };
 
   return (
@@ -103,6 +124,7 @@ export default function Profile() {
       profile={profile}
       isFollowing={isFollowing}
       followFunction={handleFollow}
+      followActive={canFollow}
     />
   );
 }

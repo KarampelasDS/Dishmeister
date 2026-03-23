@@ -9,10 +9,12 @@ export default function ProfileCard({
   profile,
   isFollowing,
   followFunction,
+  followActive,
 }: {
   profile: profileType | null;
   isFollowing: boolean;
   followFunction: () => void;
+  followActive: boolean;
 }) {
   const supabaseAvatarUrl = import.meta.env
     .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
@@ -91,7 +93,7 @@ export default function ProfileCard({
               }
               textColor={isFollowing ? "#374151" : "#fff"}
               outline="0px"
-              isActive={true}
+              isActive={followActive}
               onButtonClick={followFunction}
             />
           </div>
