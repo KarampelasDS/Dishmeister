@@ -56,7 +56,7 @@ export default function CommentsSection({
     <section className={styles.section}>
       <div className={styles.heading}>
         <MessageCircle color="#f97316" size={22} />
-        <h2>Comments ({topLevel.length})</h2>
+        <h2>Comments ({comments.length})</h2>
       </div>
 
       <AddComment
