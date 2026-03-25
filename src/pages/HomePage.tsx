@@ -193,6 +193,7 @@ function HomePage() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             style={{
+              color: "var(--text)",
               background: "none",
               border: "none",
               padding: "0.5rem 0",
