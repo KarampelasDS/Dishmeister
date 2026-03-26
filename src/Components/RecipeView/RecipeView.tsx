@@ -467,6 +467,7 @@ export default function RecipeView({
           {/* FOOTER */}
           <div className={styles.footer}>
             <span>{likes.toLocaleString()} likes</span>
+            <span>{dislikes.toLocaleString()} dislikes</span>
             <span>{comments.length} comments</span>
             <span>{saveCount} saves</span>
           </div>
