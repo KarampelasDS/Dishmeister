@@ -113,7 +113,7 @@ function SavedRecipes() {
 
   return (
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "1rem" }}>
-      <h1>Recipes</h1>
+      <h1>Saved Recipes</h1>
 
       <button onClick={() => navigate("/recipes/new")}>Create recipe</button>
 
