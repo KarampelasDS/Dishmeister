@@ -448,6 +448,7 @@ export default function RecipeView({
             </div>
           </section>
 
+          {/* INSTRUCTIONS */}
           <section>
             <div className={styles.sectionTitle}>
               <UtensilsCrossed color="#f97316" size={26} />

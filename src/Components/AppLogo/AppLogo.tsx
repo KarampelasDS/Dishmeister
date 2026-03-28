@@ -1,8 +1,10 @@
 import styles from "./AppLogo.module.css";
+import { useNavigate } from "react-router";
 
 export default function AppLogo() {
+  const navigate = useNavigate();
   return (
-    <div className={styles.title}>
+    <div onClick={() => navigate("/")} className={styles.title}>
       <div className={styles.iconWrapper}>
         <div className={styles.iconBadge}>
           <svg
