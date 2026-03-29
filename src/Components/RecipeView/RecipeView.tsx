@@ -17,6 +17,9 @@ import { supabase } from "../../supabase";
 import ProfileStat from "../ProfileStat/ProfileStat";
 import CommentsSection from "../CommentsSection/CommentsSection";
 import styles from "./RecipeView.module.css";
+import { hasFlag } from "country-flag-icons";
+import { Tooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
@@ -336,6 +339,25 @@ export default function RecipeView({
               >
                 <ChefHat size={16} /> {recipe.difficulty}
               </span>
+              {hasFlag(recipe.country_of_origin) && (
+                <a
+                  data-tooltip-id="my-tooltip"
+                  data-tooltip-content={recipe.country_of_origin?.toString()}
+                >
+                  <span
+                    className={styles.badge}
+                    style={{
+                      background: `url(${hasFlag(recipe.country_of_origin) ? `https://purecatamphetamine.github.io/country-flag-icons/3x2/${recipe.country_of_origin}.svg` : undefined})`,
+                      minHeight: "20px",
+                      minWidth: "30px",
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                      color: "white",
+                    }}
+                  ></span>
+                  <Tooltip id="my-tooltip" />
+                </a>
+              )}
             </div>
           </div>
         </div>

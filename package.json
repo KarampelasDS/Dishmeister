@@ -11,13 +11,15 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.0",
+    "country-flag-icons": "^1.6.15",
     "i18n-iso-countries": "^7.14.0",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-avatar-editor": "^14.0.0",
     "react-dom": "^19.2.0",
     "react-router": "^7.13.0",
-    "react-router-dom": "^7.13.0"
+    "react-router-dom": "^7.13.0",
+    "react-tooltip": "^5.30.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

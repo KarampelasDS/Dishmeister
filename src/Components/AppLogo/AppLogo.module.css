@@ -39,8 +39,8 @@
   transition: transform 0.2s ease;
 }
 
-.iconWrapper:hover .iconBadge {
-  transform: rotate(6deg);
+.title:hover .iconWrapper .iconBadge {
+  transform: rotate(12deg);
 }
 
 .icon {
