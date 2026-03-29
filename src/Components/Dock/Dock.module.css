@@ -1,0 +1,62 @@
+.container {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg);
+  padding: 10px;
+  border-radius: 16px;
+  border: 2px solid var(--border);
+  display: flex;
+  gap: 5px;
+  margin-bottom: 10px;
+  z-index: 1000;
+}
+
+.button {
+  position: relative;
+  background: transparent;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text);
+  transition:
+    transform 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+  overflow: visible;
+}
+
+.button:hover {
+  transform: scale(1.1) translateY(-4px);
+}
+
+.button:hover .inner {
+  color: var(--hover-color);
+}
+
+.inner {
+  position: relative;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: 14px;
+  filter: blur(8px);
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.button:hover .glow {
+  opacity: 0.6;
+}

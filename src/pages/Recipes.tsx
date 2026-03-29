@@ -115,8 +115,6 @@ function Recipes() {
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "1rem" }}>
       <h1>Recipes</h1>
 
-      <button onClick={() => navigate("/recipes/new")}>Create recipe</button>
-
       {loading && <p>Loading...</p>}
 
       {!loading && recipes.length === 0 && <p>No recipes yet.</p>}

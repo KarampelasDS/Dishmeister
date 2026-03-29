@@ -11,6 +11,7 @@ import OnboardingModal from "./Components/OnboardingModal/OnboardingModal";
 import { useAuth } from "./context/AuthProvider";
 import RecipePage from "./pages/RecipePage";
 import SavedRecipes from "./pages/SavedRecipes";
+import Dock from "./Components/Dock/Dock";
 
 function App() {
   const { session, profile, loading, needsOnboarding, signOut } = useAuth();
@@ -43,6 +44,10 @@ function App() {
         avatarUrl={profile?.avatar_url ?? null}
         onLoginClick={() => setIsAuthOpen(true)}
         onToggleDarkMode={() => toggleTheme()}
+      />
+      <Dock
+        currentUserId={profile?.username ?? null}
+        currentUrl={location.pathname}
       />
 
       <Routes>

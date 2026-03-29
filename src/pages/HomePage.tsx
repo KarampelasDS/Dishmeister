@@ -176,7 +176,6 @@ function HomePage() {
         }}
       >
         <h1>Home</h1>
-        <button onClick={() => navigate("/recipes/new")}>Create recipe</button>
       </div>
 
       {/* Tabs */}
