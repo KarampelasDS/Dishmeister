@@ -1,0 +1,372 @@
+import { useEffect, useState, useRef } from "react";
+import { supabase } from "../supabase";
+import { useNavigate, useSearchParams } from "react-router";
+import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
+
+type Recipe = {
+  id: string;
+  title: string;
+  description: string | null;
+  preparation_time: number;
+  cooking_time: number;
+  servings: number;
+  country_of_origin: string | null;
+  image_url: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  preparation_unit: "Min" | "Hrs" | "Sec";
+  cooking_unit: "Min" | "Hrs" | "Sec";
+  like_count: number;
+  dislike_count: number;
+  current_user_reaction: "like" | "dislike" | null;
+  is_saved: boolean;
+  save_count: number;
+  comment_count: number;
+  profiles: {
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    username: string | null;
+    follower_count: number;
+  };
+  categories: {
+    id: string;
+    name: string;
+  };
+};
+
+type Category = {
+  id: string;
+  name: string;
+};
+
+type FilterType = "all" | "trending" | "top-rated" | string;
+
+const PAGE_SIZE = 12;
+
+const SHARED_SELECT = `
+  id,
+  title,
+  description,
+  preparation_time,
+  cooking_time,
+  servings,
+  country_of_origin,
+  image_url,
+  difficulty,
+  preparation_unit,
+  cooking_unit,
+  created_at,
+  like_count,
+  dislike_count,
+  save_count,
+  comment_count,
+  profiles!recipes_author_id_fkey(id, display_name, avatar_url, username, follower_count),
+  categories(*),
+  recipe_reactions!left (reaction, user_id),
+  recipe_saves!left (recipe_id, saved_by)
+`;
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
+function Explore() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+
+  const debouncedSearch = useDebounce(searchInput, 300);
+  const pillsRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
+  const hasMoreRef = useRef(true);
+
+  // Fetch categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const { data } = await supabase
+        .from("categories")
+        .select("id, name")
+        .order("name");
+      if (data) setCategories(data);
+    };
+    fetchCategories();
+  }, []);
+
+  // Reset when search or filter changes
+  useEffect(() => {
+    setPage(0);
+    setRecipes([]);
+    setHasMore(true);
+    setTotalCount(null);
+    hasMoreRef.current = true;
+  }, [debouncedSearch, activeFilter]);
+
+  // Sync search to URL
+  useEffect(() => {
+    if (debouncedSearch) {
+      setSearchParams({ q: debouncedSearch });
+    } else {
+      setSearchParams({});
+    }
+  }, [debouncedSearch]);
+
+  // Fetch recipes
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      if (loadingRef.current || !hasMoreRef.current) return;
+      loadingRef.current = true;
+      setLoading(true);
+
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      let query = supabase
+        .from("recipes")
+        .select(SHARED_SELECT, { count: "exact" })
+        .eq("recipe_reactions.user_id", user?.id ?? "")
+        .range(from, to);
+
+      if (debouncedSearch.trim()) {
+        query = query.textSearch("search_vector", debouncedSearch.trim(), {
+          type: "websearch",
+        });
+      }
+
+      if (activeFilter === "top-rated") {
+        query = query.order("save_count", { ascending: false });
+      } else if (activeFilter === "trending") {
+        query = query
+          .gte(
+            "created_at",
+            new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          )
+          .order("save_count", { ascending: false });
+      } else if (activeFilter !== "all") {
+        query = query
+          .eq("category_id", activeFilter)
+          .order("created_at", { ascending: false });
+      } else {
+        query = query.order("created_at", { ascending: false });
+      }
+
+      const { data, error, count } = await query;
+
+      loadingRef.current = false;
+      setLoading(false);
+
+      if (error) {
+        console.error(error.message);
+        return;
+      }
+
+      const transformed = (data ?? []).map((recipe: any) => ({
+        ...recipe,
+        current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
+        is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
+      }));
+
+      const newHasMore = (data ?? []).length === PAGE_SIZE;
+      hasMoreRef.current = newHasMore;
+
+      setRecipes((prev) => [...prev, ...transformed]);
+      setHasMore(newHasMore);
+      console.log("Total count from Supabase:", count);
+      console.log("Fetched recipes:", recipes);
+      if (count !== null) setTotalCount(count);
+    };
+
+    fetchRecipes();
+  }, [page, debouncedSearch, activeFilter]);
+
+  // IntersectionObserver
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          hasMoreRef.current &&
+          !loadingRef.current
+        ) {
+          setPage((p) => p + 1);
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollPills = (direction: "left" | "right") => {
+    if (pillsRef.current) {
+      pillsRef.current.scrollBy({
+        left: direction === "right" ? 150 : -150,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1rem" }}>
+      {/* Header */}
+      <h1
+        style={{ fontSize: "2rem", fontWeight: 700, marginBottom: "0.25rem" }}
+      >
+        Explore Recipes
+      </h1>
+      <p style={{ color: "#666", marginBottom: "1.5rem" }}>
+        Discover amazing recipes from our community
+      </p>
+
+      {/* Filter pills */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          marginBottom: "1.5rem",
+        }}
+      >
+        <div
+          ref={pillsRef}
+          style={{
+            display: "flex",
+            gap: 8,
+            overflowX: "auto",
+            scrollbarWidth: "none",
+            flex: 1,
+          }}
+        >
+          {[
+            { id: "all", label: "All" },
+            { id: "trending", label: "Trending" },
+            { id: "top-rated", label: "Top Rated" },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setActiveFilter(f.id as FilterType)}
+              style={{
+                whiteSpace: "nowrap",
+                padding: "0.4rem 1rem",
+                borderRadius: 999,
+                border: "1px solid #ddd",
+                cursor: "pointer",
+                fontWeight: activeFilter === f.id ? 600 : 400,
+                background: activeFilter === f.id ? "#f97316" : "#fff",
+                color: activeFilter === f.id ? "#fff" : "#333",
+              }}
+            >
+              {f.label}
+            </button>
+          ))}
+
+          {categories.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => setActiveFilter(cat.id)}
+              style={{
+                whiteSpace: "nowrap",
+                padding: "0.4rem 1rem",
+                borderRadius: 999,
+                border: "1px solid #ddd",
+                cursor: "pointer",
+                fontWeight: activeFilter === cat.id ? 600 : 400,
+                background: activeFilter === cat.id ? "#f97316" : "#fff",
+                color: activeFilter === cat.id ? "#fff" : "#333",
+              }}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => scrollPills("right")}
+          style={{
+            flexShrink: 0,
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            border: "1px solid #ddd",
+            background: "#fff",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          ›
+        </button>
+      </div>
+
+      {/* Results count */}
+      {totalCount !== null && !loading && (
+        <p style={{ marginBottom: "1rem", color: "#555" }}>
+          {totalCount} recipe{totalCount !== 1 ? "s" : ""} found
+        </p>
+      )}
+
+      {/* Empty state */}
+      {!loading && recipes.length === 0 && (
+        <p>
+          No recipes found
+          {debouncedSearch ? ` for "${debouncedSearch}"` : ""}.
+        </p>
+      )}
+
+      {/* Recipe grid */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: "1.5rem",
+          marginBottom: "2rem",
+        }}
+      >
+        {recipes.map((recipe) => (
+          <RecipeCompactCard key={recipe.id} recipe={recipe} />
+        ))}
+      </div>
+
+      {/* Sentinel — IntersectionObserver target */}
+      <div ref={sentinelRef} style={{ height: 1 }} />
+
+      {/* Loading indicator */}
+      {loading && (
+        <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
+          Loading more recipes...
+        </p>
+      )}
+
+      {/* End of results */}
+      {!hasMore && recipes.length > 0 && (
+        <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>
+          You've seen all the recipes
+        </p>
+      )}
+    </div>
+  );
+}
+
+export default Explore;

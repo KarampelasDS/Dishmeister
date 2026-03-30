@@ -69,7 +69,7 @@ export default function Dock({ currentUserId, currentUrl }: DockProps) {
           >
             <div className={styles.glow} style={{ background: glowColor }} />
             <div className={styles.inner}>
-              <Icon size={22} />
+              <Icon size={28} />
             </div>
           </button>
         );
