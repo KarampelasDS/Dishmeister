@@ -277,11 +277,11 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   }, [likes, dislikes]);
 
   return (
-    <article className={styles.container}>
-      <header
-        onClick={() => navigate(`/recipes/${recipe.id}`)}
-        className={styles.header}
-      >
+    <article
+      onClick={() => navigate(`/recipes/${recipe.id}`)}
+      className={styles.container}
+    >
+      <header className={styles.header}>
         <img
           src={`${supabaseUrl}${cover}`}
           alt={title}
@@ -291,7 +291,10 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           <button
             className={styles.menuButton}
             aria-label="More options"
-            onClick={() => setMenuOpen((o) => !o)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen((o) => !o);
+            }}
           >
             <EllipsisVertical color="white" size={24} />
           </button>
@@ -299,7 +302,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             <div className={styles.menuDropdown}>
               <button
                 className={styles.menuItem}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleSave();
                   setMenuOpen(false);
                 }}
@@ -310,7 +314,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
               </button>
               <button
                 className={styles.menuItem}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   console.log("share");
                   setMenuOpen(false);
                 }}
@@ -320,7 +325,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
               </button>
               <button
                 className={styles.menuItem}
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   console.log("report");
                   setMenuOpen(false);
                 }}
@@ -362,7 +368,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             className={styles.avatar}
             src={`${supabaseAvatarUrl}${authorAvatar}`}
             alt={authorName}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               navigate(`/profile/${authorUsername}`);
             }}
             style={{ cursor: "pointer" }}
@@ -370,7 +377,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           <div className={styles.authorInfo}>
             <div className={styles.authorName}>
               <span
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   navigate(`/profile/${authorUsername}`);
                 }}
                 style={{ cursor: "pointer" }}
@@ -380,7 +388,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             </div>
             <div className={styles.authorMeta}>
               <span
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   navigate(`/profile/${authorUsername}`);
                 }}
                 style={{ cursor: "pointer" }}
