@@ -10,6 +10,7 @@ import ProfileStat from "../ProfileStat/ProfileStat";
 import {
   ThumbsUp,
   ThumbsDown,
+  Heart,
   Clock,
   ChefHat,
   EllipsisVertical,
@@ -103,6 +104,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const authorName =
     r?.profiles?.display_name ?? r?.profiles?.username ?? "chef_marco";
   const authorUsername = r?.profiles?.username;
+  const followerCount = r?.profiles?.follower_count ?? 0;
 
   const authorAvatar = r?.profiles?.avatar_url
     ? r.profiles.avatar_url
@@ -276,7 +278,10 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
 
   return (
     <article className={styles.container}>
-      <header className={styles.header}>
+      <header
+        onClick={() => navigate(`/recipes/${recipe.id}`)}
+        className={styles.header}
+      >
         <img
           src={`${supabaseUrl}${cover}`}
           alt={title}
@@ -330,7 +335,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           <h3 className={styles.title}>{title}</h3>
           <div className={styles.badges}>
             <span className={styles.badge}>
-              <Clock /> {timeLabel}
+              <Clock size={20} /> {timeLabel}
             </span>
             <span
               className={`${styles.badge} ${
@@ -341,13 +346,17 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
                     : styles.hard
               }`}
             >
-              <ChefHat /> {difficulty}
+              <ChefHat size={20} /> {difficulty}
+            </span>
+            <span className={styles.badge}>
+              <Heart size={20} /> {rating}%
             </span>
           </div>
         </div>
       </header>
 
       <section className={styles.content}>
+        <div className={styles.description}>{description}</div>
         <div className={styles.authorRow}>
           <img
             className={styles.avatar}
@@ -376,7 +385,9 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
                 }}
                 style={{ cursor: "pointer" }}
               >
-                {"@" + authorUsername}
+                {followerCount === 1
+                  ? "1 follower"
+                  : `${followerCount} followers`}
               </span>
             </div>
           </div>
@@ -385,7 +396,12 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
               <MessageCircle size={20} /> {comment_count}
             </div>
             <div>
-              <Bookmark size={20} /> {saveCount}
+              {isSaved ? (
+                <BookmarkCheck size={20} color="#f59e0b" />
+              ) : (
+                <Bookmark size={20} />
+              )}{" "}
+              {saveCount}
             </div>
           </div>
         </div>

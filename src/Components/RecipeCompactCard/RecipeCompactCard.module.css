@@ -10,7 +10,17 @@
   overflow: hidden;
   border: 1px solid var(--border);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  transition: all 0.3s ease;
+}
+
+.container:hover {
+  box-shadow: 0 16px 60px rgba(0, 0, 0, 0.25);
+  transform: scale(1.05);
+  cursor: pointer;
+}
+
+.header:hover .cover {
+  transform: scale(1.08);
 }
 
 .header {
@@ -18,6 +28,7 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .cover {
@@ -25,6 +36,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  transition: transform 0.3s ease;
 }
 
 .headerOverlay {
@@ -102,7 +114,7 @@
 }
 
 .title {
-  margin: 0 0 -0.5rem 0;
+  margin: 0;
   font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: -0.3px;
@@ -116,10 +128,10 @@
 
 .badge {
   background: rgba(255, 255, 255, 0.12);
-  padding: 0.35rem 0.6rem;
+  padding: 0.25rem 0.25rem;
   border-radius: 999px;
   font-weight: 700;
-  font-size: 0.86rem;
+  font-size: 0.75rem;
   align-items: center;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   align-content: center;
@@ -146,18 +158,19 @@
 }
 
 .content {
-  padding: 1.25rem 1.5rem 1.5rem 1.5rem;
+  padding: 0.5rem 1.5rem 0.5rem 1.5rem;
+  min-width: 0;
 }
 
 .authorRow {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 0.55rem;
 }
 
 .avatar {
-  width: 44px;
-  height: 44px;
+  width: 26px;
+  height: 26px;
   border-radius: 999px;
   object-fit: cover;
   border: 2px solid var(--bg);
@@ -168,7 +181,8 @@
 }
 
 .authorName {
-  font-weight: 800;
+  font-weight: 600;
+  font-size: 0.85rem;
 }
 
 .authorMeta {
@@ -190,8 +204,14 @@
 }
 
 .description {
-  margin: 1rem 0 1rem 0;
+  margin: 0 0 0.5rem 0;
   color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.85rem;
 }
 
 .statsRow {
@@ -227,17 +247,20 @@
 .easy {
   background: #dcfce7;
   color: #15803d;
-  border-color: #bbf7d0;
+  border: 2px solid;
+  border-color: #15803d;
 }
 .medium {
   background: #ffedd5;
   color: #c2410c;
-  border-color: #fed7aa;
+  border: 2px solid;
+  border-color: #c2410c;
 }
 .hard {
   background: #fee2e2;
   color: #b91c1c;
-  border-color: #fecaca;
+  border: 2px solid;
+  border-color: #b91c1c;
 }
 
 @media (max-width: 860px) {
