@@ -327,7 +327,6 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
                 className={styles.menuItem}
                 onClick={(e) => {
                   e.stopPropagation();
-                  console.log("report");
                   setMenuOpen(false);
                 }}
               >
