@@ -269,7 +269,7 @@ export default function RecipeView({
     <div className={styles.wrapper}>
       <div className={styles.backRow} onClick={onBack}>
         <ArrowLeft size={18} />
-        <span>Back to Feed</span>
+        <span>Back</span>
       </div>
 
       <div className={styles.card}>

@@ -373,7 +373,7 @@ function Explore() {
       {/* Loading indicator */}
       {loading && (
         <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
-          Loading more recipes...
+          Loading recipes...
         </p>
       )}
 

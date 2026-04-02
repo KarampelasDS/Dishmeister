@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  max-width: 56rem;
+  max-width: 65rem;
   height: 562px;
   border: 1px solid var(--border);
   border-radius: 12px;
