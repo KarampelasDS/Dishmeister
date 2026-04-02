@@ -93,6 +93,8 @@ function Explore() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
+  // pageRef is the source of truth for offset — always in sync before fetch fires
+  const pageRef = useRef(0);
 
   // Fetch categories
   useEffect(() => {
@@ -106,15 +108,6 @@ function Explore() {
     fetchCategories();
   }, []);
 
-  // Reset when search or filter changes
-  useEffect(() => {
-    setPage(0);
-    setRecipes([]);
-    setHasMore(true);
-    setTotalCount(null);
-    hasMoreRef.current = true;
-  }, [debouncedSearch, activeFilter]);
-
   // Sync search to URL
   useEffect(() => {
     if (debouncedSearch) {
@@ -124,77 +117,98 @@ function Explore() {
     }
   }, [debouncedSearch]);
 
-  // Fetch recipes
-  useEffect(() => {
-    const fetchRecipes = async () => {
-      if (loadingRef.current || !hasMoreRef.current) return;
-      loadingRef.current = true;
-      setLoading(true);
+  const fetchRecipes = async (
+    pageToFetch: number,
+    search: string,
+    filter: FilterType,
+  ) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    setLoading(true);
 
-      const from = page * PAGE_SIZE;
-      const to = from + PAGE_SIZE - 1;
+    const from = pageToFetch * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      let query = supabase
-        .from("recipes")
-        .select(SHARED_SELECT, { count: "exact" })
-        .eq("recipe_reactions.user_id", user?.id ?? "")
-        .range(from, to);
+    let query = supabase
+      .from("recipes")
+      .select(SHARED_SELECT, { count: "exact" })
+      .eq("recipe_reactions.user_id", user?.id ?? "")
+      .range(from, to);
 
-      if (debouncedSearch.trim()) {
-        query = query.textSearch("search_vector", debouncedSearch.trim(), {
-          type: "websearch",
-        });
-      }
+    if (search.trim()) {
+      query = query.textSearch("search_vector", search.trim(), {
+        type: "websearch",
+      });
+    }
 
-      if (activeFilter === "top-rated") {
-        query = query.order("save_count", { ascending: false });
-      } else if (activeFilter === "trending") {
-        query = query
-          .gte(
-            "created_at",
-            new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          )
-          .order("save_count", { ascending: false });
-      } else if (activeFilter !== "all") {
-        query = query
-          .eq("category_id", activeFilter)
-          .order("created_at", { ascending: false });
-      } else {
-        query = query.order("created_at", { ascending: false });
-      }
+    if (filter === "top-rated") {
+      query = query.order("save_count", { ascending: false });
+    } else if (filter === "trending") {
+      query = query
+        .gte(
+          "created_at",
+          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        )
+        .order("save_count", { ascending: false });
+    } else if (filter !== "all") {
+      query = query
+        .eq("category_id", filter)
+        .order("created_at", { ascending: false });
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
 
-      const { data, error, count } = await query;
+    const { data, error, count } = await query;
 
-      loadingRef.current = false;
-      setLoading(false);
+    loadingRef.current = false;
+    setLoading(false);
 
-      if (error) {
-        console.error(error.message);
-        return;
-      }
+    if (error) {
+      console.error(error.message);
+      return;
+    }
 
-      const transformed = (data ?? []).map((recipe: any) => ({
-        ...recipe,
-        current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
-        is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
-      }));
+    const transformed = (data ?? []).map((recipe: any) => ({
+      ...recipe,
+      current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
+      is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
+    }));
 
-      const newHasMore = (data ?? []).length === PAGE_SIZE;
-      hasMoreRef.current = newHasMore;
+    const newHasMore = (data ?? []).length === PAGE_SIZE;
+    hasMoreRef.current = newHasMore;
 
+    // Page 0 means a fresh query — replace, otherwise append
+    if (pageToFetch === 0) {
+      setRecipes(transformed);
+    } else {
       setRecipes((prev) => [...prev, ...transformed]);
-      setHasMore(newHasMore);
-      console.log("Total count from Supabase:", count);
-      console.log("Fetched recipes:", recipes);
-      if (count !== null) setTotalCount(count);
-    };
+    }
 
-    fetchRecipes();
-  }, [page, debouncedSearch, activeFilter]);
+    setHasMore(newHasMore);
+    if (count !== null) setTotalCount(count);
+  };
+
+  // When filter or search changes — full reset then fetch page 0
+  useEffect(() => {
+    pageRef.current = 0;
+    setPage(0);
+    setRecipes([]);
+    setHasMore(true);
+    setTotalCount(null);
+    hasMoreRef.current = true;
+    loadingRef.current = false;
+    fetchRecipes(0, debouncedSearch, activeFilter);
+  }, [debouncedSearch, activeFilter]);
+
+  // When page increments (from sentinel) — append fetch
+  useEffect(() => {
+    if (page === 0) return; // page 0 is handled by the reset effect above
+    fetchRecipes(page, debouncedSearch, activeFilter);
+  }, [page]);
 
   // IntersectionObserver
   useEffect(() => {
@@ -208,7 +222,11 @@ function Explore() {
           hasMoreRef.current &&
           !loadingRef.current
         ) {
-          setPage((p) => p + 1);
+          setPage((p) => {
+            const next = p + 1;
+            pageRef.current = next;
+            return next;
+          });
         }
       },
       { threshold: 0.1 },

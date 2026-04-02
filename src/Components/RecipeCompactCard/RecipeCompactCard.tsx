@@ -110,9 +110,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     ? r.profiles.avatar_url
     : "/assets/avatar.jpg";
   const saves = r?.saves ?? 0;
-  const description =
-    r?.description ??
-    "Classic Italian pasta with egg, Pecorino and crispy pancetta. A family favorite!";
+  const description = r?.description ?? "";
   const servings = r?.servings ?? 4;
   const [rating, setRating] = useState<number>(r?.rating ?? 100);
   const category = r?.categories?.name ?? "Pasta";

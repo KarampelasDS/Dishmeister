@@ -285,7 +285,7 @@ function CreateRecipe() {
           {/* IMAGE */}
           <div className={styles.section}>
             <label className={styles.label}>
-              Recipe Name <span className={styles.required}>*</span>
+              Recipe Image <span className={styles.required}>*</span>
             </label>
 
             <div
