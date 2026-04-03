@@ -109,3 +109,19 @@
   height: 18px;
   color: white;
 }
+
+.backRow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  color: #555;
+  margin: 12px auto;
+  font-size: 14px;
+  max-width: 65rem;
+}
+
+.backRow span {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}

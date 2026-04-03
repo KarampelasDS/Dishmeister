@@ -1,7 +1,8 @@
 import styles from "./ProfileCard.module.css";
 import ProfileStat from "../ProfileStat/ProfileStat";
 import Button from "../Button/Button";
-import { Mail } from "lucide-react";
+import { Mail, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router";
 
 //finish profile card design
 
@@ -19,96 +20,106 @@ export default function ProfileCard({
   const supabaseAvatarUrl = import.meta.env
     .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 
-  return (
-    <div className={styles.profileWindow}>
-      <div className={styles.banner}>
-        <div className={styles.profilePicContainer}>
-          <img
-            className={styles.profilePic}
-            src={`${supabaseAvatarUrl}/${profile?.avatar_url}`}
-            alt={profile?.display_name}
-          />
-          <span className={styles.chefBadge}>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              className={styles.icon}
-              stroke="currentColor"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z" />
-              <line x1="6" y1="17" x2="18" y2="17" />
-            </svg>
-          </span>
-        </div>
-      </div>
-      <div className={styles.profileInfo}>
-        <h1 className={styles.displayName}>{profile?.display_name}</h1>
-        <p className={styles.username}>@{profile?.username}</p>
-        <p className={styles.bio}>{profile?.bio}</p>
-      </div>
-      <div className={styles.profileStats}>
-        <div className={styles.statsBox}>
-          <ProfileStat
-            stat="Followers"
-            statAmount={profile?.follower_count.toString() || "0"}
-            border="1px solid var(--stat1-border)"
-            background="var(--stat1-bg)"
-            iconColor="var(--stat1-icon)"
-          />
-          <ProfileStat
-            stat="Following"
-            statAmount={profile?.following_count.toString() || "0"}
-            border="1px solid var(--stat2-border)"
-            background="var(--stat2-bg)"
-            iconColor="var(--stat2-icon)"
-          />
-          <ProfileStat
-            stat="Recipes"
-            statAmount={profile?.recipe_count.toString() || "0"}
-            border="1px solid var(--stat3-border)"
-            background="var(--stat3-bg)"
-            iconColor="var(--stat3-icon)"
-          />
-          <ProfileStat
-            stat="Likes"
-            statAmount={profile?.total_likes.toString() || "0"}
-            border="1px solid var(--stat4-border)"
-            background="var(--stat4-bg)"
-            iconColor="var(--stat4-icon)"
-          />
-        </div>
+  const navigate = useNavigate();
 
-        <div className={styles.buttonsContainer}>
-          <div className={styles.followButton}>
-            <Button
-              text={isFollowing ? "Following" : "Follow"}
-              backgroundColor={
-                isFollowing
-                  ? "#e5e7eb"
-                  : "linear-gradient(135deg, #ff6a00, #ff2e2e)"
-              }
-              textColor={isFollowing ? "#374151" : "#fff"}
-              outline="0px"
-              isActive={followActive}
-              onButtonClick={followFunction}
+  return (
+    <>
+      <div className={styles.backRow}>
+        <span onClick={() => navigate(-1)}>
+          <ArrowLeft size={18} />
+          <span>Back</span>
+        </span>
+      </div>
+      <div className={styles.profileWindow}>
+        <div className={styles.banner}>
+          <div className={styles.profilePicContainer}>
+            <img
+              className={styles.profilePic}
+              src={`${supabaseAvatarUrl}/${profile?.avatar_url}`}
+              alt={profile?.display_name}
+            />
+            <span className={styles.chefBadge}>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className={styles.icon}
+                stroke="currentColor"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z" />
+                <line x1="6" y1="17" x2="18" y2="17" />
+              </svg>
+            </span>
+          </div>
+        </div>
+        <div className={styles.profileInfo}>
+          <h1 className={styles.displayName}>{profile?.display_name}</h1>
+          <p className={styles.username}>@{profile?.username}</p>
+          <p className={styles.bio}>{profile?.bio}</p>
+        </div>
+        <div className={styles.profileStats}>
+          <div className={styles.statsBox}>
+            <ProfileStat
+              stat="Followers"
+              statAmount={profile?.follower_count.toString() || "0"}
+              border="1px solid var(--stat1-border)"
+              background="var(--stat1-bg)"
+              iconColor="var(--stat1-icon)"
+            />
+            <ProfileStat
+              stat="Following"
+              statAmount={profile?.following_count.toString() || "0"}
+              border="1px solid var(--stat2-border)"
+              background="var(--stat2-bg)"
+              iconColor="var(--stat2-icon)"
+            />
+            <ProfileStat
+              stat="Recipes"
+              statAmount={profile?.recipe_count.toString() || "0"}
+              border="1px solid var(--stat3-border)"
+              background="var(--stat3-bg)"
+              iconColor="var(--stat3-icon)"
+            />
+            <ProfileStat
+              stat="Likes"
+              statAmount={profile?.total_likes.toString() || "0"}
+              border="1px solid var(--stat4-border)"
+              background="var(--stat4-bg)"
+              iconColor="var(--stat4-icon)"
             />
           </div>
-          <div className={styles.contactButton}>
-            <Button
-              backgroundColor="#f3f4f6"
-              textColor="#374151"
-              outline="0px "
-              isActive={true}
-            >
-              <Mail size={18} /> Contact
-            </Button>
+
+          <div className={styles.buttonsContainer}>
+            <div className={styles.followButton}>
+              <Button
+                text={isFollowing ? "Following" : "Follow"}
+                backgroundColor={
+                  isFollowing
+                    ? "#e5e7eb"
+                    : "linear-gradient(135deg, #ff6a00, #ff2e2e)"
+                }
+                textColor={isFollowing ? "#374151" : "#fff"}
+                outline="0px"
+                isActive={followActive}
+                onButtonClick={followFunction}
+              />
+            </div>
+            <div className={styles.contactButton}>
+              <Button
+                backgroundColor="#f3f4f6"
+                textColor="#374151"
+                outline="0px "
+                isActive={true}
+              >
+                <Mail size={18} /> Contact
+              </Button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

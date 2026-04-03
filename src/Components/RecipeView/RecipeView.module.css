@@ -9,9 +9,14 @@
   gap: 6px;
   align-items: center;
   color: #555;
-  cursor: pointer;
   margin-bottom: 12px;
   font-size: 14px;
+}
+
+.backRow span {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
 }
 
 .card {

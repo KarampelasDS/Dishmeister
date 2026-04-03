@@ -267,9 +267,11 @@ export default function RecipeView({
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.backRow} onClick={onBack}>
-        <ArrowLeft size={18} />
-        <span>Back</span>
+      <div className={styles.backRow}>
+        <span onClick={onBack}>
+          <ArrowLeft size={18} />
+          <span>Back</span>
+        </span>
       </div>
 
       <div className={styles.card}>
