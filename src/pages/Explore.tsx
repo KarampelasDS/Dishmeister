@@ -104,7 +104,13 @@ function Explore() {
         .from("categories")
         .select("id, name")
         .order("name");
-      if (data) setCategories(data);
+      if (data) {
+        const sorted = [
+          ...data.filter((c) => c.name !== "Other"),
+          ...data.filter((c) => c.name === "Other"),
+        ];
+        setCategories(sorted);
+      }
     };
     fetchCategories();
   }, []);
