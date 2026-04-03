@@ -1,0 +1,38 @@
+.feedToggle {
+  display: flex;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 4px;
+  width: fit-content;
+  margin: 1.5rem auto 1.5rem auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.feedToggleBtn {
+  font-size: 1.2rem;
+  font-family: "Segoe UI";
+  border: none;
+  background: transparent;
+  padding: 10px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.25s ease;
+  align-items: center;
+  min-width: 300px;
+  justify-content: center;
+  display: flex;
+}
+
+.feedToggleBtn span {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.feedToggleBtn.active {
+  background: linear-gradient(135deg, #ff7a18, #ff3d3d);
+  color: white;
+  box-shadow: 0 4px 10px rgba(255, 61, 61, 0.3);
+}

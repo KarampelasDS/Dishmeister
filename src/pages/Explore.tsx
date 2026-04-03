@@ -267,7 +267,7 @@ function Explore() {
   };
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 1rem" }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0rem 1rem" }}>
       {/* Header */}
       <h1
         style={{ fontSize: "2rem", fontWeight: 700, marginBottom: "0.25rem" }}

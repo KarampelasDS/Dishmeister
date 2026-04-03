@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import { useNavigate } from "react-router";
 import RecipeCard from "../Components/RecipeCard/RecipeCard";
+import styles from "./HomePage.module.css";
+import { Sparkles, Users } from "lucide-react";
 
 type Recipe = {
   id: string;
@@ -167,42 +169,25 @@ function HomePage() {
   }, [page, activeTab]);
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "1rem" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <h1>Home</h1>
-      </div>
-
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "0rem 1rem" }}>
       {/* Tabs */}
-      <div
-        style={{
-          display: "flex",
-          gap: 16,
-          marginBottom: "1rem",
-          borderBottom: "1px solid #ccc",
-        }}
-      >
-        {(["for-you", "following"] as FeedTab[]).map((tab) => (
+      <div className={styles.feedToggle}>
+        {(["following", "for-you"] as FeedTab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            style={{
-              color: "var(--text)",
-              background: "none",
-              border: "none",
-              padding: "0.5rem 0",
-              cursor: "pointer",
-              fontWeight: activeTab === tab ? "bold" : "normal",
-              borderBottom:
-                activeTab === tab ? "2px solid black" : "2px solid transparent",
-            }}
+            className={`${styles.feedToggleBtn} ${activeTab === tab ? styles.active : ""}`}
           >
-            {tab === "for-you" ? "For You" : "Following"}
+            {tab === "for-you" ? (
+              <span>
+                <Sparkles /> For You
+              </span>
+            ) : (
+              <span>
+                <Users />
+                Following
+              </span>
+            )}
           </button>
         ))}
       </div>
