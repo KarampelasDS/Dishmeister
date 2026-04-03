@@ -121,6 +121,7 @@ function Explore() {
     pageToFetch: number,
     search: string,
     filter: FilterType,
+    retries = 3,
   ) => {
     if (loadingRef.current) return;
     loadingRef.current = true;
@@ -133,36 +134,50 @@ function Explore() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    let query = supabase
-      .from("recipes")
-      .select(SHARED_SELECT, { count: "exact" })
-      .eq("recipe_reactions.user_id", user?.id ?? "")
-      .range(from, to);
+    let data: any,
+      error: any,
+      count: number | null = null;
 
-    if (search.trim()) {
-      query = query.textSearch("search_vector", search.trim(), {
-        type: "websearch",
-      });
+    for (let attempt = 0; attempt < retries; attempt++) {
+      let query = supabase
+        .from("recipes")
+        .select(SHARED_SELECT, { count: "exact" })
+        .eq("recipe_reactions.user_id", user?.id ?? "")
+        .range(from, to);
+
+      if (search.trim()) {
+        query = query.textSearch("search_vector", search.trim(), {
+          type: "websearch",
+        });
+      }
+
+      if (filter === "top-rated") {
+        query = query.order("save_count", { ascending: false });
+      } else if (filter === "trending") {
+        query = query
+          .gte(
+            "created_at",
+            new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          )
+          .order("save_count", { ascending: false });
+      } else if (filter !== "all") {
+        query = query
+          .eq("category_id", filter)
+          .order("created_at", { ascending: false });
+      } else {
+        query = query.order("created_at", { ascending: false });
+      }
+
+      ({ data, error, count } = await query);
+
+      if (!error) break;
+
+      if (attempt < retries - 1) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, 1000 * (attempt + 1)),
+        );
+      }
     }
-
-    if (filter === "top-rated") {
-      query = query.order("save_count", { ascending: false });
-    } else if (filter === "trending") {
-      query = query
-        .gte(
-          "created_at",
-          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        )
-        .order("save_count", { ascending: false });
-    } else if (filter !== "all") {
-      query = query
-        .eq("category_id", filter)
-        .order("created_at", { ascending: false });
-    } else {
-      query = query.order("created_at", { ascending: false });
-    }
-
-    const { data, error, count } = await query;
 
     loadingRef.current = false;
     setLoading(false);
@@ -181,7 +196,6 @@ function Explore() {
     const newHasMore = (data ?? []).length === PAGE_SIZE;
     hasMoreRef.current = newHasMore;
 
-    // Page 0 means a fresh query — replace, otherwise append
     if (pageToFetch === 0) {
       setRecipes(transformed);
     } else {

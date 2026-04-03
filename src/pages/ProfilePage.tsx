@@ -87,7 +87,7 @@ export default function Profile() {
   // pageRef is the source of truth for offset — always in sync before fetch fires
   const pageRef = useRef(0);
 
-  const fetchRecipes = async (pageToFetch: number) => {
+  const fetchRecipes = async (pageToFetch: number, retries = 3) => {
     if (!profile) return;
     if (loadingRef.current) return;
     loadingRef.current = true;
@@ -96,19 +96,25 @@ export default function Profile() {
     const from = pageToFetch * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    let data, error, count;
 
-    let query = supabase
-      .from("recipes")
-      .select(SHARED_SELECT, { count: "exact" })
-      .eq("author_id", profile?.id)
-      .range(from, to);
+    for (let attempt = 0; attempt < retries; attempt++) {
+      ({ data, error, count } = await supabase
+        .from("recipes")
+        .select(SHARED_SELECT, { count: "exact" })
+        .eq("author_id", profile.id)
+        .order("created_at", { ascending: false })
+        .range(from, to));
 
-    query = query.order("created_at", { ascending: false });
+      if (!error) break;
 
-    const { data, error, count } = await query;
+      // Wait longer on each retry: 1s, 2s, 3s
+      if (attempt < retries - 1) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, 1000 * (attempt + 1)),
+        );
+      }
+    }
 
     loadingRef.current = false;
     setLoading(false);
@@ -126,7 +132,6 @@ export default function Profile() {
     const newHasMore = (data ?? []).length === PAGE_SIZE;
     hasMoreRef.current = newHasMore;
 
-    // Page 0 means a fresh query — replace, otherwise append
     if (pageToFetch === 0) {
       setRecipes(transformed);
     } else {
