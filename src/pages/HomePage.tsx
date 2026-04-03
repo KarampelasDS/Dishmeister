@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "../supabase";
 import { useNavigate } from "react-router";
 import RecipeCard from "../Components/RecipeCard/RecipeCard";
@@ -78,6 +78,11 @@ function HomePage() {
   const [hasMore, setHasMore] = useState(true);
   const [notFollowingAnyone, setNotFollowingAnyone] = useState(false);
 
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
+  const hasMoreRef = useRef(true);
+  const pageRef = useRef(0);
+
   const transformRecipes = (data: any[]): Recipe[] =>
     data.map((recipe) => ({
       ...recipe,
@@ -85,91 +90,156 @@ function HomePage() {
       is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
     }));
 
-  const fetchForYou = async (userId: string, from: number, to: number) => {
-    const { data, error } = await supabase
-      .from("recipes")
-      .select(SHARED_SELECT)
-      .eq("recipe_reactions.user_id", userId)
-      .order("save_count", { ascending: false })
-      .range(from, to);
-
-    return { data, error };
-  };
-
-  const fetchFollowing = async (userId: string, from: number, to: number) => {
-    const { data: follows } = await supabase
-      .from("follows")
-      .select("following_id")
-      .eq("follower_id", userId);
-
-    const followedIds = follows?.map((f) => f.following_id) ?? [];
-
-    if (followedIds.length === 0)
-      return { data: null, error: null, empty: true };
-
-    const { data, error } = await supabase
-      .from("recipes")
-      .select(SHARED_SELECT)
-      .in("author_id", followedIds)
-      .eq("recipe_reactions.user_id", userId)
-      .order("created_at", { ascending: false })
-      .range(from, to);
-
-    return { data, error, empty: false };
-  };
-
-  const fetchRecipes = async () => {
+  const fetchRecipes = async (
+    pageToFetch: number,
+    tab: FeedTab,
+    retries = 3,
+  ) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
     setNotFollowingAnyone(false);
 
-    const from = page * PAGE_SIZE;
+    const from = pageToFetch * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      loadingRef.current = false;
+      setLoading(false);
+      return;
+    }
 
-    if (activeTab === "for-you") {
-      const { data, error } = await fetchForYou(user.id, from, to);
-      setLoading(false);
-      if (error) {
-        console.error(error.message);
-        return;
-      }
-      setRecipes(transformRecipes(data ?? []));
-      setHasMore((data ?? []).length === PAGE_SIZE);
-    } else {
-      const { data, error, empty } = await fetchFollowing(user.id, from, to);
-      setLoading(false);
-      if (empty) {
+    let data: any, error: any;
+
+    if (tab === "following") {
+      const { data: follows } = await supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", user.id);
+
+      const followedIds = follows?.map((f) => f.following_id) ?? [];
+
+      if (followedIds.length === 0) {
         setNotFollowingAnyone(true);
         setRecipes([]);
+        hasMoreRef.current = false;
         setHasMore(false);
+        loadingRef.current = false;
+        setLoading(false);
         return;
       }
-      if (error) {
-        console.error(error?.message);
-        return;
+
+      for (let attempt = 0; attempt < retries; attempt++) {
+        ({ data, error } = await supabase
+          .from("recipes")
+          .select(SHARED_SELECT)
+          .in("author_id", followedIds)
+          .eq("recipe_reactions.user_id", user.id)
+          .order("created_at", { ascending: false })
+          .range(from, to));
+
+        if (!error) break;
+        if (attempt < retries - 1) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, 1000 * (attempt + 1)),
+          );
+        }
       }
-      setRecipes(transformRecipes(data ?? []));
-      setHasMore((data ?? []).length === PAGE_SIZE);
+    } else {
+      for (let attempt = 0; attempt < retries; attempt++) {
+        ({ data, error } = await supabase
+          .from("recipes")
+          .select(SHARED_SELECT)
+          .eq("recipe_reactions.user_id", user.id)
+          .order("save_count", { ascending: false })
+          .range(from, to));
+
+        if (!error) break;
+        if (attempt < retries - 1) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, 1000 * (attempt + 1)),
+          );
+        }
+      }
     }
+
+    loadingRef.current = false;
+    setLoading(false);
+
+    if (error) {
+      console.error(error.message);
+      return;
+    }
+
+    const transformed = transformRecipes(data ?? []);
+    const newHasMore = (data ?? []).length === PAGE_SIZE;
+    hasMoreRef.current = newHasMore;
+
+    if (pageToFetch === 0) {
+      setRecipes(transformed);
+    } else {
+      setRecipes((prev) => [...prev, ...transformed]);
+    }
+
+    setHasMore(newHasMore);
   };
 
-  // Reset page when switching tabs
+  // Reset and fetch on tab switch
   useEffect(() => {
+    pageRef.current = 0;
     setPage(0);
     setRecipes([]);
     setHasMore(true);
+    setNotFollowingAnyone(false);
+    hasMoreRef.current = true;
+    loadingRef.current = false;
+    fetchRecipes(0, activeTab);
   }, [activeTab]);
 
+  // Page increment
   useEffect(() => {
-    fetchRecipes();
-  }, [page, activeTab]);
+    if (page === 0) return;
+    fetchRecipes(page, activeTab);
+  }, [page]);
+
+  // IntersectionObserver
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          hasMoreRef.current &&
+          !loadingRef.current
+        ) {
+          setPage((p) => {
+            const next = p + 1;
+            pageRef.current = next;
+            return next;
+          });
+        }
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "0rem 1rem" }}>
+    <div
+      style={{
+        maxWidth: 720,
+        margin: "0 auto",
+        padding: "0rem 1rem",
+        paddingBottom: "5rem",
+      }}
+    >
       {/* Tabs */}
       <div className={styles.feedToggle}>
         {(["following", "for-you"] as FeedTab[]).map((tab) => (
@@ -184,15 +254,12 @@ function HomePage() {
               </span>
             ) : (
               <span>
-                <Users />
-                Following
+                <Users /> Following
               </span>
             )}
           </button>
         ))}
       </div>
-
-      {loading && <p>Loading...</p>}
 
       {!loading && notFollowingAnyone && (
         <p>
@@ -215,14 +282,20 @@ function HomePage() {
         ))}
       </ul>
 
-      <div style={{ display: "flex", gap: 8 }}>
-        <button disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
-          Previous
-        </button>
-        <button disabled={!hasMore} onClick={() => setPage((p) => p + 1)}>
-          Next
-        </button>
-      </div>
+      {/* Sentinel */}
+      <div ref={sentinelRef} style={{ height: 1 }} />
+
+      {loading && (
+        <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
+          Loading...
+        </p>
+      )}
+
+      {!hasMore && recipes.length > 0 && (
+        <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>
+          You're all caught up
+        </p>
+      )}
     </div>
   );
 }
