@@ -1,11 +1,16 @@
 .feedToggle {
   display: flex;
-  background: var(--bg);
+  background: var(--header-bg);
   border-radius: 12px;
   padding: 4px;
   width: fit-content;
   margin: 1.5rem auto 1.5rem auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 80px;
+  position: sticky;
+  z-index: 100000;
+  justify-content: center;
 }
 
 .feedToggleBtn {
