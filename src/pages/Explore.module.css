@@ -2,20 +2,21 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
-  max-width: 65rem;
+  max-width: 75rem;
   margin: 20px auto;
   align-items: start;
-  padding: 0 20px;
 }
 
 @media (max-width: 1024px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);
+    padding: 0 10px;
   }
 }
 
 @media (max-width: 640px) {
   .grid {
     grid-template-columns: 1fr;
+    padding: 0 20px;
   }
 }
