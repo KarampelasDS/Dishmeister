@@ -14,6 +14,7 @@ const dockItems = (userId: string | null) => [
     icon: Home,
     glowColor: "#f97316",
     activeColor: "#f97316",
+    name: "Home",
   },
   {
     key: "explore",
@@ -21,6 +22,7 @@ const dockItems = (userId: string | null) => [
     icon: Compass,
     glowColor: "#3b82f6",
     activeColor: "#3b82f6",
+    name: "Explore",
   },
   {
     key: "new",
@@ -28,6 +30,7 @@ const dockItems = (userId: string | null) => [
     icon: SquarePlus,
     glowColor: "#f97316",
     activeColor: "#f97316",
+    name: "New Recipe",
   },
   {
     key: "saved",
@@ -35,6 +38,7 @@ const dockItems = (userId: string | null) => [
     icon: Heart,
     glowColor: "#ef4444",
     activeColor: "#ef4444",
+    name: "Saved Recipes",
   },
   {
     key: "profile",
@@ -42,6 +46,7 @@ const dockItems = (userId: string | null) => [
     icon: User,
     glowColor: "#f97316",
     activeColor: "#f97316",
+    name: "Profile",
   },
 ];
 
@@ -51,7 +56,7 @@ export default function Dock({ currentUserId, currentUrl }: DockProps) {
 
   return (
     <nav className={styles.container}>
-      {items.map(({ key, url, icon: Icon, glowColor, activeColor }) => {
+      {items.map(({ key, url, icon: Icon, glowColor, activeColor, name }) => {
         const isActive = currentUrl === url;
         return (
           <button
@@ -69,8 +74,9 @@ export default function Dock({ currentUserId, currentUrl }: DockProps) {
           >
             <div className={styles.glow} style={{ background: glowColor }} />
             <div className={styles.inner}>
-              <Icon size={28} />
+              <Icon size={36} />
             </div>
+            <span className={styles.label}>{name}</span>
           </button>
         );
       })}

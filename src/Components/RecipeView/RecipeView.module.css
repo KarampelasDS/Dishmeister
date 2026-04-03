@@ -11,6 +11,7 @@
   color: #555;
   margin-bottom: 12px;
   font-size: 14px;
+  color: var(--text);
 }
 
 .backRow span {

@@ -3,6 +3,7 @@ import { supabase } from "../supabase";
 import { useNavigate, useSearchParams } from "react-router";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
 import styles from "./Explore.module.css";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type Recipe = {
   id: string;
@@ -294,15 +295,16 @@ function Explore() {
             width: 32,
             height: 32,
             borderRadius: "50%",
-            border: "1px solid #ddd",
-            background: "#fff",
+            border: "1px solid var(--border)",
+            background: "var(--bg)",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            color: "var(--text)",
           }}
         >
-          ‹
+          <ChevronLeft size={16} />
         </button>
         <div
           ref={pillsRef}
@@ -364,15 +366,16 @@ function Explore() {
             width: 32,
             height: 32,
             borderRadius: "50%",
-            border: "1px solid #ddd",
-            background: "#fff",
+            border: "1px solid var(--border)",
+            background: "var(--bg)",
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            color: "var(--text)",
           }}
         >
-          ›
+          <ChevronRight size={16} />
         </button>
       </div>
 

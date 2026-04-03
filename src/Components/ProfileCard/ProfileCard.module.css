@@ -118,6 +118,7 @@
   margin: 12px auto;
   font-size: 14px;
   max-width: 65rem;
+  color: var(--text);
 }
 
 .backRow span {

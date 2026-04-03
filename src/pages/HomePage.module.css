@@ -41,3 +41,25 @@
   color: white;
   box-shadow: 0 4px 10px rgba(255, 61, 61, 0.3);
 }
+
+@media only screen and (max-width: 768px) {
+  .feedToggle {
+    top: 50px;
+  }
+}
+
+@media only screen and (max-width: 640px) {
+  .feedToggle {
+    width: 100%;
+    padding: 4px;
+    margin: 1rem auto;
+    top: 110px;
+    min-width: 20px;
+  }
+
+  .feedToggleBtn {
+    font-size: 1rem;
+    width: 100%;
+    min-width: 0;
+  }
+}
