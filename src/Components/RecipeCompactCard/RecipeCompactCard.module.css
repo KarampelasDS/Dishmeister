@@ -3,6 +3,7 @@
 }
 
 .container {
+  width: 100%;
   max-width: 920px;
   margin: 0 auto;
   background: var(--card-bg);
@@ -26,7 +27,7 @@
 .header {
   position: relative;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: 220px; /* fixed height, not aspect-ratio */
   overflow: hidden;
   transition: all 0.3s ease;
 }
@@ -158,8 +159,12 @@
 }
 
 .content {
-  padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+  padding: 0.5rem;
   min-width: 0;
+  height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .authorRow {

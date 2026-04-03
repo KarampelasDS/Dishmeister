@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../supabase";
 import { useNavigate, useSearchParams } from "react-router";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
+import styles from "./Explore.module.css";
 
 type Recipe = {
   id: string;
@@ -280,6 +281,23 @@ function Explore() {
           marginBottom: "1.5rem",
         }}
       >
+        <button
+          onClick={() => scrollPills("left")}
+          style={{
+            flexShrink: 0,
+            width: 32,
+            height: 32,
+            borderRadius: "50%",
+            border: "1px solid #ddd",
+            background: "#fff",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          ‹
+        </button>
         <div
           ref={pillsRef}
           style={{
@@ -368,14 +386,7 @@ function Explore() {
       )}
 
       {/* Recipe grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "1.5rem",
-          marginBottom: "2rem",
-        }}
-      >
+      <div className={styles.grid}>
         {recipes.map((recipe) => (
           <RecipeCompactCard key={recipe.id} recipe={recipe} />
         ))}

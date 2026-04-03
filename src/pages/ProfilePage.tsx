@@ -3,6 +3,7 @@ import ProfileCard from "../Components/ProfileCard/ProfileCard";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabase";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
+import styles from "./ProfilePage.module.css";
 
 type profileType = {
   id: string;
@@ -289,15 +290,7 @@ export default function Profile() {
         followActive={canFollow}
       />
       {/* Recipe grid */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: "1.5rem",
-          maxWidth: "65rem",
-          margin: "20px auto",
-        }}
-      >
+      <div className={styles.grid}>
         {recipes.map((recipe) => (
           <RecipeCompactCard key={recipe.id} recipe={recipe} />
         ))}
