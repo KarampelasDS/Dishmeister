@@ -184,13 +184,13 @@ function SavedRecipes() {
       >
         Saved Recipes
       </h1>
-      <p style={{ color: "#666", marginBottom: "1.5rem" }}>
+      <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
         Recipes you've saved for later
       </p>
 
       {/* Results count */}
       {totalCount !== null && !loading && (
-        <p style={{ marginBottom: "1rem", color: "#555" }}>
+        <p style={{ marginBottom: "1rem", color: "var(--text-muted)" }}>
           {totalCount} saved recipe{totalCount !== 1 ? "s" : ""}
         </p>
       )}

@@ -326,11 +326,11 @@ function Explore() {
                 whiteSpace: "nowrap",
                 padding: "0.4rem 1rem",
                 borderRadius: 999,
-                border: "1px solid #ddd",
+                border: "1px solid var(--border)",
                 cursor: "pointer",
                 fontWeight: activeFilter === f.id ? 600 : 400,
-                background: activeFilter === f.id ? "#f97316" : "#fff",
-                color: activeFilter === f.id ? "#fff" : "#333",
+                background: activeFilter === f.id ? "#f97316" : "var(--bg)",
+                color: activeFilter === f.id ? "#fff" : "var(--text)",
               }}
             >
               {f.label}
@@ -345,11 +345,11 @@ function Explore() {
                 whiteSpace: "nowrap",
                 padding: "0.4rem 1rem",
                 borderRadius: 999,
-                border: "1px solid #ddd",
+                border: "1px solid var(--border)",
                 cursor: "pointer",
                 fontWeight: activeFilter === cat.id ? 600 : 400,
-                background: activeFilter === cat.id ? "#f97316" : "#fff",
-                color: activeFilter === cat.id ? "#fff" : "#333",
+                background: activeFilter === cat.id ? "#f97316" : "var(--bg)",
+                color: activeFilter === cat.id ? "#fff" : "var(--text)",
               }}
             >
               {cat.name}
