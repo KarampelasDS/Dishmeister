@@ -19,11 +19,13 @@
   --stat4-bg: #fef2f2;
   --stat4-border: #e29368;
   --stat4-icon: #e29368;
+  --search-bg: #f3f4f6;
 }
 
 [data-theme="dark"] {
   --bg: #030712;
   --text: #fff;
+  --text-muted: #9ca3af;
   --primary: #ff6900;
   --border: #364153;
   --header-bg: #101828;
@@ -41,6 +43,7 @@
   --stat4-bg: #4b2529;
   --stat4-border: #925b39;
   --stat4-icon: #a86143;
+  --search-bg: #1f2937;
 }
 
 body {

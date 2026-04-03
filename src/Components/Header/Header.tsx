@@ -2,6 +2,7 @@ import styles from "./Header.module.css";
 import AppLogo from "../AppLogo/AppLogo";
 import UserMenu from "./UserMenu/UserMenu";
 import BurgerMenu from "../BurgerMenu/BurgerMenu";
+import Searchbar from "./Searchbar/Searchbar";
 
 export default function Header(props: any) {
   return (
@@ -10,7 +11,7 @@ export default function Header(props: any) {
         <AppLogo />
       </div>
       <div className={styles.searchBarContainerDesktop}>
-        <h1>searchbar</h1>
+        <Searchbar />
       </div>
       <div className={styles.userMenuContainerDesktop}>
         <UserMenu
