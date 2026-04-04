@@ -12,6 +12,7 @@ import {
   EllipsisVertical,
   Forward,
   MessageSquareWarning,
+  Trash,
 } from "lucide-react";
 import { supabase } from "../../supabase";
 import ProfileStat from "../ProfileStat/ProfileStat";
@@ -20,6 +21,7 @@ import styles from "./RecipeView.module.css";
 import { hasFlag } from "country-flag-icons";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
+import ConfirmModal from "../ConfirmModal/ConfirmModal";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
@@ -136,6 +138,8 @@ export default function RecipeView({
   const [menuOpen, setMenuOpen] = useState(false);
   const [reacting, setReacting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const totalVotes = likes + dislikes;
   const likePercentage =
@@ -265,8 +269,49 @@ export default function RecipeView({
     setSaving(false);
   };
 
+  const handleDelete = async () => {
+    if (isDeleting) return;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user?.id !== recipe.profiles.id) {
+      alert("You can only delete your own recipes.");
+      setDeleteConfirmOpen(false);
+      return;
+    } else if (!user) {
+      alert("You must be logged in to delete a recipe.");
+      setDeleteConfirmOpen(false);
+      return;
+    }
+
+    let error: any = null;
+
+    setIsDeleting(true);
+
+    const res = await supabase
+      .from("recipes")
+      .delete()
+      .match({ id: recipe.id });
+    error = res.error;
+    if (error) {
+      alert(error.message);
+      setDeleteConfirmOpen(false);
+      return;
+    }
+    setDeleteConfirmOpen(false);
+    setIsDeleting(false);
+    onBack();
+  };
+
   return (
     <div className={styles.wrapper}>
+      {deleteConfirmOpen && (
+        <ConfirmModal
+          modalType="delete"
+          onConfirm={() => handleDelete()}
+          onCancel={() => setDeleteConfirmOpen(false)}
+        />
+      )}
       <div className={styles.backRow}>
         <span onClick={onBack}>
           <ArrowLeft size={18} />
@@ -321,6 +366,16 @@ export default function RecipeView({
                 >
                   <MessageSquareWarning color="#cd3131" />
                   Report
+                </button>
+                <button
+                  className={styles.menuItem}
+                  onClick={() => {
+                    setDeleteConfirmOpen(true);
+                    setMenuOpen(false);
+                  }}
+                >
+                  <Trash color="#cd3131" />
+                  Delete
                 </button>
               </div>
             )}
