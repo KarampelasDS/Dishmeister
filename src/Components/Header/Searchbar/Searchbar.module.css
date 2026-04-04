@@ -1,5 +1,6 @@
 .searchbarContainer {
   display: none;
+  min-width: 20rem;
 }
 
 .searchbarWrapper {
@@ -26,7 +27,8 @@
   outline: none;
   transition: all 0.2s ease;
   color: var(--text);
-  font-size: 1.3rem;
+  font-size: 1.1rem;
+  font-family: "Segoe UI";
 }
 
 .searchbarInput::placeholder {
