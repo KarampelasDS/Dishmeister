@@ -367,7 +367,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             alt={authorName}
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/profile/${authorUsername}`);
+              navigate(`/profiles/${authorUsername}`);
             }}
             style={{ cursor: "pointer" }}
           />

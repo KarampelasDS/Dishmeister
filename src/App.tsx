@@ -70,7 +70,7 @@ function App() {
           }
         />
         <Route path="/recipes/:id" element={<RecipePage />} />
-        <Route path="/profile/:username" element={<ProfilePage />} />
+        <Route path="/profiles/:username" element={<ProfilePage />} />
       </Routes>
 
       <AuthModal

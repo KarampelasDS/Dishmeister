@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../supabase";
 import { useSearchParams } from "react-router";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
+import ProfileCompactCard from "../Components/ProfileCompactCard/ProfileCompactCard";
 import styles from "./Explore.module.css";
 import {
   ChevronLeft,
@@ -54,6 +55,15 @@ type Recipe = {
   };
 };
 
+type Profile = {
+  id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  follower_count: number;
+};
+
 type Category = {
   id: string;
   name: string;
@@ -61,8 +71,10 @@ type Category = {
 
 type TopFilter = "all" | "trending" | "top-rated";
 type Difficulty = "Easy" | "Medium" | "Hard";
+type SearchTab = "recipes" | "people";
 
 const PAGE_SIZE = 12;
+const PEOPLE_PAGE_SIZE = 12;
 
 const SHARED_SELECT = `
   id,
@@ -100,6 +112,7 @@ function Explore() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
+  const [activeSearchTab, setActiveSearchTab] = useState<SearchTab>("recipes");
   const [topFilter, setTopFilter] = useState<TopFilter>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -108,26 +121,41 @@ function Explore() {
   );
   const [selectedCountry, setSelectedCountry] = useState<string>("");
   const [categories, setCategories] = useState<Category[]>([]);
+
+  // Recipes state
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState<number | null>(null);
+
+  // People state
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [peoplePage, setPeoplePage] = useState(0);
+  const [peopleLoading, setPeopleLoading] = useState(false);
+  const [peopleHasMore, setPeopleHasMore] = useState(true);
+  const [peopleTotalCount, setPeopleTotalCount] = useState<number | null>(null);
+
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
   const debouncedSearch = useDebounce(searchInput, 300);
   const pillsRef = useRef<HTMLDivElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const peopleSentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
   const pageRef = useRef(0);
+  const peopleLoadingRef = useRef(false);
+  const peopleHasMoreRef = useRef(true);
+  const peoplePageRef = useRef(0);
 
   const hasAdvancedFilters = !!(
     selectedCategory ||
     selectedDifficulty ||
     selectedCountry
   );
+  const isSearching = debouncedSearch.trim().length >= 3;
 
   const activeBadges = [
     selectedCategory && {
@@ -166,17 +194,14 @@ function Explore() {
   useEffect(() => {
     const el = pillsRef.current;
     if (!el) return;
-
     const update = () => {
       setCanScrollLeft(el.scrollLeft > 0);
       setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
     };
-
     update();
     el.addEventListener("scroll", update);
     const ro = new ResizeObserver(update);
     ro.observe(el);
-
     return () => {
       el.removeEventListener("scroll", update);
       ro.disconnect();
@@ -192,11 +217,20 @@ function Explore() {
     }
   }, [debouncedSearch]);
 
-  // Sync URL param to input when navigating from navbar
+  // Sync URL param to input
   useEffect(() => {
     const q = searchParams.get("q") ?? "";
     setSearchInput(q);
   }, [searchParams]);
+
+  // Reset search tab to recipes when search is cleared
+  useEffect(() => {
+    if (!isSearching) {
+      setActiveSearchTab("recipes");
+    }
+  }, [isSearching]);
+
+  // ── RECIPES ──────────────────────────────────────────
 
   const fetchRecipes = async (
     pageToFetch: number,
@@ -229,19 +263,16 @@ function Explore() {
         .eq("recipe_reactions.user_id", user?.id ?? "")
         .range(from, to);
 
-      // Search
       if (search.trim().length >= 3) {
         query = query.or(
           `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%,category_name.ilike.%${search.trim()}%,ingredients_text.ilike.%${search.trim()}%`,
         );
       }
 
-      // Advanced filters — always apply if set
       if (category) query = query.eq("category_id", category);
       if (difficulty) query = query.eq("difficulty", difficulty);
       if (country) query = query.eq("country_of_origin", country);
 
-      // Top pills — always apply as sort
       if (top === "top-rated") {
         query = query.order("save_count", { ascending: false });
       } else if (top === "trending") {
@@ -330,6 +361,7 @@ function Explore() {
     );
   }, [page]);
 
+  // Recipes sentinel
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
@@ -352,6 +384,116 @@ function Explore() {
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, []);
+
+  // ── PEOPLE ──────────────────────────────────────────
+
+  const fetchPeople = async (
+    pageToFetch: number,
+    search: string,
+    retries = 3,
+  ) => {
+    if (peopleLoadingRef.current) return;
+    peopleLoadingRef.current = true;
+    setPeopleLoading(true);
+
+    const from = pageToFetch * PEOPLE_PAGE_SIZE;
+    const to = from + PEOPLE_PAGE_SIZE - 1;
+
+    let data: any,
+      error: any,
+      count: number | null = null;
+
+    for (let attempt = 0; attempt < retries; attempt++) {
+      let query = supabase
+        .from("profiles")
+        .select("id, username, display_name, avatar_url, bio, follower_count", {
+          count: "exact",
+        })
+        .range(from, to);
+
+      if (search.trim().length >= 3) {
+        query = query.or(
+          `username.ilike.%${search.trim()}%,display_name.ilike.%${search.trim()}%`,
+        );
+      }
+
+      query = query.order("follower_count", { ascending: false });
+
+      ({ data, error, count } = await query);
+      if (!error) break;
+      if (attempt < retries - 1) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, 1000 * (attempt + 1)),
+        );
+      }
+    }
+
+    peopleLoadingRef.current = false;
+    setPeopleLoading(false);
+
+    if (error) {
+      console.error(error.message);
+      return;
+    }
+
+    const newHasMore = (data ?? []).length === PEOPLE_PAGE_SIZE;
+    peopleHasMoreRef.current = newHasMore;
+
+    if (pageToFetch === 0) {
+      setProfiles(data ?? []);
+    } else {
+      setProfiles((prev) => [...prev, ...(data ?? [])]);
+    }
+
+    setPeopleHasMore(newHasMore);
+    if (count !== null) setPeopleTotalCount(count);
+  };
+
+  const resetAndFetchPeople = (search = debouncedSearch) => {
+    peoplePageRef.current = 0;
+    setPeoplePage(0);
+    setProfiles([]);
+    setPeopleHasMore(true);
+    setPeopleTotalCount(null);
+    peopleHasMoreRef.current = true;
+    peopleLoadingRef.current = false;
+    fetchPeople(0, search);
+  };
+
+  useEffect(() => {
+    if (activeSearchTab === "people") {
+      resetAndFetchPeople();
+    }
+  }, [activeSearchTab, debouncedSearch]);
+
+  useEffect(() => {
+    if (peoplePage === 0) return;
+    fetchPeople(peoplePage, debouncedSearch);
+  }, [peoplePage]);
+
+  // People sentinel
+  useEffect(() => {
+    const sentinel = peopleSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          peopleHasMoreRef.current &&
+          !peopleLoadingRef.current
+        ) {
+          setPeoplePage((p) => {
+            const next = p + 1;
+            peoplePageRef.current = next;
+            return next;
+          });
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeSearchTab]);
 
   const scrollPills = (direction: "left" | "right") => {
     pillsRef.current?.scrollBy({
@@ -379,7 +521,7 @@ function Explore() {
         Explore Recipes
       </h1>
       <p style={{ color: "var(--text)", marginBottom: "1.5rem" }}>
-        {searchInput.trim().length >= 3 ? (
+        {isSearching ? (
           <span>
             Showing results for{" "}
             <span
@@ -449,7 +591,7 @@ function Explore() {
           className={`${styles.advancedBtn} ${filtersOpen || hasAdvancedFilters ? styles.advancedBtnActive : ""}`}
         >
           <Filter size={14} />
-          Advanced Filters
+          Recipe Filters
         </button>
       </div>
 
@@ -533,39 +675,141 @@ function Explore() {
         </div>
       )}
 
-      {/* Results count */}
-      {totalCount !== null && !loading && (
-        <p style={{ marginBottom: "1rem", color: "var(--text)" }}>
-          {totalCount} recipe{totalCount !== 1 ? "s" : ""} found
-        </p>
+      {/* Search tabs — only show when searching */}
+      {isSearching && (
+        <div
+          style={{
+            display: "flex",
+            gap: 0,
+            marginBottom: "1rem",
+            borderBottom: "1px solid var(--border)",
+          }}
+        >
+          {(
+            [
+              { id: "recipes", label: "Recipes", count: totalCount },
+              { id: "people", label: "People", count: peopleTotalCount },
+            ] as { id: SearchTab; label: string; count: number | null }[]
+          ).map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveSearchTab(tab.id)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "0.6rem 1.2rem",
+                background: "none",
+                border: "none",
+                borderBottom:
+                  activeSearchTab === tab.id
+                    ? "2px solid #f97316"
+                    : "2px solid transparent",
+                cursor: "pointer",
+                fontWeight: activeSearchTab === tab.id ? 600 : 400,
+                color: activeSearchTab === tab.id ? "#f97316" : "var(--text)",
+                fontSize: "0.95rem",
+                marginBottom: "-1px",
+              }}
+            >
+              {tab.label}
+              {tab.count !== null && (
+                <span
+                  style={{
+                    background:
+                      activeSearchTab === tab.id ? "#f97316" : "var(--border)",
+                    color: activeSearchTab === tab.id ? "#fff" : "var(--text)",
+                    borderRadius: 999,
+                    padding: "0.1rem 0.5rem",
+                    fontSize: "0.75rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       )}
 
-      {/* Empty state */}
-      {!loading && recipes.length === 0 && (
-        <p>
-          No recipes found{debouncedSearch ? ` for "${debouncedSearch}"` : ""}.
-        </p>
+      {/* RECIPES TAB */}
+      {activeSearchTab === "recipes" && (
+        <>
+          {totalCount !== null && !loading && (
+            <p style={{ marginBottom: "1rem", color: "var(--text)" }}>
+              {totalCount} recipe{totalCount !== 1 ? "s" : ""} found
+            </p>
+          )}
+
+          {!loading && recipes.length === 0 && (
+            <p>
+              No recipes found
+              {debouncedSearch ? ` for "${debouncedSearch}"` : ""}.
+            </p>
+          )}
+
+          <div className={styles.grid}>
+            {recipes.map((recipe) => (
+              <RecipeCompactCard key={recipe.id} recipe={recipe} />
+            ))}
+          </div>
+
+          <div ref={sentinelRef} style={{ height: 1 }} />
+
+          {loading && (
+            <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
+              Loading recipes...
+            </p>
+          )}
+
+          {!hasMore && recipes.length > 0 && (
+            <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>
+              You've seen all the recipes
+            </p>
+          )}
+        </>
       )}
 
-      {/* Recipe grid */}
-      <div className={styles.grid}>
-        {recipes.map((recipe) => (
-          <RecipeCompactCard key={recipe.id} recipe={recipe} />
-        ))}
-      </div>
+      {/* PEOPLE TAB */}
+      {activeSearchTab === "people" && (
+        <>
+          {peopleTotalCount !== null && !peopleLoading && (
+            <p style={{ marginBottom: "1rem", color: "var(--text)" }}>
+              {peopleTotalCount} user{peopleTotalCount !== 1 ? "s" : ""} found
+            </p>
+          )}
 
-      <div ref={sentinelRef} style={{ height: 1 }} />
+          {!peopleLoading && profiles.length === 0 && (
+            <p>No users found for "{debouncedSearch}".</p>
+          )}
 
-      {loading && (
-        <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
-          Loading recipes...
-        </p>
-      )}
+          <div className={styles.grid}>
+            {profiles.map((profile) => (
+              <ProfileCompactCard
+                key={profile.id}
+                displayName={profile.display_name ?? profile.username ?? ""}
+                username={profile.username ?? ""}
+                bio={profile.bio ?? ""}
+                profilePictureUrl={profile.avatar_url}
+              />
+            ))}
+          </div>
 
-      {!hasMore && recipes.length > 0 && (
-        <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>
-          You've seen all the recipes
-        </p>
+          <div ref={peopleSentinelRef} style={{ height: 1 }} />
+
+          {peopleLoading && (
+            <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
+              Loading users...
+            </p>
+          )}
+
+          {!peopleHasMore && profiles.length > 0 && (
+            <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>
+              You've seen all the users
+            </p>
+          )}
+        </>
       )}
     </div>
   );

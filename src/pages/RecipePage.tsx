@@ -211,7 +211,7 @@ export default function RecipePage() {
       currentUserAvatar={currentUserAvatar}
       currentUserId={currentUserId}
       onBack={() => navigate(-1)}
-      onUserClick={(username) => navigate(`/profile/${username}`)}
+      onUserClick={(username) => navigate(`/profiles/${username}`)}
       onCommentAdded={() => fetchComments()}
       onCommentDeleted={handleCommentDeleted}
     />

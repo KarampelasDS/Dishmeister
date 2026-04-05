@@ -368,7 +368,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             src={`${supabaseAvatarUrl}${authorAvatar}`}
             alt={authorName}
             onClick={() => {
-              navigate(`/profile/${authorUsername}`);
+              navigate(`/profiles/${authorUsername}`);
             }}
             style={{ cursor: "pointer" }}
           />

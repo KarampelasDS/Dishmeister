@@ -1,0 +1,42 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: 300px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: auto;
+}
+
+.profilePicture {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+}
+
+.profileName {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text);
+  margin-bottom: 5px;
+  width: 100%;
+}
+
+.profileUsername {
+  font-size: 14px;
+  color: var(--textSecondary);
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+.profileBio {
+  font-size: 14px;
+  color: var(--text);
+  text-align: center;
+  width: 100%;
+}

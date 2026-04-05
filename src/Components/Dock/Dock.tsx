@@ -42,7 +42,7 @@ const dockItems = (userId: string | null) => [
   },
   {
     key: "profile",
-    url: "/profile/" + userId,
+    url: "/profiles/" + userId,
     icon: User,
     glowColor: "#f97316",
     activeColor: "#f97316",
