@@ -790,6 +790,7 @@ function Explore() {
                 key={profile.id}
                 displayName={profile.display_name ?? profile.username ?? ""}
                 username={profile.username ?? ""}
+                followers={profile.follower_count}
                 bio={profile.bio ?? ""}
                 profilePictureUrl={profile.avatar_url}
               />

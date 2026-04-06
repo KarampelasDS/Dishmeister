@@ -6,6 +6,7 @@ type ProfileCompactCardProps = {
   displayName: string;
   username: string;
   bio: string;
+  followers: number;
   profilePictureUrl: string;
 };
 
@@ -13,6 +14,7 @@ export default function ProfileCompactCard({
   displayName,
   username,
   bio,
+  followers,
   profilePictureUrl,
 }: ProfileCompactCardProps) {
   const supabaseUrl = import.meta.env
@@ -30,6 +32,7 @@ export default function ProfileCompactCard({
       <div className={styles.profileInfo}>
         <h3 className={styles.profileName}>{displayName}</h3>
         <p className={styles.profileUsername}>@{username}</p>
+        <p className={styles.profileUsername}>{followers} followers</p>
         <p className={styles.profileBio}>{bio}</p>
       </div>
       <Button
