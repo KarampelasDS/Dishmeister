@@ -36,6 +36,10 @@ function App() {
     setIsOnboardingOpen(!!session && needsOnboarding);
   }, [session, needsOnboarding]);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location]);
+
   if (loading) return <div>Loading...</div>;
 
   return (

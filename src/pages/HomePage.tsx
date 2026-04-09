@@ -4,6 +4,7 @@ import { useNavigate } from "react-router";
 import RecipeCard from "../Components/RecipeCard/RecipeCard";
 import styles from "./HomePage.module.css";
 import { Sparkles, Users } from "lucide-react";
+import { useFeedCache } from "../Context/FeedCacheContext";
 
 type Recipe = {
   id: string;
@@ -70,18 +71,21 @@ const SHARED_SELECT = `
 
 function HomePage() {
   const navigate = useNavigate();
+  const { state, setFeed, isStale } = useFeedCache();
 
   const [activeTab, setActiveTab] = useState<FeedTab>("for-you");
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [page, setPage] = useState(0);
+  const [recipes, setRecipes] = useState<Recipe[]>(state.forYou.recipes);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(state.forYou.hasMore);
   const [notFollowingAnyone, setNotFollowingAnyone] = useState(false);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
-  const hasMoreRef = useRef(true);
-  const pageRef = useRef(0);
+  const hasMoreRef = useRef(state.forYou.hasMore);
+  const pageRef = useRef(state.forYou.page);
+  const activeTabRef = useRef<FeedTab>("for-you");
+
+  const pendingScrollRef = useRef<number | null>(null);
 
   const transformRecipes = (data: any[]): Recipe[] =>
     data.map((recipe) => ({
@@ -96,9 +100,9 @@ function HomePage() {
     retries = 3,
   ) => {
     if (loadingRef.current) return;
+
     loadingRef.current = true;
     setLoading(true);
-    setNotFollowingAnyone(false);
 
     const from = pageToFetch * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
@@ -106,6 +110,7 @@ function HomePage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+
     if (!user) {
       loadingRef.current = false;
       setLoading(false);
@@ -132,38 +137,20 @@ function HomePage() {
         return;
       }
 
-      for (let attempt = 0; attempt < retries; attempt++) {
-        ({ data, error } = await supabase
-          .from("recipes")
-          .select(SHARED_SELECT)
-          .in("author_id", followedIds)
-          .eq("recipe_reactions.user_id", user.id)
-          .order("created_at", { ascending: false })
-          .range(from, to));
-
-        if (!error) break;
-        if (attempt < retries - 1) {
-          await new Promise((resolve) =>
-            setTimeout(resolve, 1000 * (attempt + 1)),
-          );
-        }
-      }
+      ({ data, error } = await supabase
+        .from("recipes")
+        .select(SHARED_SELECT)
+        .in("author_id", followedIds)
+        .eq("recipe_reactions.user_id", user.id)
+        .order("created_at", { ascending: false })
+        .range(from, to));
     } else {
-      for (let attempt = 0; attempt < retries; attempt++) {
-        ({ data, error } = await supabase
-          .from("recipes")
-          .select(SHARED_SELECT)
-          .eq("recipe_reactions.user_id", user.id)
-          .order("save_count", { ascending: false })
-          .range(from, to));
-
-        if (!error) break;
-        if (attempt < retries - 1) {
-          await new Promise((resolve) =>
-            setTimeout(resolve, 1000 * (attempt + 1)),
-          );
-        }
-      }
+      ({ data, error } = await supabase
+        .from("recipes")
+        .select(SHARED_SELECT)
+        .eq("recipe_reactions.user_id", user.id)
+        .order("save_count", { ascending: false })
+        .range(from, to));
     }
 
     loadingRef.current = false;
@@ -174,38 +161,90 @@ function HomePage() {
       return;
     }
 
+    if (activeTabRef.current !== tab) return;
+
     const transformed = transformRecipes(data ?? []);
     const newHasMore = (data ?? []).length === PAGE_SIZE;
+
     hasMoreRef.current = newHasMore;
+    setHasMore(newHasMore);
+
+    const feedKey = tab === "for-you" ? "forYou" : "following";
 
     if (pageToFetch === 0) {
       setRecipes(transformed);
+      setFeed(feedKey, {
+        recipes: transformed,
+        page: 0,
+        hasMore: newHasMore,
+        lastFetched: Date.now(),
+      });
     } else {
-      setRecipes((prev) => [...prev, ...transformed]);
-    }
+      setRecipes((prev) => {
+        const updated = [...prev, ...transformed];
 
-    setHasMore(newHasMore);
+        setFeed(feedKey, {
+          recipes: updated,
+          page: pageToFetch,
+          hasMore: newHasMore,
+          lastFetched: Date.now(),
+        });
+
+        return updated;
+      });
+    }
   };
 
-  // Reset and fetch on tab switch
+  // ✅ SCROLL RESTORE (correct timing)
   useEffect(() => {
+    if (pendingScrollRef.current !== null && recipes.length > 0) {
+      const pos = pendingScrollRef.current;
+      pendingScrollRef.current = null;
+
+      requestAnimationFrame(() => {
+        window.scrollTo(0, pos);
+      });
+    }
+  }, [recipes]);
+
+  // ✅ TAB SWITCH
+  useEffect(() => {
+    const leavingKey =
+      activeTabRef.current === "for-you" ? "forYou" : "following";
+
+    setFeed(leavingKey, {
+      scrollPosition: window.scrollY,
+    });
+
+    activeTabRef.current = activeTab;
+
+    const newKey = activeTab === "for-you" ? "forYou" : "following";
+    const cached = state[newKey];
+
+    loadingRef.current = false;
+    setLoading(false);
+    setNotFollowingAnyone(false);
+
+    if (cached.recipes.length > 0 && !isStale(newKey)) {
+      setRecipes(cached.recipes);
+      setHasMore(cached.hasMore);
+      hasMoreRef.current = cached.hasMore;
+      pageRef.current = cached.page;
+
+      pendingScrollRef.current = cached.scrollPosition ?? 0;
+      return;
+    }
+
     pageRef.current = 0;
-    setPage(0);
+    hasMoreRef.current = true;
     setRecipes([]);
     setHasMore(true);
-    setNotFollowingAnyone(false);
-    hasMoreRef.current = true;
-    loadingRef.current = false;
+
+    window.scrollTo(0, 0);
     fetchRecipes(0, activeTab);
   }, [activeTab]);
 
-  // Page increment
-  useEffect(() => {
-    if (page === 0) return;
-    fetchRecipes(page, activeTab);
-  }, [page]);
-
-  // IntersectionObserver
+  // ✅ INFINITE SCROLL
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
@@ -217,11 +256,9 @@ function HomePage() {
           hasMoreRef.current &&
           !loadingRef.current
         ) {
-          setPage((p) => {
-            const next = p + 1;
-            pageRef.current = next;
-            return next;
-          });
+          const nextPage = pageRef.current + 1;
+          pageRef.current = nextPage;
+          fetchRecipes(nextPage, activeTabRef.current);
         }
       },
       { threshold: 0.1 },
@@ -232,21 +269,15 @@ function HomePage() {
   }, []);
 
   return (
-    <div
-      style={{
-        maxWidth: 720,
-        margin: "0 auto",
-        padding: "0rem 1rem",
-        paddingBottom: "5rem",
-      }}
-    >
-      {/* Tabs */}
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 1rem 5rem" }}>
       <div className={styles.feedToggle}>
         {(["following", "for-you"] as FeedTab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`${styles.feedToggleBtn} ${activeTab === tab ? styles.active : ""}`}
+            className={`${styles.feedToggleBtn} ${
+              activeTab === tab ? styles.active : ""
+            }`}
           >
             {tab === "for-you" ? (
               <span>
@@ -262,10 +293,7 @@ function HomePage() {
       </div>
 
       {!loading && notFollowingAnyone && (
-        <p>
-          You're not following anyone yet. Discover chefs to see their recipes
-          here.
-        </p>
+        <p>You're not following anyone yet.</p>
       )}
 
       {!loading && !notFollowingAnyone && recipes.length === 0 && (
@@ -282,19 +310,12 @@ function HomePage() {
         ))}
       </ul>
 
-      {/* Sentinel */}
       <div ref={sentinelRef} style={{ height: 1 }} />
 
-      {loading && (
-        <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
-          Loading...
-        </p>
-      )}
+      {loading && <p style={{ textAlign: "center" }}>Loading...</p>}
 
       {!hasMore && recipes.length > 0 && (
-        <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>
-          You're all caught up
-        </p>
+        <p style={{ textAlign: "center" }}>You're all caught up</p>
       )}
     </div>
   );

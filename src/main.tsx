@@ -5,11 +5,14 @@ import App from "./App";
 import "./index.css";
 import "./App.css";
 import { AuthProvider } from "./Context/AuthProvider";
+import { FeedCacheProvider } from "./Context/FeedCacheContext";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <AuthProvider>
-      <App />
+      <FeedCacheProvider>
+        <App />
+      </FeedCacheProvider>
     </AuthProvider>
   </BrowserRouter>,
 );
