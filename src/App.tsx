@@ -13,8 +13,10 @@ import RecipePage from "./pages/RecipePage";
 import SavedRecipes from "./pages/SavedRecipes";
 import Dock from "./Components/Dock/Dock";
 import Explore from "./pages/Explore";
+import { useScrollRestoration } from "./Hooks/useScrollRestoration";
 
 function App() {
+  useScrollRestoration(["/explore"]);
   const { session, profile, loading, needsOnboarding, signOut } = useAuth();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
@@ -35,10 +37,6 @@ function App() {
   useEffect(() => {
     setIsOnboardingOpen(!!session && needsOnboarding);
   }, [session, needsOnboarding]);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [location]);
 
   if (loading) return <div>Loading...</div>;
 

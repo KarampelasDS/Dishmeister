@@ -62,52 +62,58 @@ const SHARED_SELECT = `
 
 function SavedRecipes() {
   const { state, setFeed, isStale } = useFeedCache();
-  const [recipes, setRecipes] = useState<Recipe[]>(state.savedRecipes.recipes);
-  const [page, setPage] = useState(state.savedRecipes.page);
+  const cached = state.savedRecipes;
+
+  const [recipes, setRecipes] = useState<Recipe[]>(cached.recipes);
+  const [page, setPage] = useState(cached.page);
+  const [hasMore, setHasMore] = useState(cached.hasMore);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(state.savedRecipes.hasMore);
   const [totalCount, setTotalCount] = useState<number | null>(
-    state.savedRecipes.totalCount,
+    cached.totalCount,
   );
 
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const loadingRef = useRef(false);
-  const hasMoreRef = useRef(state.savedRecipes.hasMore);
-  const pageRef = useRef(state.savedRecipes.page);
 
-  const fetchRecipes = async (pageToFetch: number, retries = 3) => {
+  // 🔥 runtime guards
+  const loadingRef = useRef(false);
+  const hasMoreRef = useRef(cached.hasMore);
+  const lastRequestedPageRef = useRef<number | null>(null);
+
+  const fetchRecipes = async (pageToFetch: number) => {
     if (loadingRef.current) return;
+
+    // 🔥 prevents duplicate fetch for same page
+    if (lastRequestedPageRef.current === pageToFetch) return;
+    lastRequestedPageRef.current = pageToFetch;
+
     loadingRef.current = true;
     setLoading(true);
 
     const from = pageToFetch * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
+    if (from < 0 || to < from) {
+      loadingRef.current = false;
+      setLoading(false);
+      return;
+    }
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    let data: any,
-      error: any,
-      count: number | null = null;
-
-    for (let attempt = 0; attempt < retries; attempt++) {
-      ({ data, error, count } = await supabase
-        .from("recipes")
-        .select(SHARED_SELECT, { count: "exact" })
-        .eq("recipe_reactions.user_id", user?.id ?? "")
-        .eq("recipe_saves.saved_by", user?.id ?? "")
-        .order("created_at", { ascending: false })
-        .range(from, to));
-
-      if (!error) break;
-
-      if (attempt < retries - 1) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, 1000 * (attempt + 1)),
-        );
-      }
+    if (!user?.id) {
+      loadingRef.current = false;
+      setLoading(false);
+      return;
     }
+
+    const { data, error, count } = await supabase
+      .from("recipes")
+      .select(SHARED_SELECT, { count: "exact" })
+      .eq("recipe_saves.saved_by", user.id)
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     loadingRef.current = false;
     setLoading(false);
@@ -120,22 +126,25 @@ function SavedRecipes() {
     const transformed = (data ?? []).map((recipe: any) => ({
       ...recipe,
       current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
-      is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
+      is_saved: recipe.recipe_saves?.length > 0,
     }));
 
-    const newHasMore = (data ?? []).length === PAGE_SIZE;
+    const newHasMore = transformed.length === PAGE_SIZE;
+
+    setHasMore(newHasMore);
     hasMoreRef.current = newHasMore;
 
     if (pageToFetch === 0) {
       setRecipes(transformed);
+      setTotalCount(count);
+
       setFeed("savedRecipes", {
         recipes: transformed,
         page: 0,
         hasMore: newHasMore,
-        lastFetched: Date.now(),
         totalCount: count,
+        lastFetched: Date.now(),
       });
-      setTotalCount(count);
     } else {
       setRecipes((prev) => {
         const updated = [...prev, ...transformed];
@@ -152,51 +161,51 @@ function SavedRecipes() {
     }
   };
 
-  // Initial fetch
+  // initial load / cache hydration
   useEffect(() => {
-    const cached = state["savedRecipes"];
     if (cached.recipes.length > 0 && !isStale("savedRecipes")) {
       setRecipes(cached.recipes);
       setPage(cached.page);
       setHasMore(cached.hasMore);
       setTotalCount(cached.totalCount);
+
+      hasMoreRef.current = cached.hasMore;
+      lastRequestedPageRef.current = cached.page;
+
       return;
     }
 
-    pageRef.current = 0;
-    setPage(0);
     setRecipes([]);
+    setPage(0);
     setHasMore(true);
     setTotalCount(null);
+
     hasMoreRef.current = true;
-    loadingRef.current = false;
+    lastRequestedPageRef.current = null;
+
     fetchRecipes(0);
   }, []);
 
-  // Page increment
+  // page trigger
   useEffect(() => {
     if (page === 0) return;
     fetchRecipes(page);
   }, [page]);
 
-  // IntersectionObserver
+  // intersection observer
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (
-          entries[0].isIntersecting &&
-          hasMoreRef.current &&
-          !loadingRef.current
-        ) {
-          setPage((p) => {
-            const next = p + 1;
-            pageRef.current = next;
-            return next;
-          });
-        }
+        const entry = entries[0];
+
+        if (!entry.isIntersecting) return;
+        if (!hasMoreRef.current) return;
+        if (loadingRef.current) return;
+
+        setPage((p) => p + 1);
       },
       { threshold: 0.1 },
     );
@@ -207,46 +216,36 @@ function SavedRecipes() {
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0rem 1rem" }}>
-      {/* Header */}
-      <h1
-        style={{ fontSize: "2rem", fontWeight: 700, marginBottom: "0.25rem" }}
-      >
-        Saved Recipes
-      </h1>
+      <h1 style={{ fontSize: "2rem", fontWeight: 700 }}>Saved Recipes</h1>
+
       <p style={{ color: "var(--text-muted)", marginBottom: "1.5rem" }}>
         Recipes you've saved for later
       </p>
 
-      {/* Results count */}
       {totalCount !== null && !loading && (
         <p style={{ marginBottom: "1rem", color: "var(--text-muted)" }}>
           {totalCount} saved recipe{totalCount !== 1 ? "s" : ""}
         </p>
       )}
 
-      {/* Empty state */}
       {!loading && recipes.length === 0 && (
         <p>You haven't saved any recipes yet.</p>
       )}
 
-      {/* Recipe grid */}
       <div className={styles.grid}>
         {recipes.map((recipe) => (
           <RecipeCompactCard key={recipe.id} recipe={recipe} />
         ))}
       </div>
 
-      {/* Sentinel */}
       <div ref={sentinelRef} style={{ height: 1 }} />
 
-      {/* Loading indicator */}
       {loading && (
         <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
           Loading recipes...
         </p>
       )}
 
-      {/* End of results */}
       {!hasMore && recipes.length > 0 && (
         <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>
           You've seen all your saved recipes
