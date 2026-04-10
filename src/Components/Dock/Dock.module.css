@@ -89,14 +89,16 @@
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    padding: 0px 0px;
+    padding: 6px 0px;
     margin-left: 0;
     width: 100vw;
     justify-content: space-evenly;
     position: fixed;
     flex: auto;
-    border-bottom: transparent;
+    border-bottom: solid 2px var(--bg);
     gap: 0px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
   }
 
   .button {
