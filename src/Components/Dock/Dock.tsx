@@ -1,5 +1,5 @@
 import styles from "./Dock.module.css";
-import { Home, Compass, SquarePlus, Heart, User } from "lucide-react";
+import { Home, Compass, SquarePlus, Heart, User, Bookmark } from "lucide-react";
 import { useNavigate } from "react-router";
 
 interface DockProps {
@@ -28,24 +28,24 @@ const dockItems = (userId: string | null) => [
     key: "new",
     url: "/recipes/new",
     icon: SquarePlus,
-    glowColor: "#f97316",
-    activeColor: "#f97316",
+    glowColor: "#f43f5e",
+    activeColor: "#f43f5e",
     name: "New Recipe",
   },
   {
     key: "saved",
     url: "/saved",
-    icon: Heart,
-    glowColor: "#ef4444",
-    activeColor: "#ef4444",
+    icon: Bookmark,
+    glowColor: "#f59e0b",
+    activeColor: "#f59e0b",
     name: "Saved Recipes",
   },
   {
     key: "profile",
     url: "/profiles/" + userId,
     icon: User,
-    glowColor: "#f97316",
-    activeColor: "#f97316",
+    glowColor: "#8b5cf6",
+    activeColor: "#8b5cf6",
     name: "Profile",
   },
 ];
