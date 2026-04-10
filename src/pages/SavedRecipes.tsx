@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../supabase";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
 import styles from "./Explore.module.css";
+import { useFeedCache } from "../Context/FeedCacheContext";
 
 type Recipe = {
   id: string;
@@ -60,16 +61,19 @@ const SHARED_SELECT = `
 `;
 
 function SavedRecipes() {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [page, setPage] = useState(0);
+  const { state, setFeed, isStale } = useFeedCache();
+  const [recipes, setRecipes] = useState<Recipe[]>(state.savedRecipes.recipes);
+  const [page, setPage] = useState(state.savedRecipes.page);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [hasMore, setHasMore] = useState(state.savedRecipes.hasMore);
+  const [totalCount, setTotalCount] = useState<number | null>(
+    state.savedRecipes.totalCount,
+  );
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
-  const hasMoreRef = useRef(true);
-  const pageRef = useRef(0);
+  const hasMoreRef = useRef(state.savedRecipes.hasMore);
+  const pageRef = useRef(state.savedRecipes.page);
 
   const fetchRecipes = async (pageToFetch: number, retries = 3) => {
     if (loadingRef.current) return;
@@ -124,16 +128,41 @@ function SavedRecipes() {
 
     if (pageToFetch === 0) {
       setRecipes(transformed);
+      setFeed("savedRecipes", {
+        recipes: transformed,
+        page: 0,
+        hasMore: newHasMore,
+        lastFetched: Date.now(),
+        totalCount: count,
+      });
+      setTotalCount(count);
     } else {
-      setRecipes((prev) => [...prev, ...transformed]);
-    }
+      setRecipes((prev) => {
+        const updated = [...prev, ...transformed];
 
-    setHasMore(newHasMore);
-    if (count !== null) setTotalCount(count);
+        setFeed("savedRecipes", {
+          recipes: updated,
+          page: pageToFetch,
+          hasMore: newHasMore,
+          lastFetched: Date.now(),
+        });
+
+        return updated;
+      });
+    }
   };
 
   // Initial fetch
   useEffect(() => {
+    const cached = state["savedRecipes"];
+    if (cached.recipes.length > 0 && !isStale("savedRecipes")) {
+      setRecipes(cached.recipes);
+      setPage(cached.page);
+      setHasMore(cached.hasMore);
+      setTotalCount(cached.totalCount);
+      return;
+    }
+
     pageRef.current = 0;
     setPage(0);
     setRecipes([]);
