@@ -4,6 +4,7 @@ import { supabase } from "../../supabase";
 import type { Session } from "@supabase/supabase-js";
 import styles from "./AuthModal.module.css";
 import Button from "../Button/Button";
+import { useFeedCache } from "../../Context/FeedCacheContext";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface AuthModalProps {
 }
 
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+  const { invalidateAll } = useFeedCache();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -22,6 +24,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   useEffect(() => {
     if (!isOpen) return;
+    invalidateAll();
 
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
