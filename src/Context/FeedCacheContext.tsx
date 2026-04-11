@@ -27,6 +27,7 @@ type FeedCacheState = {
 
 type FeedCacheAction =
   | { type: "SET_FEED"; key: keyof FeedCacheState; feed: Partial<CachedFeed> }
+  | { type: "PATCH_RECIPE"; recipeId: string; patch: Record<string, any> }
   | { type: "INVALIDATE"; key: keyof FeedCacheState }
   | { type: "INVALIDATE_ALL" };
 
@@ -59,6 +60,25 @@ function feedCacheReducer(
       };
     case "INVALIDATE_ALL":
       return initialState;
+    case "PATCH_RECIPE": {
+      const keys = [
+        "forYou",
+        "following",
+        "savedRecipes",
+        "ownProfile",
+      ] as const;
+      const updated = { ...state };
+      for (const key of keys) {
+        if (!state[key].recipes.some((r) => r.id === action.recipeId)) continue;
+        updated[key] = {
+          ...state[key],
+          recipes: state[key].recipes.map((r) =>
+            r.id === action.recipeId ? { ...r, ...action.patch } : r,
+          ),
+        };
+      }
+      return updated;
+    }
     default:
       return state;
   }
@@ -70,6 +90,7 @@ type FeedCacheContextType = {
   invalidate: (key: keyof FeedCacheState) => void;
   invalidateAll: () => void;
   isStale: (key: keyof FeedCacheState) => boolean;
+  patchRecipe: (recipeId: string, patch: Record<string, any>) => void;
 };
 
 const FeedCacheContext = createContext<FeedCacheContextType | null>(null);
@@ -91,9 +112,19 @@ export function FeedCacheProvider({ children }: { children: ReactNode }) {
     return Date.now() - lastFetched > STALE_MS;
   };
 
+  const patchRecipe = (recipeId: string, patch: Record<string, any>) =>
+    dispatch({ type: "PATCH_RECIPE", recipeId, patch });
+
   return (
     <FeedCacheContext.Provider
-      value={{ state, setFeed, invalidate, invalidateAll, isStale }}
+      value={{
+        state,
+        setFeed,
+        invalidate,
+        invalidateAll,
+        isStale,
+        patchRecipe,
+      }}
     >
       {children}
     </FeedCacheContext.Provider>

@@ -4,12 +4,11 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 import { supabase } from "../../supabase";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import ProfileStat from "../ProfileStat/ProfileStat";
+import { useFeedCache } from "../../Context/FeedCacheContext";
+
 import {
-  ThumbsUp,
-  ThumbsDown,
   Heart,
   Clock,
   ChefHat,
@@ -58,6 +57,7 @@ interface RecipeCardProps {
 
 export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const navigate = useNavigate();
+  const { invalidate } = useFeedCache();
   const convertTimeToMinutes = (
     preparationTime: number,
     cookingTime: number,
@@ -111,9 +111,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     : "/assets/avatar.jpg";
   const saves = r?.saves ?? 0;
   const description = r?.description ?? "";
-  const servings = r?.servings ?? 4;
   const [rating, setRating] = useState<number>(r?.rating ?? 100);
-  const category = r?.categories?.name ?? "Pasta";
   const [isSaved, setIsSaved] = useState<boolean>(r?.is_saved ?? false);
   const [saveCount, setSaveCount] = useState<number>(r?.save_count ?? 0);
   const preparation_time = r?.preparation_time ?? 0;
@@ -121,12 +119,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const preparation_unit = r?.preparation_unit ?? "Min";
   const cooking_unit = r?.cooking_unit ?? "Min";
   const comment_count = r?.comment_count ?? 0;
-  const [isReacting, setIsReacting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
-  const [currentReaction, setCurrentReaction] = useState<
-    "like" | "dislike" | null
-  >(r.current_user_reaction);
 
   const hasTimes = preparation_time > 0 || cooking_time > 0;
   const timeLabel = hasTimes
@@ -138,84 +131,9 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
       )
     : "25 Min";
 
-  const handleReaction = async (reaction: "like" | "dislike") => {
-    if (isReacting) return;
-    setIsReacting(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      alert("You must be logged in to react to a recipe.");
-      return;
-    }
-    // Save previous local state so we can revert on failure
-    const prevLikes = likes;
-    const prevDislikes = dislikes;
-    const prevReaction = currentReaction;
-
-    // Determine whether the user is toggling off their current reaction
-    const isTogglingOff = currentReaction === reaction;
-    const newReaction = isTogglingOff ? null : reaction;
-
-    if (isTogglingOff) {
-      // User is toggling off their reaction
-      setCurrentReaction(null);
-      if (reaction === "like") {
-        setLikes((prev) => Math.max(0, prev - 1));
-      } else {
-        setDislikes((prev) => Math.max(0, prev - 1));
-      }
-    } else {
-      // User is setting a new reaction. If they had the opposite reaction,
-      // decrement that count and increment the new one. Use Math.max to avoid negatives.
-      if (currentReaction === "like" && reaction === "dislike") {
-        setLikes((prev) => Math.max(0, prev - 1));
-        setDislikes((prev) => prev + 1);
-      } else if (currentReaction === "dislike" && reaction === "like") {
-        setDislikes((prev) => Math.max(0, prev - 1));
-        setLikes((prev) => prev + 1);
-      } else {
-        // no previous reaction
-        if (reaction === "like") {
-          setLikes((prev) => prev + 1);
-        } else {
-          setDislikes((prev) => prev + 1);
-        }
-      }
-      setCurrentReaction(reaction);
-    }
-
-    // Persist change: delete when toggling off, otherwise upsert
-    let error: any = null;
-    if (newReaction === null) {
-      const res = await supabase
-        .from("recipe_reactions")
-        .delete()
-        .match({ user_id: user.id, recipe_id: r.id });
-      error = res.error;
-    } else {
-      const res = await supabase
-        .from("recipe_reactions")
-        .upsert(
-          { user_id: user.id, recipe_id: r.id, reaction: newReaction },
-          { onConflict: ["user_id", "recipe_id"] },
-        );
-      error = res.error;
-    }
-    if (error) {
-      // Revert local optimistic updates
-      setLikes(prevLikes);
-      setDislikes(prevDislikes);
-      setCurrentReaction(prevReaction);
-      alert(error.message);
-    }
-    setIsReacting(false);
-  };
-
   const handleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
-
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -235,6 +153,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
         .from("recipe_saves")
         .delete()
         .match({ recipe_id: recipe.id, saved_by: user.id });
+      invalidate("savedRecipes");
       error = res.error;
       if (error) {
         setSaveCount(prevSaveCount);
@@ -249,6 +168,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
       const res = await supabase
         .from("recipe_saves")
         .upsert({ recipe_id: recipe.id, saved_by: user.id });
+      invalidate("savedRecipes");
       error = res.error;
       if (error) {
         setSaveCount(prevSaveCount);
@@ -364,6 +284,9 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           <img
             className={styles.avatar}
             src={`${supabaseAvatarUrl}${authorAvatar}`}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/public/defaultAvatar.png";
+            }}
             alt={authorName}
             onClick={(e) => {
               e.stopPropagation();
@@ -376,7 +299,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/profile/${authorUsername}`);
+                  navigate(`/profiles/${authorUsername}`);
                 }}
                 style={{ cursor: "pointer" }}
               >
@@ -387,7 +310,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate(`/profile/${authorUsername}`);
+                  navigate(`/profiles/${authorUsername}`);
                 }}
                 style={{ cursor: "pointer" }}
               >

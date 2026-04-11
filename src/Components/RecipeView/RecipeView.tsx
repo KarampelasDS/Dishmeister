@@ -22,6 +22,7 @@ import { hasFlag } from "country-flag-icons";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import ConfirmModal from "../ConfirmModal/ConfirmModal";
+import { useFeedCache } from "../../Context/FeedCacheContext";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
@@ -92,6 +93,8 @@ export default function RecipeView({
   onCommentAdded,
   onCommentDeleted,
 }: RecipeViewProps) {
+  const { invalidate, patchRecipe } = useFeedCache();
+
   const convertTimeToMinutes = (
     preparationTime: number,
     cookingTime: number,
@@ -164,6 +167,7 @@ export default function RecipeView({
       setReacting(false);
       return;
     }
+
     const prevLikes = likes;
     const prevDislikes = dislikes;
     const prevReaction = currentReaction;
@@ -171,29 +175,32 @@ export default function RecipeView({
     const isTogglingOff = currentReaction === reaction;
     const newReaction = isTogglingOff ? null : reaction;
 
-    if (isTogglingOff) {
-      setCurrentReaction(null);
-      if (reaction === "like") {
-        setLikes((prev) => Math.max(0, prev - 1));
-      } else {
-        setDislikes((prev) => Math.max(0, prev - 1));
-      }
-    } else {
-      if (currentReaction === "like" && reaction === "dislike") {
-        setLikes((prev) => Math.max(0, prev - 1));
-        setDislikes((prev) => prev + 1);
-      } else if (currentReaction === "dislike" && reaction === "like") {
-        setDislikes((prev) => Math.max(0, prev - 1));
-        setLikes((prev) => prev + 1);
-      } else {
-        if (reaction === "like") {
-          setLikes((prev) => prev + 1);
-        } else {
-          setDislikes((prev) => prev + 1);
-        }
-      }
-      setCurrentReaction(reaction);
-    }
+    const newLikes =
+      isTogglingOff && reaction === "like"
+        ? Math.max(0, likes - 1)
+        : !isTogglingOff && reaction === "like"
+          ? likes + 1
+          : currentReaction === "like" && reaction === "dislike"
+            ? Math.max(0, likes - 1)
+            : likes;
+
+    const newDislikes =
+      isTogglingOff && reaction === "dislike"
+        ? Math.max(0, dislikes - 1)
+        : !isTogglingOff && reaction === "dislike"
+          ? dislikes + 1
+          : currentReaction === "dislike" && reaction === "like"
+            ? Math.max(0, dislikes - 1)
+            : dislikes;
+
+    setLikes(newLikes);
+    setDislikes(newDislikes);
+    setCurrentReaction(newReaction);
+    patchRecipe(recipe.id, {
+      like_count: newLikes,
+      dislike_count: newDislikes,
+      current_user_reaction: newReaction,
+    });
 
     let error: any = null;
     if (newReaction === null) {
@@ -211,12 +218,19 @@ export default function RecipeView({
         );
       error = res.error;
     }
+
     if (error) {
       setLikes(prevLikes);
       setDislikes(prevDislikes);
       setCurrentReaction(prevReaction);
+      patchRecipe(recipe.id, {
+        like_count: prevLikes,
+        dislike_count: prevDislikes,
+        current_user_reaction: prevReaction,
+      });
       alert(error.message);
     }
+
     setReacting(false);
   };
 
@@ -232,40 +246,60 @@ export default function RecipeView({
       setSaving(false);
       return;
     }
+
     const prevSaved = isSaved;
     const prevSaveCount = saveCount;
     let error: any = null;
 
     if (isSaved) {
-      setSaveCount((prev) => Math.max(0, prev - 1));
+      const newSaveCount = Math.max(0, saveCount - 1);
+      setSaveCount(newSaveCount);
       setIsSaved(false);
+      patchRecipe(recipe.id, { is_saved: false, save_count: newSaveCount });
+
       const res = await supabase
         .from("recipe_saves")
         .delete()
         .match({ recipe_id: recipe.id, saved_by: user.id });
       error = res.error;
+
       if (error) {
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
+        patchRecipe(recipe.id, {
+          is_saved: prevSaved,
+          save_count: prevSaveCount,
+        });
         alert(error.message);
         setSaving(false);
         return;
       }
+      invalidate("savedRecipes");
     } else {
-      setSaveCount((prev) => prev + 1);
+      const newSaveCount = saveCount + 1;
+      setSaveCount(newSaveCount);
       setIsSaved(true);
+      patchRecipe(recipe.id, { is_saved: true, save_count: newSaveCount });
+
       const res = await supabase
         .from("recipe_saves")
         .upsert({ recipe_id: recipe.id, saved_by: user.id });
       error = res.error;
+
       if (error) {
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
+        patchRecipe(recipe.id, {
+          is_saved: prevSaved,
+          save_count: prevSaveCount,
+        });
         alert(error.message);
         setSaving(false);
         return;
       }
+      invalidate("savedRecipes");
     }
+
     setSaving(false);
   };
 
@@ -298,6 +332,7 @@ export default function RecipeView({
       setDeleteConfirmOpen(false);
       return;
     }
+    if (isSaved) invalidate("savedRecipes");
     setDeleteConfirmOpen(false);
     setIsDeleting(false);
     onBack();
@@ -428,6 +463,10 @@ export default function RecipeView({
             >
               <img
                 src={`${supabaseAvatarUrl}${recipe.profiles.avatar_url}`}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src =
+                    "/public/defaultAvatar.png";
+                }}
                 className={styles.avatar}
               />
               <div>

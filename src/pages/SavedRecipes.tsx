@@ -38,26 +38,27 @@ type Recipe = {
 const PAGE_SIZE = 12;
 
 const SHARED_SELECT = `
-  id,
-  title,
-  description,
-  preparation_time,
-  cooking_time,
-  servings,
-  country_of_origin,
-  image_url,
-  difficulty,
-  preparation_unit,
-  cooking_unit,
   created_at,
-  like_count,
-  dislike_count,
-  save_count,
-  comment_count,
-  profiles!recipes_author_id_fkey(id, display_name, avatar_url, username, follower_count),
-  categories(*),
-  recipe_reactions!left (reaction, user_id),
-  recipe_saves!inner (recipe_id, saved_by)
+  recipes (
+    id,
+    title,
+    description,
+    preparation_time,
+    cooking_time,
+    servings,
+    country_of_origin,
+    image_url,
+    difficulty,
+    preparation_unit,
+    cooking_unit,
+    like_count,
+    dislike_count,
+    save_count,
+    comment_count,
+    profiles!recipes_author_id_fkey(id, display_name, avatar_url, username, follower_count),
+    categories(*),
+    recipe_reactions!left (reaction, user_id)
+  )
 `;
 
 function SavedRecipes() {
@@ -74,7 +75,7 @@ function SavedRecipes() {
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // 🔥 runtime guards
+  // runtime guards
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(cached.hasMore);
   const lastRequestedPageRef = useRef<number | null>(null);
@@ -82,7 +83,7 @@ function SavedRecipes() {
   const fetchRecipes = async (pageToFetch: number) => {
     if (loadingRef.current) return;
 
-    // 🔥 prevents duplicate fetch for same page
+    // prevents duplicate fetch for same page
     if (lastRequestedPageRef.current === pageToFetch) return;
     lastRequestedPageRef.current = pageToFetch;
 
@@ -109,9 +110,9 @@ function SavedRecipes() {
     }
 
     const { data, error, count } = await supabase
-      .from("recipes")
+      .from("recipe_saves")
       .select(SHARED_SELECT, { count: "exact" })
-      .eq("recipe_saves.saved_by", user.id)
+      .eq("saved_by", user.id)
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -123,10 +124,11 @@ function SavedRecipes() {
       return;
     }
 
-    const transformed = (data ?? []).map((recipe: any) => ({
-      ...recipe,
-      current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
-      is_saved: recipe.recipe_saves?.length > 0,
+    const transformed = (data ?? []).map((row: any) => ({
+      ...row.recipes,
+      current_user_reaction:
+        row.recipes.recipe_reactions?.[0]?.reaction ?? null,
+      is_saved: true,
     }));
 
     const newHasMore = transformed.length === PAGE_SIZE;

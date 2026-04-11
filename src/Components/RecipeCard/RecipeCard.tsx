@@ -19,6 +19,7 @@ import {
   MessageSquareWarning,
   MessageCircle,
 } from "lucide-react";
+import { useFeedCache } from "../../Context/FeedCacheContext";
 
 type Recipe = {
   id: string;
@@ -36,14 +37,12 @@ type Recipe = {
   dislike_count: number;
   current_user_reaction: "like" | "dislike" | null;
   comment_count: number;
-
   profiles: {
     id: string;
     display_name: string | null;
     avatar_url: string | null;
     username: string | null;
   };
-
   categories: {
     id: string;
     name: string;
@@ -57,6 +56,8 @@ interface RecipeCardProps {
 
 export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const navigate = useNavigate();
+  const { invalidate, patchRecipe } = useFeedCache();
+
   const convertTimeToMinutes = (
     preparationTime: number,
     cookingTime: number,
@@ -79,9 +80,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
       toSeconds(preparationTime, preparationUnit) +
       toSeconds(cookingTime, cookingUnit);
 
-    if (totalSeconds < 60) {
-      return "<1 Min";
-    }
+    if (totalSeconds < 60) return "<1 Min";
 
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -92,26 +91,23 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
 
     return `${minutes} Min`;
   };
+
   const r = recipe as Recipe;
   const [menuOpen, setMenuOpen] = useState(false);
 
   const title = r?.title ?? "Creamy Carbonara";
-  const cover = r?.image_url ?? r?.image_url ?? "/assets/pasta.jpg";
+  const cover = r?.image_url ?? "/assets/pasta.jpg";
   const difficulty = r?.difficulty ?? "Medium";
   const [likes, setLikes] = useState<number>(r?.like_count ?? 0);
   const [dislikes, setDislikes] = useState<number>(r?.dislike_count ?? 0);
   const authorName =
     r?.profiles?.display_name ?? r?.profiles?.username ?? "chef_marco";
   const authorUsername = r?.profiles?.username;
-
   const authorAvatar = r?.profiles?.avatar_url
     ? r.profiles.avatar_url
     : "/assets/avatar.jpg";
-  const saves = r?.saves ?? 0;
   const description = r?.description ?? "";
-  const servings = r?.servings ?? 4;
   const [rating, setRating] = useState<number>(r?.rating ?? 100);
-  const category = r?.categories?.name ?? "Pasta";
   const [isSaved, setIsSaved] = useState<boolean>(r?.is_saved ?? false);
   const [saveCount, setSaveCount] = useState<number>(r?.save_count ?? 0);
   const preparation_time = r?.preparation_time ?? 0;
@@ -121,7 +117,6 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const comment_count = r?.comment_count ?? 0;
   const [isReacting, setIsReacting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-
   const [currentReaction, setCurrentReaction] = useState<
     "like" | "dislike" | null
   >(r.current_user_reaction);
@@ -139,51 +134,50 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const handleReaction = async (reaction: "like" | "dislike") => {
     if (isReacting) return;
     setIsReacting(true);
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
       alert("You must be logged in to react to a recipe.");
+      setIsReacting(false);
       return;
     }
-    // Save previous local state so we can revert on failure
+
     const prevLikes = likes;
     const prevDislikes = dislikes;
     const prevReaction = currentReaction;
 
-    // Determine whether the user is toggling off their current reaction
     const isTogglingOff = currentReaction === reaction;
     const newReaction = isTogglingOff ? null : reaction;
 
-    if (isTogglingOff) {
-      // User is toggling off their reaction
-      setCurrentReaction(null);
-      if (reaction === "like") {
-        setLikes((prev) => Math.max(0, prev - 1));
-      } else {
-        setDislikes((prev) => Math.max(0, prev - 1));
-      }
-    } else {
-      // User is setting a new reaction. If they had the opposite reaction,
-      // decrement that count and increment the new one. Use Math.max to avoid negatives.
-      if (currentReaction === "like" && reaction === "dislike") {
-        setLikes((prev) => Math.max(0, prev - 1));
-        setDislikes((prev) => prev + 1);
-      } else if (currentReaction === "dislike" && reaction === "like") {
-        setDislikes((prev) => Math.max(0, prev - 1));
-        setLikes((prev) => prev + 1);
-      } else {
-        // no previous reaction
-        if (reaction === "like") {
-          setLikes((prev) => prev + 1);
-        } else {
-          setDislikes((prev) => prev + 1);
-        }
-      }
-      setCurrentReaction(reaction);
-    }
+    const newLikes =
+      isTogglingOff && reaction === "like"
+        ? Math.max(0, likes - 1)
+        : !isTogglingOff && reaction === "like"
+          ? likes + 1
+          : currentReaction === "like" && reaction === "dislike"
+            ? Math.max(0, likes - 1)
+            : likes;
 
-    // Persist change: delete when toggling off, otherwise upsert
+    const newDislikes =
+      isTogglingOff && reaction === "dislike"
+        ? Math.max(0, dislikes - 1)
+        : !isTogglingOff && reaction === "dislike"
+          ? dislikes + 1
+          : currentReaction === "dislike" && reaction === "like"
+            ? Math.max(0, dislikes - 1)
+            : dislikes;
+
+    setLikes(newLikes);
+    setDislikes(newDislikes);
+    setCurrentReaction(newReaction);
+    patchRecipe(r.id, {
+      like_count: newLikes,
+      dislike_count: newDislikes,
+      current_user_reaction: newReaction,
+    });
+
     let error: any = null;
     if (newReaction === null) {
       const res = await supabase
@@ -200,13 +194,19 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
         );
       error = res.error;
     }
+
     if (error) {
-      // Revert local optimistic updates
       setLikes(prevLikes);
       setDislikes(prevDislikes);
       setCurrentReaction(prevReaction);
+      patchRecipe(r.id, {
+        like_count: prevLikes,
+        dislike_count: prevDislikes,
+        current_user_reaction: prevReaction,
+      });
       alert(error.message);
     }
+
     setIsReacting(false);
   };
 
@@ -222,47 +222,60 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
       setIsSaving(false);
       return;
     }
+
     const prevSaved = isSaved;
     const prevSaveCount = saveCount;
     let error: any = null;
 
     if (isSaved) {
-      setSaveCount((prev) => Math.max(0, prev - 1));
+      const newSaveCount = Math.max(0, saveCount - 1);
+      setSaveCount(newSaveCount);
       setIsSaved(false);
+      patchRecipe(r.id, { is_saved: false, save_count: newSaveCount });
+
       const res = await supabase
         .from("recipe_saves")
         .delete()
         .match({ recipe_id: recipe.id, saved_by: user.id });
       error = res.error;
+
       if (error) {
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
+        patchRecipe(r.id, { is_saved: prevSaved, save_count: prevSaveCount });
         alert(error.message);
         setIsSaving(false);
         return;
       }
+      invalidate("savedRecipes");
     } else {
-      setSaveCount((prev) => prev + 1);
+      const newSaveCount = saveCount + 1;
+      setSaveCount(newSaveCount);
       setIsSaved(true);
+      patchRecipe(r.id, { is_saved: true, save_count: newSaveCount });
+
       const res = await supabase
         .from("recipe_saves")
         .upsert({ recipe_id: recipe.id, saved_by: user.id });
       error = res.error;
+
       if (error) {
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
+        patchRecipe(r.id, { is_saved: prevSaved, save_count: prevSaveCount });
         alert(error.message);
         setIsSaving(false);
         return;
       }
+      invalidate("savedRecipes");
     }
+
     setIsSaving(false);
   };
 
   const CalculateRating = () => {
     if (likes + dislikes > 0) {
-      const calculated = Math.round((likes / (likes + dislikes)) * 100);
-      setRating(calculated);
+      setRating(Math.round((likes / (likes + dislikes)) * 100));
     } else {
       setRating(0);
     }
@@ -366,18 +379,17 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           <img
             className={styles.avatar}
             src={`${supabaseAvatarUrl}${authorAvatar}`}
-            alt={authorName}
-            onClick={() => {
-              navigate(`/profiles/${authorUsername}`);
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/public/defaultAvatar.png";
             }}
+            alt={authorName}
+            onClick={() => navigate(`/profiles/${authorUsername}`)}
             style={{ cursor: "pointer" }}
           />
           <div className={styles.authorInfo}>
             <div className={styles.authorName}>
               <span
-                onClick={() => {
-                  navigate(`/profile/${authorUsername}`);
-                }}
+                onClick={() => navigate(`/profiles/${authorUsername}`)}
                 style={{ cursor: "pointer" }}
               >
                 {authorName}
@@ -385,9 +397,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             </div>
             <div className={styles.authorMeta}>
               <span
-                onClick={() => {
-                  navigate(`/profile/${authorUsername}`);
-                }}
+                onClick={() => navigate(`/profiles/${authorUsername}`)}
                 style={{ cursor: "pointer" }}
               >
                 {"@" + authorUsername}
@@ -414,7 +424,6 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             background="var(--stat1-bg)"
             iconColor="var(--stat1-icon)"
           />
-
           <ProfileStat
             stat="Rating"
             statAmount={rating.toString() + "%"}
@@ -422,7 +431,6 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             background="var(--stat2-bg)"
             iconColor="var(--stat2-icon)"
           />
-
           <ProfileStat
             stat="Category"
             statAmount={recipe.categories.name}
@@ -442,7 +450,6 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
             type="button"
             outline={"0px"}
           />
-
           <Button
             backgroundColor="#fff"
             textColor="#374151"

@@ -195,7 +195,7 @@ function HomePage() {
     }
   };
 
-  // ✅ SCROLL RESTORE (correct timing)
+  // SCROLL RESTORE (correct timing)
   useEffect(() => {
     if (pendingScrollRef.current !== null && recipes.length > 0) {
       const pos = pendingScrollRef.current;
@@ -207,7 +207,7 @@ function HomePage() {
     }
   }, [recipes]);
 
-  // ✅ TAB SWITCH
+  // TAB SWITCH
   useEffect(() => {
     const leavingKey =
       activeTabRef.current === "for-you" ? "forYou" : "following";
@@ -244,7 +244,7 @@ function HomePage() {
     fetchRecipes(0, activeTab);
   }, [activeTab]);
 
-  // ✅ INFINITE SCROLL
+  // INFINITE SCROLL
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;

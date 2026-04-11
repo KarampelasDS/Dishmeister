@@ -36,6 +36,10 @@ export default function ProfileCard({
             <img
               className={styles.profilePic}
               src={`${supabaseAvatarUrl}/${profile?.avatar_url}`}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  "/public/defaultAvatar.png";
+              }}
               alt={profile?.display_name}
             />
             <span className={styles.chefBadge}>

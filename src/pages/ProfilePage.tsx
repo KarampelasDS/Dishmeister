@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabase";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
 import styles from "./ProfilePage.module.css";
+import { useFeedCache } from "../Context/FeedCacheContext";
 
 type profileType = {
   id: string;
@@ -72,6 +73,7 @@ const SHARED_SELECT = `
 `;
 
 export default function Profile() {
+  const { invalidate } = useFeedCache();
   const { username } = useParams<{ username: string }>();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<profileType | null>(null);
@@ -163,6 +165,7 @@ export default function Profile() {
         .delete()
         .eq("follower_id", user.id)
         .eq("following_id", profile.id);
+      invalidate("following");
       setProfile((prevProfile) => {
         if (!prevProfile) return null;
         return {
@@ -181,6 +184,7 @@ export default function Profile() {
       const { error } = await supabase
         .from("follows")
         .insert({ follower_id: user.id, following_id: profile.id });
+      invalidate("following");
       setProfile((prevProfile) => {
         if (!prevProfile) return null;
         return {
