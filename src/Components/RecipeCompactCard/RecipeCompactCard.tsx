@@ -57,7 +57,7 @@ interface RecipeCardProps {
 
 export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const navigate = useNavigate();
-  const { invalidate } = useFeedCache();
+  const { invalidate, patchRecipe } = useFeedCache();
   const convertTimeToMinutes = (
     preparationTime: number,
     cookingTime: number,
@@ -147,8 +147,10 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     let error: any = null;
 
     if (isSaved) {
-      setSaveCount((prev) => Math.max(0, prev - 1));
+      const newSaveCount = Math.max(0, saveCount - 1);
+      setSaveCount(newSaveCount);
       setIsSaved(false);
+      patchRecipe(recipe.id, { is_saved: false, save_count: newSaveCount });
       const res = await supabase
         .from("recipe_saves")
         .delete()
@@ -158,13 +160,19 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
       if (error) {
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
+        patchRecipe(recipe.id, {
+          is_saved: prevSaved,
+          save_count: prevSaveCount,
+        });
         alert(error.message);
         setIsSaving(false);
         return;
       }
     } else {
-      setSaveCount((prev) => prev + 1);
+      const newSaveCount = saveCount + 1;
+      setSaveCount(newSaveCount);
       setIsSaved(true);
+      patchRecipe(recipe.id, { is_saved: true, save_count: newSaveCount });
       const res = await supabase
         .from("recipe_saves")
         .upsert({ recipe_id: recipe.id, saved_by: user.id });
@@ -173,6 +181,10 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
       if (error) {
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
+        patchRecipe(recipe.id, {
+          is_saved: prevSaved,
+          save_count: prevSaveCount,
+        });
         alert(error.message);
         setIsSaving(false);
         return;
