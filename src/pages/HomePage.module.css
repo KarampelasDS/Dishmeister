@@ -9,7 +9,7 @@
   position: sticky;
   top: 80px;
   position: sticky;
-  z-index: 100000;
+  z-index: 50;
   justify-content: center;
 }
 
@@ -44,7 +44,7 @@
 
 @media only screen and (max-width: 768px) {
   .feedToggle {
-    top: 50px;
+    top: 100px;
   }
 }
 
