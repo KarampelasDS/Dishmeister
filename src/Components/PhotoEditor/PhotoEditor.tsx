@@ -94,8 +94,6 @@ export default function PhotoEditor({
               onChange={(e) => setZoom(Number(e.target.value))}
             />
 
-            <Plus size={18} />
-
             <span className={styles.value}>{Math.round(zoom * 100)}%</span>
           </div>
         </div>
