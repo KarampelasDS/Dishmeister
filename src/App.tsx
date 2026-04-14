@@ -8,7 +8,7 @@ import ProfilePage from "./pages/ProfilePage";
 import HomePage from "./pages/HomePage";
 import AuthModal from "./Components/AuthModal/AuthModal";
 import OnboardingModal from "./Components/OnboardingModal/OnboardingModal";
-import { useAuth } from "./context/AuthProvider";
+import { useAuth } from "./Context/AuthProvider";
 import RecipePage from "./pages/RecipePage";
 import SavedRecipes from "./pages/SavedRecipes";
 import Dock from "./Components/Dock/Dock";

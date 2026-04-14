@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../supabase";
 import styles from "./OnboardingModal.module.css";
 import Button from "../Button/Button";
-import { useAuth } from "../../context/AuthProvider";
+import { useAuth } from "../../Context/AuthProvider";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
 
 const AVATAR_BUCKET = "avatars";
