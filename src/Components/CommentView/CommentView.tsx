@@ -78,6 +78,7 @@ export default function CommentView({
   const [replyOpen, setReplyOpen] = useState(false);
   const [repliesOpen, setRepliesOpen] = useState(false);
   const [reacting, setReacting] = useState(false);
+  const [replyMenuOpen, setReplyMenuOpen] = useState<string | null>(null);
 
   const handleReaction = async (reaction: "like" | "dislike") => {
     if (reacting) return;
@@ -165,7 +166,6 @@ export default function CommentView({
       />
 
       <div className={styles.body}>
-        {/* HEADER */}
         <div className={styles.header}>
           <div
             className={styles.userInfo}
@@ -210,10 +210,8 @@ export default function CommentView({
           )}
         </div>
 
-        {/* CONTENT */}
         <p className={styles.content}>{comment.content}</p>
 
-        {/* REACTIONS + REPLY BUTTON */}
         <div className={styles.reactions}>
           <button
             className={`${styles.reactionBtn} ${
@@ -246,7 +244,6 @@ export default function CommentView({
           </button>
         </div>
 
-        {/* INLINE REPLY INPUT */}
         {replyOpen && (
           <div className={styles.replyInput}>
             <AddComment
@@ -263,7 +260,6 @@ export default function CommentView({
           </div>
         )}
 
-        {/* VIEW REPLIES TOGGLE */}
         {replyCount > 0 && (
           <button
             className={styles.repliesToggle}
@@ -283,7 +279,6 @@ export default function CommentView({
           </button>
         )}
 
-        {/* REPLIES LIST */}
         {repliesOpen && replyCount > 0 && (
           <div className={styles.repliesList}>
             {comment.replies.map((reply) => (
@@ -311,14 +306,43 @@ export default function CommentView({
                         {timeAgo(reply.created_at)}
                       </span>
                     </div>
-                    {currentUserId === reply.profiles.id && (
-                      <button
-                        className={styles.menuBtn}
-                        onClick={() => onCommentDeleted(reply.id)}
-                        aria-label="Delete reply"
-                      >
-                        <Trash2 size={14} color="#cd3131" />
-                      </button>
+                    <button
+                      className={styles.menuBtn}
+                      onClick={() =>
+                        setReplyMenuOpen((o) =>
+                          o === reply.id ? null : reply.id,
+                        )
+                      }
+                      aria-label="Reply options"
+                    >
+                      <EllipsisVertical size={16} />
+                    </button>
+                    {replyMenuOpen === reply.id && (
+                      <div className={styles.menuDropdown}>
+                        {currentUserId === reply.profiles.id ? (
+                          <button
+                            className={styles.menuItem}
+                            onClick={() => {
+                              setReplyMenuOpen(null);
+                              onCommentDeleted(reply.id);
+                            }}
+                          >
+                            <Trash2 size={15} color="#cd3131" />
+                            <span style={{ color: "#cd3131" }}>Delete</span>
+                          </button>
+                        ) : (
+                          <button
+                            className={styles.menuItem}
+                            onClick={() => {
+                              console.log("report", reply.id);
+                              setReplyMenuOpen(null);
+                            }}
+                          >
+                            <MessageSquareWarning size={15} color="#cd3131" />
+                            <span style={{ color: "#cd3131" }}>Report</span>
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                   <p className={styles.content}>{reply.content}</p>
