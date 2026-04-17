@@ -150,10 +150,6 @@ export default function RecipeView({
 
   const [localRecipe, setLocalRecipe] = useState(recipe);
 
-  useEffect(() => {
-    console.log(localRecipe);
-  }, []);
-
   const totalVotes = likes + dislikes;
   const likePercentage =
     totalVotes === 0 ? 0 : Math.round((likes / totalVotes) * 100);

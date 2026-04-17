@@ -109,7 +109,6 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
       if (!error && data) setCategories(data);
     };
     fetchCategories();
-    alert(categoryId);
   }, []);
 
   useEffect(() => {
