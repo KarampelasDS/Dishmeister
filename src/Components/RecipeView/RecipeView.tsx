@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   ThumbsUp,
@@ -13,6 +13,7 @@ import {
   Forward,
   MessageSquareWarning,
   Trash,
+  Pencil,
 } from "lucide-react";
 import { supabase } from "../../supabase";
 import ProfileStat from "../ProfileStat/ProfileStat";
@@ -23,6 +24,7 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import ConfirmModal from "../ConfirmModal/ConfirmModal";
 import { useFeedCache } from "../../Context/FeedCacheContext";
+import EditRecipe from "../EditRecipe/EditRecipe";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
@@ -143,6 +145,14 @@ export default function RecipeView({
   const [saving, setSaving] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [localRecipe, setLocalRecipe] = useState(recipe);
+
+  useEffect(() => {
+    console.log(localRecipe);
+  }, []);
 
   const totalVotes = likes + dislikes;
   const likePercentage =
@@ -338,6 +348,21 @@ export default function RecipeView({
     onBack();
   };
 
+  if (isEditing) {
+    return (
+      <EditRecipe
+        recipe={localRecipe}
+        onBack={() => setIsEditing(false)}
+        onSaved={(updatedFields) => {
+          setLocalRecipe((prev) => ({ ...prev, ...updatedFields }));
+          patchRecipe(recipe.id, updatedFields);
+          setIsEditing(false);
+          location.reload();
+        }}
+      />
+    );
+  }
+
   return (
     <div className={styles.wrapper}>
       {deleteConfirmOpen && (
@@ -372,6 +397,18 @@ export default function RecipeView({
             </button>
             {menuOpen && (
               <div className={styles.menuDropdown}>
+                {currentUserId === recipe.profiles.id && (
+                  <button
+                    className={styles.menuItem}
+                    onClick={() => {
+                      setIsEditing(true);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <Pencil />
+                    Edit
+                  </button>
+                )}
                 <button
                   className={styles.menuItem}
                   onClick={() => {
