@@ -6,6 +6,7 @@ import styles from "./CreateRecipe.module.css";
 import countries from "i18n-iso-countries";
 import en from "i18n-iso-countries/langs/en.json";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
+import { useLocalDraft } from "../../hooks/useLocalDraft";
 
 type Category = {
   id: string;
@@ -21,43 +22,52 @@ const countryOptions = Object.entries(
   .sort((a, b) => a.name.localeCompare(b.name));
 
 const difficultyOptions = ["Easy", "Medium", "Hard"] as const;
-
 const timeUnits = ["Min", "Hrs", "Sec"] as const;
 
 type Difficulty = (typeof difficultyOptions)[number];
 type TimeUnit = (typeof timeUnits)[number];
 
+const DRAFT_KEY = "dishmeister:create-recipe-draft";
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1521388825798-fec41108def2?auto=format&fit=crop&w=1400&q=80";
+
+const defaultDraft = {
+  title: "",
+  description: "",
+  countryOfOrigin: null as string | null,
+  difficulty: "Medium" as Difficulty,
+  categoryId: "",
+  preparationTime: "" as number | "",
+  preparationUnit: "Min" as TimeUnit,
+  cookingTime: "" as number | "",
+  cookingUnit: "Min" as TimeUnit,
+  servings: 4,
+  ingredients: [""],
+  instructions: [""],
+  savedImageBase64: null as string | null, // persisted across navigation
+};
+
 function CreateRecipe() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [countryOfOrigin, setCountryOfOrigin] = useState<string | null>(null);
-
-  const [difficulty, setDifficulty] = useState<Difficulty>("Medium");
+  const [draft, setDraft] = useLocalDraft(DRAFT_KEY, defaultDraft);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [categoryId, setCategoryId] = useState<string>("");
-
-  const [preparationTime, setPreparationTime] = useState<number | "">("");
-  const [preparationUnit, setPreparationUnit] = useState<TimeUnit>("Min");
-
-  const [cookingTime, setCookingTime] = useState<number | "">("");
-  const [cookingUnit, setCookingUnit] = useState<TimeUnit>("Min");
-
-  const [servings, setServings] = useState<number>(4);
-
-  const [ingredients, setIngredients] = useState<string[]>([""]);
-  const [instructions, setInstructions] = useState<string[]>([""]);
-
   const [loading, setLoading] = useState(false);
 
-  const [previewImage, setPreviewImage] = useState<string | null>(
-    "https://images.unsplash.com/photo-1521388825798-fec41108def2?auto=format&fit=crop&w=1400&q=80",
-  );
-
+  // imageFile is the in-memory File object (not persisted).
+  // On mount, if there's a savedImageBase64 in the draft, we reconstruct a
+  // preview from it. If the user picks a new image, we update both.
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string>(
+    draft.savedImageBase64 ?? FALLBACK_IMAGE,
+  );
   const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
   const [fileKey, setFileKey] = useState(0);
+
+  const setField = <K extends keyof typeof defaultDraft>(
+    key: K,
+    value: (typeof defaultDraft)[K],
+  ) => setDraft((prev) => ({ ...prev, [key]: value }));
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -66,9 +76,7 @@ function CreateRecipe() {
         .select("id, name")
         .order("name", { ascending: true });
 
-      if (!error && data) {
-        setCategories(data);
-      }
+      if (!error && data) setCategories(data);
     };
 
     fetchCategories();
@@ -76,93 +84,93 @@ function CreateRecipe() {
 
   /* ---------------- INGREDIENTS ---------------- */
 
-  const addIngredient = () => setIngredients([...ingredients, ""]);
+  const addIngredient = () =>
+    setField("ingredients", [...draft.ingredients, ""]);
 
   const updateIngredient = (index: number, value: string) => {
-    const copy = [...ingredients];
+    const copy = [...draft.ingredients];
     copy[index] = value;
-    setIngredients(copy);
+    setField("ingredients", copy);
   };
 
   const removeIngredient = (index: number) => {
-    if (ingredients.length === 1) return;
-    setIngredients(ingredients.filter((_, i) => i !== index));
+    if (draft.ingredients.length === 1) return;
+    setField(
+      "ingredients",
+      draft.ingredients.filter((_, i) => i !== index),
+    );
   };
 
   /* ---------------- INSTRUCTIONS ---------------- */
 
-  const addInstruction = () => setInstructions([...instructions, ""]);
+  const addInstruction = () =>
+    setField("instructions", [...draft.instructions, ""]);
 
   const updateInstruction = (index: number, value: string) => {
-    const copy = [...instructions];
+    const copy = [...draft.instructions];
     copy[index] = value;
-    setInstructions(copy);
+    setField("instructions", copy);
   };
 
   const removeInstruction = (index: number) => {
-    if (instructions.length === 1) return;
-    setInstructions(instructions.filter((_, i) => i !== index));
+    if (draft.instructions.length === 1) return;
+    setField(
+      "instructions",
+      draft.instructions.filter((_, i) => i !== index),
+    );
   };
 
   /* ---------------- IMAGE PICKER ---------------- */
-  useEffect(() => {
-    if (!imageFile) {
-      if (previewImage) URL.revokeObjectURL(previewImage);
-      return;
-    }
-    const url = URL.createObjectURL(imageFile);
-    setPreviewImage(url);
 
-    return () => URL.revokeObjectURL(url);
+  // When imageFile changes (new pick or after PhotoEditor), update the
+  // preview and persist a base64 copy to the draft so it survives navigation.
+  useEffect(() => {
+    if (!imageFile) return;
+
+    const objectUrl = URL.createObjectURL(imageFile);
+    setPreviewImage(objectUrl);
+
+    // Persist as base64 so it survives a navigation away and back
+    const reader = new FileReader();
+    reader.onload = () => {
+      setField("savedImageBase64", reader.result as string);
+    };
+    reader.readAsDataURL(imageFile);
+
+    return () => URL.revokeObjectURL(objectUrl);
   }, [imageFile]);
 
-  const openFilePicker = () => {
-    fileInputRef.current?.click();
-  };
+  const openFilePicker = () => fileInputRef.current?.click();
 
   const onFilePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ["image/png", "image/jpeg"];
-
-    if (!allowedTypes.includes(file.type)) {
+    if (!["image/png", "image/jpeg"].includes(file.type)) {
       alert("Only PNG and JPEG files are allowed.");
       e.target.value = "";
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
       return;
     }
 
-    const maxSizeMB = 5;
-    if (file.size > maxSizeMB * 1024 * 1024) {
+    if (file.size > 5 * 1024 * 1024) {
       alert("Image must be under 5MB.");
       e.target.value = "";
       return;
     }
 
-    const objectUrl = URL.createObjectURL(file);
-
-    if (previewImage.startsWith("blob:")) {
-      URL.revokeObjectURL(previewImage);
-    }
-
     e.target.value = "";
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
     setFileKey((k) => k + 1);
-    setPhotoEditorOpen(true);
-    setPreviewImage(objectUrl);
     setImageFile(file);
+    setPhotoEditorOpen(true);
   };
 
   /* ---------------- SUBMIT ---------------- */
 
   const submitRecipe = async () => {
-    const hasEmptyIngredient = ingredients.some((i) => !i.trim());
-    const hasEmptyInstruction = instructions.some((i) => !i.trim());
+    const hasEmptyIngredient = draft.ingredients.some((i) => !i.trim());
+    const hasEmptyInstruction = draft.instructions.some((i) => !i.trim());
 
     if (hasEmptyIngredient) {
       alert("All ingredient fields must be filled in.");
@@ -174,30 +182,30 @@ function CreateRecipe() {
       return;
     }
 
-    const cleanedIngredients = ingredients.map((i) => i.trim());
-    const cleanedInstructions = instructions.map((i) => i.trim());
+    const cleanedIngredients = draft.ingredients.map((i) => i.trim());
+    const cleanedInstructions = draft.instructions.map((i) => i.trim());
 
     if (
-      !title.trim() ||
+      !draft.title.trim() ||
       cleanedIngredients.length === 0 ||
       cleanedInstructions.length === 0 ||
-      preparationTime === "" ||
-      cookingTime === "" ||
-      !categoryId
+      draft.preparationTime === "" ||
+      draft.cookingTime === "" ||
+      !draft.categoryId
     ) {
       alert("All required fields must be filled");
       return;
     }
 
-    if (!imageFile) {
+    if (!imageFile && !draft.savedImageBase64) {
       alert("Recipe image is required.");
       return;
     }
 
     if (
-      Number(preparationTime) <= 0 ||
-      Number(cookingTime) < 0 ||
-      servings <= 0
+      Number(draft.preparationTime) <= 0 ||
+      Number(draft.cookingTime) < 0 ||
+      draft.servings <= 0
     ) {
       alert("Invalid numeric values");
       return;
@@ -215,12 +223,28 @@ function CreateRecipe() {
       return;
     }
 
-    const fileExt = imageFile.name.split(".").pop();
+    // If user navigated away and back, imageFile will be null but we have
+    // the base64. Reconstruct a File from it for upload.
+    let fileToUpload = imageFile;
+
+    if (!fileToUpload && draft.savedImageBase64) {
+      const res = await fetch(draft.savedImageBase64);
+      const blob = await res.blob();
+      fileToUpload = new File([blob], "recipe.png", { type: blob.type });
+    }
+
+    if (!fileToUpload) {
+      alert("Recipe image is required.");
+      setLoading(false);
+      return;
+    }
+
+    const fileExt = fileToUpload.name.split(".").pop();
     const filePath = `${user.id}/${crypto.randomUUID()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from("recipe-images")
-      .upload(filePath, imageFile, { upsert: false });
+      .upload(filePath, fileToUpload, { upsert: false });
 
     if (uploadError) {
       alert(uploadError.message);
@@ -230,16 +254,16 @@ function CreateRecipe() {
 
     const { error } = await supabase.from("recipes").insert({
       author_id: user.id,
-      title: title.trim(),
-      description: description.trim() || null,
-      country_of_origin: countryOfOrigin,
-      difficulty,
-      category_id: categoryId,
-      preparation_time: Number(preparationTime),
-      preparation_unit: preparationUnit,
-      cooking_time: Number(cookingTime),
-      cooking_unit: cookingUnit,
-      servings,
+      title: draft.title.trim(),
+      description: draft.description.trim() || null,
+      country_of_origin: draft.countryOfOrigin,
+      difficulty: draft.difficulty,
+      category_id: draft.categoryId,
+      preparation_time: Number(draft.preparationTime),
+      preparation_unit: draft.preparationUnit,
+      cooking_time: Number(draft.cookingTime),
+      cooking_unit: draft.cookingUnit,
+      servings: draft.servings,
       ingredients: cleanedIngredients,
       instructions: cleanedInstructions,
       image_url: filePath,
@@ -249,25 +273,16 @@ function CreateRecipe() {
 
     if (error) {
       await supabase.storage.from("recipe-images").remove([filePath]);
-
       alert(error.message);
-      setLoading(false);
       return;
     }
 
-    alert("Recipe created");
-    setTitle("");
-    setDescription("");
-    setIngredients([""]);
-    setInstructions([""]);
+    // Clear draft and reset state
+    localStorage.removeItem(DRAFT_KEY);
+    setDraft(defaultDraft);
     setImageFile(null);
-    setPreviewImage(
-      "https://images.unsplash.com/photo-1521388825798-fec41108def2?auto=format&fit=crop&w=1400&q=80",
-    );
-    setCategoryId("");
-    setPreparationTime("");
-    setCookingTime("");
-    setServings(4);
+    setPreviewImage(FALLBACK_IMAGE);
+    alert("Recipe created!");
   };
 
   return (
@@ -298,8 +313,6 @@ function CreateRecipe() {
               }}
             >
               <img src={previewImage} alt="Recipe preview" />
-
-              {/* Hover overlay */}
               <div className={styles.imageOverlay}>
                 <div className={styles.overlayInner}>
                   <div className={styles.overlayIcon} aria-hidden="true">
@@ -314,6 +327,7 @@ function CreateRecipe() {
 
             <input
               ref={fileInputRef}
+              key={fileKey}
               type="file"
               accept="image/png, image/jpeg"
               className={styles.hiddenFileInput}
@@ -326,11 +340,10 @@ function CreateRecipe() {
             <label className={styles.label}>
               Recipe Name <span className={styles.required}>*</span>
             </label>
-
             <input
               className={styles.input}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={draft.title}
+              onChange={(e) => setField("title", e.target.value)}
               placeholder="e.g., Creamy Carbonara"
             />
           </div>
@@ -340,37 +353,36 @@ function CreateRecipe() {
             <label className={styles.label}>
               Description <span className={styles.required}>*</span>
             </label>
-
             <textarea
               className={styles.textarea}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={draft.description}
+              onChange={(e) => setField("description", e.target.value)}
               placeholder="Tell us about your recipe..."
             />
           </div>
 
-          {/* GRID: TIME + DIFFICULTY + CATEGORY */}
+          {/* GRID: TIME + SERVINGS */}
           <div className={styles.grid3}>
             <div className={styles.timeGroup}>
               <label className={styles.label}>
                 Prep Time <span className={styles.required}>*</span>
               </label>
-
               <div className={styles.timeInputWrapper}>
                 <input
                   type="number"
-                  value={preparationTime}
+                  value={draft.preparationTime}
                   min={1}
                   onChange={(e) =>
-                    setPreparationTime(
+                    setField(
+                      "preparationTime",
                       e.target.value === "" ? "" : Number(e.target.value),
                     )
                   }
                 />
                 <select
-                  value={preparationUnit}
+                  value={draft.preparationUnit}
                   onChange={(e) =>
-                    setPreparationUnit(e.target.value as TimeUnit)
+                    setField("preparationUnit", e.target.value as TimeUnit)
                   }
                 >
                   {timeUnits.map((u) => (
@@ -386,21 +398,23 @@ function CreateRecipe() {
               <label className={styles.label}>
                 Cook Time <span className={styles.required}>*</span>
               </label>
-
               <div className={styles.timeInputWrapper}>
                 <input
                   type="number"
-                  value={cookingTime}
+                  value={draft.cookingTime}
                   min={0}
                   onChange={(e) =>
-                    setCookingTime(
+                    setField(
+                      "cookingTime",
                       e.target.value === "" ? "" : Number(e.target.value),
                     )
                   }
                 />
                 <select
-                  value={cookingUnit}
-                  onChange={(e) => setCookingUnit(e.target.value as TimeUnit)}
+                  value={draft.cookingUnit}
+                  onChange={(e) =>
+                    setField("cookingUnit", e.target.value as TimeUnit)
+                  }
                 >
                   {timeUnits.map((u) => (
                     <option key={u} value={u}>
@@ -413,21 +427,22 @@ function CreateRecipe() {
 
             <div>
               <label className={styles.label}>
-                Servings<span className={styles.required}>*</span>
+                Servings <span className={styles.required}>*</span>
               </label>
-
               <div className={styles.stepper}>
                 <button
                   type="button"
-                  onClick={() => setServings(Math.max(1, servings - 1))}
+                  onClick={() =>
+                    setField("servings", Math.max(1, draft.servings - 1))
+                  }
                   aria-label="Decrease servings"
                 >
                   –
                 </button>
-                <span>{servings}</span>
+                <span>{draft.servings}</span>
                 <button
                   type="button"
-                  onClick={() => setServings(servings + 1)}
+                  onClick={() => setField("servings", draft.servings + 1)}
                   aria-label="Increase servings"
                 >
                   +
@@ -436,16 +451,18 @@ function CreateRecipe() {
             </div>
           </div>
 
+          {/* DIFFICULTY + CATEGORY */}
           <div className={styles.grid2}>
             <div>
               <label className={styles.label}>
                 Difficulty <span className={styles.required}>*</span>
               </label>
-
               <select
                 className={styles.select}
-                value={difficulty}
-                onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+                value={draft.difficulty}
+                onChange={(e) =>
+                  setField("difficulty", e.target.value as Difficulty)
+                }
               >
                 {difficultyOptions.map((d) => (
                   <option key={d} value={d}>
@@ -459,11 +476,10 @@ function CreateRecipe() {
               <label className={styles.label}>
                 Category <span className={styles.required}>*</span>
               </label>
-
               <select
                 className={styles.select}
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
+                value={draft.categoryId}
+                onChange={(e) => setField("categoryId", e.target.value)}
               >
                 <option value="">Select category</option>
                 {categories.map((c) => (
@@ -480,8 +496,10 @@ function CreateRecipe() {
             <label className={styles.label}>Country of origin</label>
             <select
               className={styles.select}
-              value={countryOfOrigin ?? ""}
-              onChange={(e) => setCountryOfOrigin(e.target.value || null)}
+              value={draft.countryOfOrigin ?? ""}
+              onChange={(e) =>
+                setField("countryOfOrigin", e.target.value || null)
+              }
             >
               <option value="">Select country</option>
               {countryOptions.map((c) => (
@@ -498,7 +516,6 @@ function CreateRecipe() {
               <label className={styles.label}>
                 Ingredients <span className={styles.required}>*</span>
               </label>
-
               <button
                 type="button"
                 onClick={addIngredient}
@@ -507,8 +524,7 @@ function CreateRecipe() {
                 + Add Ingredient
               </button>
             </div>
-
-            {ingredients.map((ingredient, index) => (
+            {draft.ingredients.map((ingredient, index) => (
               <div key={index} className={styles.dynamicRow}>
                 <input
                   className={styles.input}
@@ -534,7 +550,6 @@ function CreateRecipe() {
               <label className={styles.label}>
                 Instructions <span className={styles.required}>*</span>
               </label>
-
               <button
                 type="button"
                 onClick={addInstruction}
@@ -543,8 +558,7 @@ function CreateRecipe() {
                 + Add Step
               </button>
             </div>
-
-            {instructions.map((instruction, index) => (
+            {draft.instructions.map((instruction, index) => (
               <div key={index} className={styles.dynamicRow}>
                 <div className={styles.stepIndex}>{index + 1}</div>
                 <textarea
@@ -578,6 +592,7 @@ function CreateRecipe() {
           </div>
         </div>
       </div>
+
       {photoEditorOpen && imageFile && (
         <PhotoEditor
           mode={"recipe"}
@@ -592,7 +607,7 @@ function CreateRecipe() {
 
             if (!blob) return;
 
-            const file = new File([blob], "avatar.png", {
+            const file = new File([blob], "recipe.png", {
               type: "image/png",
             });
 
