@@ -1,7 +1,7 @@
 import styles from "./ProfileCard.module.css";
 import ProfileStat from "../ProfileStat/ProfileStat";
 import Button from "../Button/Button";
-import { Mail, ArrowLeft } from "lucide-react";
+import { Mail, ArrowLeft, Pencil } from "lucide-react";
 import { useNavigate } from "react-router";
 
 //finish profile card design
@@ -11,11 +11,13 @@ export default function ProfileCard({
   isFollowing,
   followFunction,
   followActive,
+  isOwnProfile,
 }: {
   profile: profileType | null;
   isFollowing: boolean;
   followFunction: () => void;
   followActive: boolean;
+  isOwnProfile: boolean;
 }) {
   const supabaseAvatarUrl = import.meta.env
     .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
@@ -37,8 +39,7 @@ export default function ProfileCard({
               className={styles.profilePic}
               src={`${supabaseAvatarUrl}/${profile?.avatar_url}`}
               onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  "/public/defaultAvatar.png";
+                (e.target as HTMLImageElement).src = "/defaultAvatar.png";
               }}
               alt={profile?.display_name}
             />
@@ -98,19 +99,33 @@ export default function ProfileCard({
 
           <div className={styles.buttonsContainer}>
             <div className={styles.followButton}>
-              <Button
-                text={isFollowing ? "Following" : "Follow"}
-                backgroundColor={
-                  isFollowing
-                    ? "#e5e7eb"
-                    : "linear-gradient(135deg, #ff6a00, #ff2e2e)"
-                }
-                textColor={isFollowing ? "#374151" : "#fff"}
-                outline="0px"
-                isActive={followActive}
-                onButtonClick={followFunction}
-              />
+              {isOwnProfile ? (
+                <Button
+                  backgroundColor="#f3f4f6"
+                  textColor="#374151"
+                  outline="0px"
+                  isActive={true}
+                  onButtonClick={() => navigate("/settings")}
+                >
+                  <Pencil size={18} />
+                  Edit Profile
+                </Button>
+              ) : (
+                <Button
+                  text={isFollowing ? "Following" : "Follow"}
+                  backgroundColor={
+                    isFollowing
+                      ? "#e5e7eb"
+                      : "linear-gradient(135deg, #ff6a00, #ff2e2e)"
+                  }
+                  textColor={isFollowing ? "#374151" : "#fff"}
+                  outline="0px"
+                  isActive={followActive}
+                  onButtonClick={followFunction}
+                />
+              )}
             </div>
+
             <div className={styles.contactButton}>
               <Button
                 backgroundColor="#f3f4f6"

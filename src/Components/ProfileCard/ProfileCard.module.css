@@ -2,46 +2,67 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   max-width: 65rem;
-  height: 562px;
   border: 1px solid var(--border);
   border-radius: 12px;
+  overflow: hidden; /* prevents visual bleed */
 }
+
 .profileStats {
   padding: 22px;
 }
+
 .profileInfo {
   padding: 64px 24px 0 24px;
   font-family: "Segoe UI", sans-serif;
   color: var(--text);
+  min-width: 0; /* important for flex overflow */
 }
 
+/* DISPLAY NAME */
 .profileInfo .displayName {
   font-size: 1.6rem;
   font-weight: 700;
   margin: 0 0 2px 0;
   line-height: 1.2;
-  color: var(--text);
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* USERNAME */
 .profileInfo .username {
   font-size: 0.9rem;
   font-weight: 500;
   color: oklch(63.6% 0.02 256.802);
   margin: 0 0 10px 0;
   letter-spacing: 0.01em;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* BIO */
 .profileInfo .bio {
   font-size: 0.95rem;
   color: oklch(55% 0.02 256.802);
   margin: 0;
   line-height: 1.55;
   max-width: 480px;
+
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+
+  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
+
+/* BANNER */
 .banner {
-  justify-self: flex-start;
   width: 100%;
   height: 160px;
   border-top-left-radius: 11px;
@@ -49,29 +70,36 @@
   background: linear-gradient(135deg, #ff7a18, #ff4d6d, #d946ef);
   position: relative;
 }
+
+/* STATS */
 .statsBox {
-  justify-content: center;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
+
+/* BUTTONS */
 .buttonsContainer {
   display: flex;
   justify-content: space-evenly;
   gap: 20px;
+  flex-wrap: wrap;
 }
-.followButton {
-  width: 48%;
-  height: 48px;
-}
+
+.followButton,
 .contactButton {
   width: 48%;
   height: 48px;
+  min-width: 140px; /* prevents collapse */
 }
+
 .contactButton button:hover {
   background-color: #a9a7a7 !important;
   transition: all 0.2s ease;
 }
+
+/* PROFILE PIC */
 .profilePicContainer {
   position: absolute;
   top: 90px;
@@ -85,11 +113,14 @@
   height: 100%;
   border-radius: 50%;
   border: 4px solid white;
+  object-fit: cover; /* prevents stretch */
+
   box-shadow:
     0 20px 25px -5px rgba(0, 0, 0, 0.1),
     0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
+/* BADGE */
 .chefBadge {
   position: absolute;
   bottom: 2px;
@@ -110,11 +141,11 @@
   color: white;
 }
 
+/* BACK ROW */
 .backRow {
   display: flex;
   gap: 6px;
   align-items: center;
-  color: #555;
   margin: 12px auto;
   font-size: 14px;
   max-width: 65rem;
@@ -125,4 +156,55 @@
   display: flex;
   align-items: center;
   cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .profileWindow {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .profileInfo {
+    padding: 75px 16px 0 16px;
+  }
+
+  .profilePicContainer {
+    width: 6.5rem;
+    height: 6.5rem;
+    top: 100px;
+    left: 16px;
+  }
+
+  .profileInfo .displayName {
+    font-size: 1.4rem;
+  }
+
+  .profileInfo .username {
+    font-size: 0.85rem;
+  }
+
+  .profileInfo .bio {
+    max-width: 100%;
+    -webkit-line-clamp: 4;
+  }
+
+  .statsBox {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .buttonsContainer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .followButton,
+  .contactButton {
+    width: 100%;
+  }
+
+  .banner {
+    height: 140px;
+  }
 }

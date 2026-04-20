@@ -79,6 +79,7 @@ export default function Profile() {
   const [profile, setProfile] = useState<profileType | null>(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [canFollow, setCanFollow] = useState(true);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [page, setPage] = useState(0);
@@ -224,6 +225,7 @@ export default function Profile() {
       } = await supabase.auth.getUser();
 
       if (user) {
+        setIsOwnProfile(user.id === data.id);
         const { data: followRow } = await supabase
           .from("follows")
           .select("follower_id")
@@ -292,6 +294,7 @@ export default function Profile() {
         isFollowing={isFollowing}
         followFunction={handleFollow}
         followActive={canFollow}
+        isOwnProfile={isOwnProfile}
       />
       {/* Recipe grid */}
       <div className={styles.grid}>

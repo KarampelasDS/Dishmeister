@@ -14,6 +14,7 @@ import SavedRecipes from "./pages/SavedRecipes";
 import Dock from "./Components/Dock/Dock";
 import Explore from "./pages/Explore";
 import { useScrollRestoration } from "./Hooks/useScrollRestoration";
+import EditProfilePage from "./pages/EditProfile";
 
 function App() {
   useScrollRestoration(["/explore"]);
@@ -73,6 +74,7 @@ function App() {
         />
         <Route path="/recipes/:id" element={<RecipePage />} />
         <Route path="/profiles/:username" element={<ProfilePage />} />
+        <Route path="/settings" element={<EditProfilePage />} />
       </Routes>
 
       <AuthModal
