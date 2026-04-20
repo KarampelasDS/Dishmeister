@@ -166,6 +166,8 @@ export default function EditProfilePage() {
       setError(err.message || "Something went wrong.");
     } finally {
       setLoading(false);
+      location.reload();
+      location.href = `/profiles/${fields.username}`;
     }
   };
 
