@@ -32,6 +32,7 @@ type Recipe = {
   cooking_unit: "Min" | "Hrs" | "Sec";
   like_count: number;
   dislike_count: number;
+  current_user_reaction: "like" | "dislike" | null;
   is_saved: boolean;
   save_count: number;
   comment_count: number;
@@ -84,7 +85,7 @@ export default function Profile() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [, setTotalCount] = useState<number | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
@@ -143,7 +144,7 @@ export default function Profile() {
     }
 
     setHasMore(newHasMore);
-    if (count !== null) setTotalCount(count);
+    if (count !== null && count !== undefined) setTotalCount(count);
   };
 
   const handleFollow = async () => {

@@ -329,7 +329,7 @@ export default function EditProfilePage() {
       {avatarEditorOpen && avatarFile && (
         <PhotoEditor
           key={fileKey}
-          mode="avatar"
+          mode="profile"
           onClose={() => setAvatarEditorOpen(false)}
           onSave={async (canvas) => {
             if (!canvas) return;

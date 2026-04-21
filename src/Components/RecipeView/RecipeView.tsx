@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   ArrowLeft,
   ThumbsUp,
@@ -57,14 +57,17 @@ type Recipe = {
     id: string;
     name: string;
   };
+  ingredients: string[];
+  instructions: string[];
 };
 
-type Comment = {
+interface Comment {
   id: string;
   content: string;
   created_at: string;
   like_count: number;
   dislike_count: number;
+  parent_id: string | null;
   current_user_reaction: "like" | "dislike" | null;
   profiles: {
     id: string;
@@ -72,7 +75,8 @@ type Comment = {
     display_name: string | null;
     avatar_url: string | null;
   };
-};
+  replies: Comment[];
+}
 
 interface RecipeViewProps {
   recipe: Recipe;
@@ -220,7 +224,7 @@ export default function RecipeView({
         .from("recipe_reactions")
         .upsert(
           { user_id: user.id, recipe_id: recipe.id, reaction: newReaction },
-          { onConflict: ["user_id", "recipe_id"] },
+          { onConflict: "user_id,recipe_id" },
         );
       error = res.error;
     }
@@ -464,25 +468,26 @@ export default function RecipeView({
               >
                 <ChefHat size={16} /> {recipe.difficulty}
               </span>
-              {hasFlag(recipe.country_of_origin) && (
-                <a
-                  data-tooltip-id="my-tooltip"
-                  data-tooltip-content={recipe.country_of_origin?.toString()}
-                >
-                  <span
-                    className={styles.badge}
-                    style={{
-                      background: `url(${hasFlag(recipe.country_of_origin) ? `https://purecatamphetamine.github.io/country-flag-icons/3x2/${recipe.country_of_origin}.svg` : undefined})`,
-                      minHeight: "20px",
-                      minWidth: "30px",
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                      color: "white",
-                    }}
-                  ></span>
-                  <Tooltip id="my-tooltip" />
-                </a>
-              )}
+              {recipe.country_of_origin &&
+                hasFlag(recipe.country_of_origin!) && (
+                  <a
+                    data-tooltip-id="my-tooltip"
+                    data-tooltip-content={recipe.country_of_origin!.toString()}
+                  >
+                    <span
+                      className={styles.badge}
+                      style={{
+                        background: `url(${hasFlag(recipe.country_of_origin!) ? `https://purecatamphetamine.github.io/country-flag-icons/3x2/${recipe.country_of_origin!}.svg` : undefined})`,
+                        minHeight: "20px",
+                        minWidth: "30px",
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        color: "white",
+                      }}
+                    ></span>
+                    <Tooltip id="my-tooltip" />
+                  </a>
+                )}
             </div>
           </div>
         </div>

@@ -18,7 +18,7 @@ import EditProfilePage from "./pages/EditProfile";
 
 function App() {
   useScrollRestoration(["/explore"]);
-  const { session, profile, loading, needsOnboarding, signOut } = useAuth();
+  const { session, profile, loading, needsOnboarding } = useAuth();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -84,9 +84,6 @@ function App() {
           if (location.pathname === "/auth") {
             navigate("/");
           }
-        }}
-        onAuthSuccess={() => {
-          setIsAuthOpen(false);
         }}
       />
 

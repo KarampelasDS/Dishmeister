@@ -1,5 +1,5 @@
 import styles from "./Dock.module.css";
-import { Home, Compass, SquarePlus, Heart, User, Bookmark } from "lucide-react";
+import { Home, Compass, SquarePlus, User, Bookmark } from "lucide-react";
 import { useNavigate } from "react-router";
 
 interface DockProps {

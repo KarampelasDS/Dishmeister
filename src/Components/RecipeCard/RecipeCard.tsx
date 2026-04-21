@@ -20,6 +20,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useFeedCache } from "../../Context/FeedCacheContext";
+import type { ReactNode } from "react";
 
 type Recipe = {
   id: string;
@@ -36,6 +37,8 @@ type Recipe = {
   like_count: number;
   dislike_count: number;
   current_user_reaction: "like" | "dislike" | null;
+  is_saved: boolean;
+  save_count: number;
   comment_count: number;
   profiles: {
     id: string;
@@ -54,7 +57,7 @@ interface RecipeCardProps {
   children?: ReactNode;
 }
 
-export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
+export default function RecipeCard({ recipe }: RecipeCardProps) {
   const navigate = useNavigate();
   const { invalidate, patchRecipe } = useFeedCache();
 
@@ -107,7 +110,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     ? r.profiles.avatar_url
     : "/assets/avatar.jpg";
   const description = r?.description ?? "";
-  const [rating, setRating] = useState<number>(r?.rating ?? 100);
+  const [rating, setRating] = useState<number>(0);
   const [isSaved, setIsSaved] = useState<boolean>(r?.is_saved ?? false);
   const [saveCount, setSaveCount] = useState<number>(r?.save_count ?? 0);
   const preparation_time = r?.preparation_time ?? 0;
@@ -190,7 +193,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
         .from("recipe_reactions")
         .upsert(
           { user_id: user.id, recipe_id: r.id, reaction: newReaction },
-          { onConflict: ["user_id", "recipe_id"] },
+          { onConflict: "user_id,recipe_id" },
         );
       error = res.error;
     }
@@ -236,7 +239,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
       const res = await supabase
         .from("recipe_saves")
         .delete()
-        .match({ recipe_id: recipe.id, saved_by: user.id });
+        .match({ recipe_id: recipe?.id, saved_by: user.id });
       error = res.error;
 
       if (error) {
@@ -256,7 +259,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
 
       const res = await supabase
         .from("recipe_saves")
-        .upsert({ recipe_id: recipe.id, saved_by: user.id });
+        .upsert({ recipe_id: recipe?.id, saved_by: user.id });
       error = res.error;
 
       if (error) {
@@ -419,7 +422,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
         <div className={styles.statsRow}>
           <ProfileStat
             stat="Servings"
-            statAmount={recipe.servings.toString()}
+            statAmount={recipe?.servings.toString()}
             border="2px solid var(--stat1-border)"
             background="var(--stat1-bg)"
             iconColor="var(--stat1-icon)"
@@ -433,7 +436,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
           />
           <ProfileStat
             stat="Category"
-            statAmount={recipe.categories.name}
+            statAmount={recipe?.categories.name}
             border="2px solid var(--stat3-border)"
             background="var(--stat3-bg)"
             iconColor="var(--stat3-icon)"

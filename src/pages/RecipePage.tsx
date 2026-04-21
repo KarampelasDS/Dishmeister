@@ -30,11 +30,11 @@ type Recipe = {
     id: string;
     name: string;
   };
-  ingredients: string | null;
-  instructions: string | null;
+  ingredients: string[];
+  instructions: string[];
 };
 
-type Comment = {
+interface Comment {
   id: string;
   content: string;
   created_at: string;
@@ -48,7 +48,8 @@ type Comment = {
     display_name: string | null;
     avatar_url: string | null;
   };
-};
+  replies: Comment[];
+}
 
 export default function RecipePage() {
   const { id } = useParams<{ id: string }>();
@@ -113,7 +114,7 @@ export default function RecipePage() {
         ...data,
         current_user_reaction: data.recipe_reactions?.[0]?.reaction ?? null,
         is_saved: data.recipe_saves?.[0]?.recipe_id !== undefined,
-      });
+      } as unknown as Recipe);
 
       if (userId) {
         const { data: profile } = await supabase
@@ -135,7 +136,7 @@ export default function RecipePage() {
   const fetchComments = useCallback(
     async (
       userId: string | null = currentUserId,
-      recipeId: string | null = id,
+      recipeId: string | undefined = id,
     ) => {
       if (!recipeId) return;
 

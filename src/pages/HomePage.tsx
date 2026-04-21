@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../supabase";
-import { useNavigate } from "react-router";
 import RecipeCard from "../Components/RecipeCard/RecipeCard";
 import styles from "./HomePage.module.css";
 import { Sparkles, Users } from "lucide-react";
@@ -70,7 +69,6 @@ const SHARED_SELECT = `
 `;
 
 function HomePage() {
-  const navigate = useNavigate();
   const { state, setFeed, isStale } = useFeedCache();
 
   const [activeTab, setActiveTab] = useState<FeedTab>("for-you");
@@ -94,11 +92,7 @@ function HomePage() {
       is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
     }));
 
-  const fetchRecipes = async (
-    pageToFetch: number,
-    tab: FeedTab,
-    retries = 3,
-  ) => {
+  const fetchRecipes = async (pageToFetch: number, tab: FeedTab) => {
     if (loadingRef.current) return;
 
     loadingRef.current = true;
@@ -302,11 +296,7 @@ function HomePage() {
 
       <ul style={{ listStyle: "none", padding: 0 }}>
         {recipes.map((recipe) => (
-          <RecipeCard
-            key={recipe.id}
-            recipe={recipe}
-            onClick={() => navigate(`/recipes/${recipe.id}`)}
-          />
+          <RecipeCard key={recipe.id} recipe={recipe} />
         ))}
       </ul>
 

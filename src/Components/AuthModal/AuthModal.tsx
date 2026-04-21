@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Mail, Lock, Eye, EyeOff, ChefHat } from "lucide-react";
 import { supabase } from "../../supabase";
-import type { Session } from "@supabase/supabase-js";
 import styles from "./AuthModal.module.css";
 import Button from "../Button/Button";
 import { useFeedCache } from "../../Context/FeedCacheContext";

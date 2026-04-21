@@ -6,7 +6,7 @@ import styles from "./CreateRecipe.module.css";
 import countries from "i18n-iso-countries";
 import en from "i18n-iso-countries/langs/en.json";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
-import { useLocalDraft } from "../../hooks/useLocalDraft";
+import { useLocalDraft } from "../../Hooks/useLocalDraft";
 
 type Category = {
   id: string;

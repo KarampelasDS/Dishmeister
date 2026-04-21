@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
-import { useNavigate } from "react-router";
 import RecipeCard from "../Components/RecipeCard/RecipeCard";
 
 type Recipe = {
@@ -37,8 +36,6 @@ type Recipe = {
 const PAGE_SIZE = 10;
 
 function Recipes() {
-  const navigate = useNavigate();
-
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -121,11 +118,7 @@ function Recipes() {
 
       <ul style={{ listStyle: "none", padding: 0 }}>
         {recipes.map((recipe) => (
-          <RecipeCard
-            key={recipe.id}
-            recipe={recipe}
-            onClick={() => navigate(`/recipes/${recipe.id}`)}
-          />
+          <RecipeCard key={recipe.id} recipe={recipe} />
         ))}
       </ul>
 

@@ -1,6 +1,6 @@
 import styles from "./PhotoEditor.module.css";
 import Button from "../Button/Button";
-import { X, Search, Plus, RotateCcw, Grid2x2 } from "lucide-react";
+import { X, Search, RotateCcw, Grid2x2 } from "lucide-react";
 import AvatarEditor from "react-avatar-editor";
 import { useRef, useState } from "react";
 

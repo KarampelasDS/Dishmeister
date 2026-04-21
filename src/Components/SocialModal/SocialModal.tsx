@@ -1,4 +1,3 @@
-import styles from "./SocialModal.module.css";
 export default function SocialModal() {
   return (
     <div>

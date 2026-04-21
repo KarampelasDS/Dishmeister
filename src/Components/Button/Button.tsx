@@ -1,5 +1,5 @@
 import styles from "./Button.module.css";
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
 
 interface ButtonProps {
   text?: string;

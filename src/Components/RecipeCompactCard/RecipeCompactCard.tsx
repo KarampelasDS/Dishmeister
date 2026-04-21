@@ -1,12 +1,12 @@
 import styles from "./RecipeCompactCard.module.css";
-import Button from "../Button/Button";
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 import { supabase } from "../../supabase";
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useFeedCache } from "../../Context/FeedCacheContext";
+import type { ReactNode } from "react";
 
 import {
   Heart,
@@ -36,12 +36,14 @@ type Recipe = {
   dislike_count: number;
   current_user_reaction: "like" | "dislike" | null;
   comment_count: number;
-
+  is_saved: boolean;
+  save_count: number;
   profiles: {
     id: string;
     display_name: string | null;
     avatar_url: string | null;
     username: string | null;
+    follower_count: number;
   };
 
   categories: {
@@ -55,7 +57,7 @@ interface RecipeCardProps {
   children?: ReactNode;
 }
 
-export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
+export default function RecipeCard({ recipe }: RecipeCardProps) {
   const navigate = useNavigate();
   const { invalidate, patchRecipe } = useFeedCache();
   const convertTimeToMinutes = (
@@ -99,8 +101,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const title = r?.title ?? "Creamy Carbonara";
   const cover = r?.image_url ?? r?.image_url ?? "/assets/pasta.jpg";
   const difficulty = r?.difficulty ?? "Medium";
-  const [likes, setLikes] = useState<number>(r?.like_count ?? 0);
-  const [dislikes, setDislikes] = useState<number>(r?.dislike_count ?? 0);
+  const [likes] = useState<number>(r?.like_count ?? 0);
+  const [dislikes] = useState<number>(r?.dislike_count ?? 0);
   const authorName =
     r?.profiles?.display_name ?? r?.profiles?.username ?? "chef_marco";
   const authorUsername = r?.profiles?.username;
@@ -109,9 +111,8 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
   const authorAvatar = r?.profiles?.avatar_url
     ? r.profiles.avatar_url
     : "/assets/avatar.jpg";
-  const saves = r?.saves ?? 0;
   const description = r?.description ?? "";
-  const [rating, setRating] = useState<number>(r?.rating ?? 100);
+  const [rating, setRating] = useState<number>(100);
   const [isSaved, setIsSaved] = useState<boolean>(r?.is_saved ?? false);
   const [saveCount, setSaveCount] = useState<number>(r?.save_count ?? 0);
   const preparation_time = r?.preparation_time ?? 0;
@@ -132,7 +133,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
     : "25 Min";
 
   const handleSave = async () => {
-    if (isSaving) return;
+    if (isSaving || !recipe) return;
     setIsSaving(true);
     const {
       data: { user },
@@ -150,11 +151,11 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
       const newSaveCount = Math.max(0, saveCount - 1);
       setSaveCount(newSaveCount);
       setIsSaved(false);
-      patchRecipe(recipe.id, { is_saved: false, save_count: newSaveCount });
+      patchRecipe(recipe?.id, { is_saved: false, save_count: newSaveCount });
       const res = await supabase
         .from("recipe_saves")
         .delete()
-        .match({ recipe_id: recipe.id, saved_by: user.id });
+        .match({ recipe_id: recipe?.id, saved_by: user.id });
       invalidate("savedRecipes");
       error = res.error;
       if (error) {
@@ -208,7 +209,7 @@ export default function RecipeCard({ recipe = {} }: RecipeCardProps) {
 
   return (
     <article
-      onClick={() => navigate(`/recipes/${recipe.id}`)}
+      onClick={() => navigate(`/recipes/${recipe?.id}`)}
       className={styles.container}
     >
       <header className={styles.header}>

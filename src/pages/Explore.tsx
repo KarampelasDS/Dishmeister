@@ -792,7 +792,7 @@ function Explore() {
                 username={profile.username ?? ""}
                 followers={profile.follower_count}
                 bio={profile.bio ?? ""}
-                profilePictureUrl={profile.avatar_url}
+                profilePictureUrl={profile.avatar_url ?? "/defaultAvatar.png"}
               />
             ))}
           </div>

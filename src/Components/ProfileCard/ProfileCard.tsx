@@ -4,7 +4,17 @@ import Button from "../Button/Button";
 import { Mail, ArrowLeft, Pencil } from "lucide-react";
 import { useNavigate } from "react-router";
 
-//finish profile card design
+type profileType = {
+  id: string;
+  username: string;
+  avatar_url: string;
+  display_name: string;
+  bio: string;
+  recipe_count: number;
+  follower_count: number;
+  following_count: number;
+  total_likes: number;
+};
 
 export default function ProfileCard({
   profile,

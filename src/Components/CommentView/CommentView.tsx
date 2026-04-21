@@ -129,7 +129,7 @@ export default function CommentView({
         .from("comment_reactions")
         .upsert(
           { user_id: user.id, comment_id: comment.id, reaction: newReaction },
-          { onConflict: ["user_id", "comment_id"] },
+          { onConflict: "user_id,comment_id" },
         );
       error = res.error;
     }
