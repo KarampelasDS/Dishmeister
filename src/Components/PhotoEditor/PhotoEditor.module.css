@@ -6,32 +6,41 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 12px;
+  cursor: pointer;
 }
 
 .container {
-  width: 640px;
+  width: min(640px, 100%);
   background: white;
   border-radius: 20px;
-  overflow: hidden;
+  overflow: scroll;
+  overflow-x: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - 24px);
 }
 
 .header {
   display: flex;
   justify-content: space-between;
-  padding: 22px 24px;
+  align-items: flex-start;
+  padding: 14px 18px;
   background: linear-gradient(90deg, #ff7a00, #ff2d55);
   color: white;
+  flex-shrink: 0;
 }
 
 .header h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: clamp(15px, 4vw, 20px);
 }
 
 .header p {
-  margin: 4px 0 0;
-  font-size: 13px;
+  margin: 3px 0 0;
+  font-size: 12px;
   opacity: 0.9;
 }
 
@@ -45,10 +54,14 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .editorContainer {
-  padding: 20px;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .editorWrapper {
@@ -57,10 +70,9 @@
   justify-content: center;
   align-items: center;
   border-radius: 16px;
-  padding: 20px;
+  padding: 10px;
 }
 
-/* grid overlay */
 .gridOverlay {
   position: absolute;
   width: 260px;
@@ -70,38 +82,36 @@
   grid-template-rows: 1fr 1fr;
   pointer-events: none;
 }
+
 .gridOverlayRecipe {
   position: absolute;
-  width: 640px;
-  height: 400px;
+  width: 350px;
+  height: 200px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
   pointer-events: none;
 }
 
-.gridOverlay div {
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
+.gridOverlay div,
 .gridOverlayRecipe div {
   border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-/* sliders */
-
 .sliderContainer {
-  margin: 10px 20px;
+  margin: 6px 12px;
   background: #e7f1ff;
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px 12px;
+  flex-shrink: 0;
 }
 
 .sliderContainerPurple {
-  margin: 10px 20px;
+  margin: 6px 12px;
   background: #efe5ff;
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px 12px;
+  flex-shrink: 0;
 }
 
 .sliderRow {
@@ -112,6 +122,7 @@
 
 .sliderRow input {
   flex: 1;
+  min-width: 0;
   padding: 0 !important;
 }
 
@@ -119,29 +130,36 @@
   color: #1976ff;
   font-weight: 600;
   font-size: 13px;
+  min-width: 40px;
+  text-align: right;
 }
 
 .valuePurple {
   color: #8b3dff;
   font-weight: 600;
   font-size: 13px;
+  min-width: 36px;
+  text-align: right;
 }
 
 .gridButtonWrapper {
   display: flex;
   max-width: 300px;
   justify-content: center;
-  margin: auto;
+  margin: 6px auto;
+  flex-shrink: 0;
 }
 
 .gridButton {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
 }
 
 .buttonRow {
   display: flex;
-  gap: 16px;
-  padding: 20px;
+  gap: 10px;
+  padding: 12px;
+  flex-shrink: 0;
 }

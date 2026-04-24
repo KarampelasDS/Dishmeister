@@ -31,9 +31,8 @@ export default function PhotoEditor({
   };
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.container}>
-        {/* Header */}
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.container} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <div>
             <h2>Edit {mode === "recipe" ? "Recipe" : "Profile"} Picture</h2>
@@ -42,13 +41,11 @@ export default function PhotoEditor({
               {mode === "recipe" ? "recipe picture" : "avatar"}
             </p>
           </div>
-
           <button className={styles.closeButton} onClick={onClose}>
             <X size={20} color="#fff" />
           </button>
         </div>
 
-        {/* Editor */}
         <div className={styles.editorContainer}>
           <div className={styles.editorWrapper}>
             <AvatarEditor
@@ -80,11 +77,9 @@ export default function PhotoEditor({
           </div>
         </div>
 
-        {/* Zoom */}
         <div className={styles.sliderContainer}>
           <div className={styles.sliderRow}>
             <Search size={18} />
-
             <input
               type="range"
               min={1}
@@ -93,16 +88,13 @@ export default function PhotoEditor({
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
             />
-
             <span className={styles.value}>{Math.round(zoom * 100)}%</span>
           </div>
         </div>
 
-        {/* Rotation */}
         <div className={styles.sliderContainerPurple}>
           <div className={styles.sliderRow}>
             <RotateCcw size={18} />
-
             <input
               type="range"
               min={0}
@@ -110,12 +102,10 @@ export default function PhotoEditor({
               value={rotation}
               onChange={(e) => setRotation(Number(e.target.value))}
             />
-
             <span className={styles.valuePurple}>{rotation}°</span>
           </div>
         </div>
 
-        {/* Grid toggle */}
         <div className={styles.gridButtonWrapper}>
           <Button
             onButtonClick={() => setGrid(!grid)}
@@ -129,7 +119,6 @@ export default function PhotoEditor({
           </Button>
         </div>
 
-        {/* Buttons */}
         <div className={styles.buttonRow}>
           <Button
             onButtonClick={onChangePhoto}
@@ -138,7 +127,6 @@ export default function PhotoEditor({
           >
             Change Photo
           </Button>
-
           <Button
             onButtonClick={handleSave}
             backgroundColor="linear-gradient(90deg,#ff7a00,#ff2d55)"
