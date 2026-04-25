@@ -12,9 +12,9 @@
 
 .container {
   width: min(640px, 100%);
-  background: white;
+  background: var(--bg);
   border-radius: 20px;
-  overflow: scroll;
+  overflow: auto;
   overflow-x: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
   cursor: default;
@@ -100,7 +100,7 @@
 
 .sliderContainer {
   margin: 6px 12px;
-  background: #e7f1ff;
+  background: var(--secondary-bg);
   border-radius: 12px;
   padding: 10px 12px;
   flex-shrink: 0;
@@ -108,7 +108,7 @@
 
 .sliderContainerPurple {
   margin: 6px 12px;
-  background: #efe5ff;
+  background: var(--secondary-bg);
   border-radius: 12px;
   padding: 10px 12px;
   flex-shrink: 0;
