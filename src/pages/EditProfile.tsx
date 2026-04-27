@@ -183,7 +183,7 @@ export default function EditProfilePage() {
         <button className={styles.back} onClick={() => navigate(-1)}>
           ← Back
         </button>
-        <h1>Edit Profile</h1>
+        <h1>Account Settings</h1>
       </div>
 
       <div className={styles.layout}>
