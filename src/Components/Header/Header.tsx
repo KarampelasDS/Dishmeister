@@ -15,7 +15,7 @@ export default function Header(props: any) {
       </div>
       <div className={styles.userMenuContainerDesktop}>
         <UserMenu
-          username={props.username}
+          username={props.displayName}
           avatarUrl={props.avatarUrl}
           onToggleDarkMode={props.onToggleDarkMode}
         />

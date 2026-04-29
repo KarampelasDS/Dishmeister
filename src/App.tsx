@@ -44,7 +44,7 @@ function App() {
   return (
     <div>
       <Header
-        username={profile?.display_name ?? null}
+        username={profile?.username ?? null}
         displayName={profile?.display_name ?? null}
         avatarUrl={profile?.avatar_url ?? null}
         onLoginClick={() => setIsAuthOpen(true)}
