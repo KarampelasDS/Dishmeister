@@ -43,7 +43,14 @@ export default function BurgerMenu({
     {
       label: username !== null ? "Logout" : "Login",
       link: "",
-      onClick: () => (username !== null ? logout() : navigate("/auth")),
+      onClick: (e: MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        if (username !== null) {
+          logout();
+        } else {
+          navigate("/auth");
+        }
+      },
     },
   ];
   return (
