@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "../supabase";
 import { useSearchParams } from "react-router";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
@@ -15,6 +15,12 @@ import {
 } from "lucide-react";
 import countries from "i18n-iso-countries";
 import en from "i18n-iso-countries/langs/en.json";
+import {
+  useFeedCache,
+  makeExploreFilterKey,
+  makeSearchKey,
+} from "../Context/FeedCacheContext";
+import type { ExploreTabKey } from "../Context/FeedCacheContext";
 
 countries.registerLocale(en);
 
@@ -42,6 +48,7 @@ type Recipe = {
   is_saved: boolean;
   save_count: number;
   comment_count: number;
+  created_at: string | null;
   profiles: {
     id: string;
     display_name: string | null;
@@ -70,6 +77,8 @@ type Category = {
 };
 
 type TopFilter = "all" | "trending" | "top-rated";
+// Search sort: "recent" = order by created_at desc, "top-rated" = order by save_count desc
+type SearchSort = "recent" | "top-rated";
 type Difficulty = "Easy" | "Medium" | "Hard";
 type SearchTab = "recipes" | "people";
 
@@ -99,6 +108,13 @@ const SHARED_SELECT = `
   recipe_saves!left (recipe_id, saved_by)
 `;
 
+/** Maps TopFilter to the ExploreTabKey used in FeedCacheContext */
+function topFilterToTabKey(top: TopFilter): ExploreTabKey {
+  if (top === "trending") return "exploreTrending";
+  if (top === "top-rated") return "exploreTopRated";
+  return "exploreAll";
+}
+
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
@@ -110,26 +126,56 @@ function useDebounce<T>(value: T, delay: number): T {
 
 function Explore() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const cache = useFeedCache();
+
+  // ─── Restore persisted tab + filters on mount ────────────────────────────
+  // We read from cache.state directly (not via getters) so the initial useState
+  // values reflect what was last cached, preventing a flicker to defaults.
+  const cachedActiveTab = cache.state.activeExploreTab as TopFilter;
+  const initialTopFilter: TopFilter =
+    cachedActiveTab === "trending" || cachedActiveTab === "top-rated"
+      ? cachedActiveTab
+      : "all";
+
+  const initialTabKey = topFilterToTabKey(initialTopFilter);
+  const cachedFilters = cache.getExploreTabFilters(initialTabKey);
 
   const [searchInput, setSearchInput] = useState(searchParams.get("q") ?? "");
   const [activeSearchTab, setActiveSearchTab] = useState<SearchTab>("recipes");
-  const [topFilter, setTopFilter] = useState<TopFilter>("all");
-  const [filtersOpen, setFiltersOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
-  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | "">(
-    "",
+  // Search sort — separate from explore top filter
+  const [searchSort, setSearchSort] = useState<SearchSort>("recent");
+  const [topFilter, setTopFilter] = useState<TopFilter>(initialTopFilter);
+  const [searchFiltersOpen, setSearchFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(
+    !!(
+      cachedFilters.category ||
+      cachedFilters.difficulty ||
+      cachedFilters.country
+    ),
   );
-  const [selectedCountry, setSelectedCountry] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    cachedFilters.category,
+  );
+  const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | "">(
+    cachedFilters.difficulty as Difficulty | "",
+  );
+  const [selectedCountry, setSelectedCountry] = useState<string>(
+    cachedFilters.country,
+  );
+  // Search-specific filters — fully independent from explore filters
+  const [searchCategory, setSearchCategory] = useState<string>("");
+  const [searchDifficulty, setSearchDifficulty] = useState<Difficulty | "">("");
+  const [searchCountry, setSearchCountry] = useState<string>("");
+
   const [categories, setCategories] = useState<Category[]>([]);
 
-  // Recipes state
+  // ─── Local display state (populated from cache or fresh fetch) ───────────
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState<number | null>(null);
 
-  // People state
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [peoplePage, setPeoplePage] = useState(0);
   const [peopleLoading, setPeopleLoading] = useState(false);
@@ -139,23 +185,40 @@ function Explore() {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
-  const debouncedSearch = useDebounce(searchInput, 300);
-  const pillsRef = useRef<HTMLDivElement>(null);
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  const peopleSentinelRef = useRef<HTMLDivElement>(null);
+  // ─── Refs ─────────────────────────────────────────────────────────────────
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
   const pageRef = useRef(0);
   const peopleLoadingRef = useRef(false);
   const peopleHasMoreRef = useRef(true);
   const peoplePageRef = useRef(0);
+  const restoredFromCache = useRef(false);
+  const lastFetchKey = useRef<string>("");
+
+  const debouncedSearch = useDebounce(searchInput, 300);
+  const pillsRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const peopleSentinelRef = useRef<HTMLDivElement>(null);
 
   const hasAdvancedFilters = !!(
     selectedCategory ||
     selectedDifficulty ||
     selectedCountry
   );
+  const hasSearchFilters = !!(
+    searchCategory ||
+    searchDifficulty ||
+    searchCountry
+  );
   const isSearching = debouncedSearch.trim().length >= 3;
+
+  // Derived: which explore tab + filter key we're currently on
+  const currentTabKey = topFilterToTabKey(topFilter);
+  const currentFilterKey = makeExploreFilterKey(
+    selectedCategory,
+    selectedDifficulty,
+    selectedCountry,
+  );
 
   const activeBadges = [
     selectedCategory && {
@@ -172,7 +235,65 @@ function Explore() {
     },
   ].filter(Boolean) as { label: string; clear: () => void }[];
 
-  // Fetch categories
+  const searchActiveBadges = [
+    searchCategory && {
+      label: `Category: ${categories.find((c) => c.id === searchCategory)?.name}`,
+      clear: () => setSearchCategory(""),
+    },
+    searchDifficulty && {
+      label: searchDifficulty,
+      clear: () => setSearchDifficulty(""),
+    },
+    searchCountry && {
+      label: countries.getName(searchCountry, "en") ?? searchCountry,
+      clear: () => setSearchCountry(""),
+    },
+  ].filter(Boolean) as { label: string; clear: () => void }[];
+
+  // ─── Persist active tab to cache whenever it changes ─────────────────────
+  useEffect(() => {
+    cache.setActiveExploreTab(topFilter);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topFilter]);
+
+  // ─── Persist filters to cache whenever they change ───────────────────────
+  useEffect(() => {
+    cache.setExploreTabFilters(currentTabKey, {
+      category: selectedCategory,
+      difficulty: selectedDifficulty,
+      country: selectedCountry,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCategory, selectedDifficulty, selectedCountry, currentTabKey]);
+
+  // ─── In search mode, bust cache + re-fetch when search filters change ───────
+  useEffect(() => {
+    if (!isSearching) return;
+    cache.invalidateSearch(debouncedSearch);
+    resetAndFetchSearch(debouncedSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchCategory, searchDifficulty, searchCountry]);
+
+  // ─── Restore filters when switching tabs ─────────────────────────────────
+  // When the user switches to a different tab, restore that tab's last-used filters.
+  const prevTopFilter = useRef<TopFilter>(initialTopFilter);
+  useEffect(() => {
+    if (topFilter === prevTopFilter.current) return;
+    prevTopFilter.current = topFilter;
+
+    const tabKey = topFilterToTabKey(topFilter);
+    const saved = cache.getExploreTabFilters(tabKey);
+    setSelectedCategory(saved.category);
+    setSelectedDifficulty(saved.difficulty as Difficulty | "");
+    setSelectedCountry(saved.country);
+    // Auto-expand filters if this tab has non-default filters saved
+    if (saved.category || saved.difficulty || saved.country) {
+      setFiltersOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topFilter]);
+
+  // ─── Fetch categories ────────────────────────────────────────────────────
   useEffect(() => {
     const fetchCategories = async () => {
       const { data } = await supabase
@@ -190,7 +311,7 @@ function Explore() {
     fetchCategories();
   }, []);
 
-  // Overflow detection
+  // ─── Overflow detection ──────────────────────────────────────────────────
   useEffect(() => {
     const el = pillsRef.current;
     if (!el) return;
@@ -208,7 +329,7 @@ function Explore() {
     };
   }, [categories]);
 
-  // Sync search to URL
+  // ─── Sync search ↔ URL ───────────────────────────────────────────────────
   useEffect(() => {
     if (debouncedSearch) {
       setSearchParams({ q: debouncedSearch });
@@ -217,140 +338,226 @@ function Explore() {
     }
   }, [debouncedSearch]);
 
-  // Sync URL param to input
   useEffect(() => {
     const q = searchParams.get("q") ?? "";
     setSearchInput(q);
   }, [searchParams]);
 
-  // Reset search tab to recipes when search is cleared
+  // Reset search tab and lastFetchKey when search is cleared so the explore
+  // cache restore effect always re-runs on transition back to explore mode.
   useEffect(() => {
     if (!isSearching) {
       setActiveSearchTab("recipes");
+      lastFetchKey.current = ""; // force cache restore on next explore render
+      setSearchFiltersOpen(false);
+      setSearchCategory("");
+      setSearchDifficulty("");
+      setSearchCountry("");
     }
   }, [isSearching]);
 
-  // ── RECIPES ──────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // EXPLORE RECIPES (non-search)
+  // ─────────────────────────────────────────────────────────────────────────
 
-  const fetchRecipes = async (
-    pageToFetch: number,
-    search: string,
-    top: TopFilter,
-    category: string,
-    difficulty: Difficulty | "",
-    country: string,
-    retries = 3,
-  ) => {
-    if (loadingRef.current) return;
-    loadingRef.current = true;
-    setLoading(true);
+  const fetchRecipes = useCallback(
+    async (
+      pageToFetch: number,
+      search: string,
+      top: TopFilter,
+      category: string,
+      difficulty: Difficulty | "",
+      country: string,
+      retries = 3,
+    ) => {
+      if (loadingRef.current) return;
+      loadingRef.current = true;
+      setLoading(true);
 
-    const from = pageToFetch * PAGE_SIZE;
-    const to = from + PAGE_SIZE - 1;
+      const from = pageToFetch * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    let data: any,
-      error: any,
-      count: number | null = null;
+      let data: any,
+        error: any,
+        count: number | null = null;
 
-    for (let attempt = 0; attempt < retries; attempt++) {
-      let query = supabase
-        .from("recipes")
-        .select(SHARED_SELECT, { count: "exact" })
-        .eq("recipe_reactions.user_id", user?.id ?? "")
-        .range(from, to);
+      for (let attempt = 0; attempt < retries; attempt++) {
+        let query = supabase
+          .from("recipes")
+          .select(SHARED_SELECT, { count: "exact" })
+          .eq("recipe_reactions.user_id", user?.id ?? "")
+          .range(from, to);
 
-      if (search.trim().length >= 3) {
-        query = query.or(
-          `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%,category_name.ilike.%${search.trim()}%,ingredients_text.ilike.%${search.trim()}%`,
-        );
+        if (search.trim().length >= 3) {
+          query = query.or(
+            `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%,category_name.ilike.%${search.trim()}%,ingredients_text.ilike.%${search.trim()}%`,
+          );
+        }
+
+        if (category) query = query.eq("category_id", category);
+        if (difficulty) query = query.eq("difficulty", difficulty);
+        if (country) query = query.eq("country_of_origin", country);
+
+        if (top === "top-rated") {
+          query = query.order("save_count", { ascending: false });
+        } else if (top === "trending") {
+          query = query
+            .gte(
+              "created_at",
+              new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+            )
+            .order("save_count", { ascending: false });
+        } else {
+          query = query.order("created_at", { ascending: false });
+        }
+
+        ({ data, error, count } = await query);
+        if (!error) break;
+        if (attempt < retries - 1) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, 1000 * (attempt + 1)),
+          );
+        }
       }
 
-      if (category) query = query.eq("category_id", category);
-      if (difficulty) query = query.eq("difficulty", difficulty);
-      if (country) query = query.eq("country_of_origin", country);
+      loadingRef.current = false;
+      setLoading(false);
 
-      if (top === "top-rated") {
-        query = query.order("save_count", { ascending: false });
-      } else if (top === "trending") {
-        query = query
-          .gte(
-            "created_at",
-            new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          )
-          .order("save_count", { ascending: false });
+      if (error) {
+        console.error(error.message);
+        return;
+      }
+
+      const transformed: Recipe[] = (data ?? []).map((recipe: any) => ({
+        ...recipe,
+        current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
+        is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
+      }));
+
+      const newHasMore = (data ?? []).length === PAGE_SIZE;
+      hasMoreRef.current = newHasMore;
+
+      const tabKey = topFilterToTabKey(top);
+      const filterKey = makeExploreFilterKey(category, difficulty, country);
+
+      if (pageToFetch === 0) {
+        setRecipes(transformed);
+        cache.setExploreFeed(tabKey, filterKey, {
+          recipes: transformed,
+          page: 0,
+          hasMore: newHasMore,
+          totalCount: count,
+          lastFetched: Date.now(),
+        });
       } else {
-        query = query.order("created_at", { ascending: false });
+        setRecipes((prev) => {
+          const existingIds = new Set(prev.map((r) => r.id));
+          const fresh = transformed.filter((r) => !existingIds.has(r.id));
+          const merged = [...prev, ...fresh];
+          cache.setExploreFeed(tabKey, filterKey, {
+            recipes: merged,
+            page: pageToFetch,
+            hasMore: newHasMore,
+            totalCount: count ?? totalCount,
+            lastFetched: Date.now(),
+          });
+          return merged;
+        });
       }
 
-      ({ data, error, count } = await query);
-      if (!error) break;
-      if (attempt < retries - 1) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, 1000 * (attempt + 1)),
-        );
+      setHasMore(newHasMore);
+      if (count !== null) setTotalCount(count);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const resetAndFetch = useCallback(
+    (
+      top = topFilter,
+      category = selectedCategory,
+      difficulty = selectedDifficulty,
+      country = selectedCountry,
+      search = debouncedSearch,
+    ) => {
+      pageRef.current = 0;
+      setPage(0);
+      setRecipes([]);
+      setHasMore(true);
+      setTotalCount(null);
+      hasMoreRef.current = true;
+      loadingRef.current = false;
+      fetchRecipes(0, search, top, category, difficulty, country);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      topFilter,
+      selectedCategory,
+      selectedDifficulty,
+      selectedCountry,
+      debouncedSearch,
+    ],
+  );
+
+  useEffect(() => {
+    if (isSearching) return;
+
+    const tabKey = topFilterToTabKey(topFilter);
+    const filterKey = makeExploreFilterKey(
+      selectedCategory,
+      selectedDifficulty,
+      selectedCountry,
+    );
+    const fetchKey = `${tabKey}::${filterKey}`;
+
+    const cachedFeed = cache.getExploreFeed(tabKey, filterKey);
+    const stale = cache.isExploreFeedStale(tabKey, filterKey);
+
+    if (!stale && cachedFeed.recipes.length > 0) {
+      if (lastFetchKey.current !== fetchKey) {
+        lastFetchKey.current = fetchKey;
+        restoredFromCache.current = true;
+
+        pageRef.current = cachedFeed.page;
+        hasMoreRef.current = cachedFeed.hasMore;
+        loadingRef.current = false;
+
+        setPage(cachedFeed.page);
+        setRecipes(cachedFeed.recipes as Recipe[]);
+        setHasMore(cachedFeed.hasMore);
+        setTotalCount(cachedFeed.totalCount);
       }
-    }
-
-    loadingRef.current = false;
-    setLoading(false);
-
-    if (error) {
-      console.error(error.message);
       return;
     }
 
-    const transformed = (data ?? []).map((recipe: any) => ({
-      ...recipe,
-      current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
-      is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
-    }));
-
-    const newHasMore = (data ?? []).length === PAGE_SIZE;
-    hasMoreRef.current = newHasMore;
-
-    if (pageToFetch === 0) {
-      setRecipes(transformed);
-    } else {
-      setRecipes((prev) => [...prev, ...transformed]);
-    }
-
-    setHasMore(newHasMore);
-    if (count !== null) setTotalCount(count);
-  };
-
-  const resetAndFetch = (
-    top = topFilter,
-    category = selectedCategory,
-    difficulty = selectedDifficulty,
-    country = selectedCountry,
-    search = debouncedSearch,
-  ) => {
-    pageRef.current = 0;
-    setPage(0);
-    setRecipes([]);
-    setHasMore(true);
-    setTotalCount(null);
-    hasMoreRef.current = true;
-    loadingRef.current = false;
-    fetchRecipes(0, search, top, category, difficulty, country);
-  };
-
-  useEffect(() => {
-    resetAndFetch();
+    lastFetchKey.current = fetchKey;
+    restoredFromCache.current = false;
+    resetAndFetch(
+      topFilter,
+      selectedCategory,
+      selectedDifficulty,
+      selectedCountry,
+      debouncedSearch,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    debouncedSearch,
     topFilter,
     selectedCategory,
     selectedDifficulty,
     selectedCountry,
+    debouncedSearch,
+    isSearching,
   ]);
 
   useEffect(() => {
     if (page === 0) return;
+    if (isSearching) return;
+    const cachedFeed = cache.getExploreFeed(currentTabKey, currentFilterKey);
+    if (cachedFeed.page >= page && cachedFeed.recipes.length > 0) return;
     fetchRecipes(
       page,
       debouncedSearch,
@@ -359,18 +566,21 @@ function Explore() {
       selectedDifficulty,
       selectedCountry,
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  // Recipes sentinel
+  // ─── Recipes sentinel ────────────────────────────────────────────────────
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (
           entries[0].isIntersecting &&
           hasMoreRef.current &&
-          !loadingRef.current
+          !loadingRef.current &&
+          !isSearching
         ) {
           setPage((p) => {
             const next = p + 1;
@@ -383,98 +593,330 @@ function Explore() {
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, []);
+  }, [isSearching]);
 
-  // ── PEOPLE ──────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────
+  // SEARCH — RECIPES
+  // ─────────────────────────────────────────────────────────────────────────
 
-  const fetchPeople = async (
-    pageToFetch: number,
-    search: string,
-    retries = 3,
-  ) => {
-    if (peopleLoadingRef.current) return;
-    peopleLoadingRef.current = true;
-    setPeopleLoading(true);
+  const fetchSearchRecipes = useCallback(
+    async (
+      pageToFetch: number,
+      search: string,
+      category: string,
+      difficulty: Difficulty | "",
+      country: string,
+      retries = 3,
+    ) => {
+      if (loadingRef.current) return;
+      loadingRef.current = true;
+      setLoading(true);
 
-    const from = pageToFetch * PEOPLE_PAGE_SIZE;
-    const to = from + PEOPLE_PAGE_SIZE - 1;
+      const from = pageToFetch * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
 
-    let data: any,
-      error: any,
-      count: number | null = null;
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    for (let attempt = 0; attempt < retries; attempt++) {
-      let query = supabase
-        .from("profiles")
-        .select("id, username, display_name, avatar_url, bio, follower_count", {
-          count: "exact",
-        })
-        .range(from, to);
+      let data: any,
+        error: any,
+        count: number | null = null;
 
-      if (search.trim().length >= 3) {
-        query = query.or(
-          `username.ilike.%${search.trim()}%,display_name.ilike.%${search.trim()}%`,
-        );
+      for (let attempt = 0; attempt < retries; attempt++) {
+        let query = supabase
+          .from("recipes")
+          .select(SHARED_SELECT, { count: "exact" })
+          .eq("recipe_reactions.user_id", user?.id ?? "")
+          .range(from, to)
+          .or(
+            `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%,category_name.ilike.%${search.trim()}%,ingredients_text.ilike.%${search.trim()}%`,
+          );
+
+        if (category) query = query.eq("category_id", category);
+        if (difficulty) query = query.eq("difficulty", difficulty);
+        if (country) query = query.eq("country_of_origin", country);
+
+        // Always fetch by most recent; client-side sort handles display ordering
+        query = query.order("created_at", { ascending: false });
+
+        ({ data, error, count } = await query);
+        if (!error) break;
+        if (attempt < retries - 1) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, 1000 * (attempt + 1)),
+          );
+        }
       }
 
-      query = query.order("follower_count", { ascending: false });
+      loadingRef.current = false;
+      setLoading(false);
 
-      ({ data, error, count } = await query);
-      if (!error) break;
-      if (attempt < retries - 1) {
-        await new Promise((resolve) =>
-          setTimeout(resolve, 1000 * (attempt + 1)),
-        );
+      if (error) {
+        console.error(error.message);
+        return;
       }
-    }
 
-    peopleLoadingRef.current = false;
-    setPeopleLoading(false);
+      const transformed: Recipe[] = (data ?? []).map((recipe: any) => ({
+        ...recipe,
+        current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
+        is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
+      }));
 
-    if (error) {
-      console.error(error.message);
+      const newHasMore = (data ?? []).length === PAGE_SIZE;
+      hasMoreRef.current = newHasMore;
+
+      if (pageToFetch === 0) {
+        setRecipes(transformed);
+        cache.setSearchRecipes(search, transformed, 0, newHasMore, count);
+      } else {
+        setRecipes((prev) => {
+          const existingIds = new Set(prev.map((r) => r.id));
+          const fresh = transformed.filter((r) => !existingIds.has(r.id));
+          const merged = [...prev, ...fresh];
+          cache.setSearchRecipes(
+            search,
+            merged,
+            pageToFetch,
+            newHasMore,
+            count ?? totalCount,
+          );
+          return merged;
+        });
+      }
+
+      setHasMore(newHasMore);
+      if (count !== null) setTotalCount(count);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const resetAndFetchSearch = useCallback(
+    (
+      search: string,
+      category = searchCategory,
+      difficulty = searchDifficulty,
+      country = searchCountry,
+    ) => {
+      pageRef.current = 0;
+      setPage(0);
+      setRecipes([]);
+      setHasMore(true);
+      setTotalCount(null);
+      hasMoreRef.current = true;
+      loadingRef.current = false;
+      fetchSearchRecipes(0, search, category, difficulty, country);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [searchCategory, searchDifficulty, searchCountry],
+  );
+
+  /**
+   * Effect that runs when search mode is active.
+   * Also busts cache when sort changes (different ordering = different results).
+   */
+  useEffect(() => {
+    if (!isSearching) return;
+
+    const key = makeSearchKey(debouncedSearch);
+    const entry = cache.getSearchEntry(key);
+    const stale = cache.isSearchStale(key);
+
+    if (!stale && entry && entry.recipes.length > 0) {
+      pageRef.current = entry.recipesPage;
+      hasMoreRef.current = entry.recipesHasMore;
+      loadingRef.current = false;
+
+      setPage(entry.recipesPage);
+      setRecipes(entry.recipes as Recipe[]);
+      setHasMore(entry.recipesHasMore);
+      setTotalCount(entry.recipesTotalCount);
       return;
     }
 
-    const newHasMore = (data ?? []).length === PEOPLE_PAGE_SIZE;
-    peopleHasMoreRef.current = newHasMore;
+    resetAndFetchSearch(debouncedSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, isSearching]);
 
-    if (pageToFetch === 0) {
-      setProfiles(data ?? []);
-    } else {
-      setProfiles((prev) => [...prev, ...(data ?? [])]);
-    }
+  // Load next page for search recipes
+  useEffect(() => {
+    if (page === 0) return;
+    if (!isSearching) return;
+    const entry = cache.getSearchEntry(makeSearchKey(debouncedSearch));
+    if (entry && entry.recipesPage >= page) return;
 
-    setPeopleHasMore(newHasMore);
-    if (count !== null) setPeopleTotalCount(count);
-  };
+    fetchSearchRecipes(
+      page,
+      debouncedSearch,
+      searchCategory,
+      searchDifficulty,
+      searchCountry,
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, isSearching]);
 
-  const resetAndFetchPeople = (search = debouncedSearch) => {
-    peoplePageRef.current = 0;
-    setPeoplePage(0);
-    setProfiles([]);
-    setPeopleHasMore(true);
-    setPeopleTotalCount(null);
-    peopleHasMoreRef.current = true;
-    peopleLoadingRef.current = false;
-    fetchPeople(0, search);
-  };
+  // ─── Search recipe sentinel ───────────────────────────────────────────────
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          hasMoreRef.current &&
+          !loadingRef.current &&
+          isSearching
+        ) {
+          setPage((p) => {
+            const next = p + 1;
+            pageRef.current = next;
+            return next;
+          });
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [isSearching]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // SEARCH — PEOPLE
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const fetchPeople = useCallback(
+    async (pageToFetch: number, search: string, retries = 3) => {
+      if (peopleLoadingRef.current) return;
+      peopleLoadingRef.current = true;
+      setPeopleLoading(true);
+
+      const from = pageToFetch * PEOPLE_PAGE_SIZE;
+      const to = from + PEOPLE_PAGE_SIZE - 1;
+
+      let data: any,
+        error: any,
+        count: number | null = null;
+
+      for (let attempt = 0; attempt < retries; attempt++) {
+        let query = supabase
+          .from("profiles")
+          .select(
+            "id, username, display_name, avatar_url, bio, follower_count",
+            { count: "exact" },
+          )
+          .range(from, to);
+
+        if (search.trim().length >= 3) {
+          query = query.or(
+            `username.ilike.%${search.trim()}%,display_name.ilike.%${search.trim()}%`,
+          );
+        }
+
+        query = query.order("follower_count", { ascending: false });
+
+        ({ data, error, count } = await query);
+        if (!error) break;
+        if (attempt < retries - 1) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, 1000 * (attempt + 1)),
+          );
+        }
+      }
+
+      peopleLoadingRef.current = false;
+      setPeopleLoading(false);
+
+      if (error) {
+        console.error(error.message);
+        return;
+      }
+
+      const newHasMore = (data ?? []).length === PEOPLE_PAGE_SIZE;
+      peopleHasMoreRef.current = newHasMore;
+
+      if (pageToFetch === 0) {
+        setProfiles(data ?? []);
+        cache.setSearchPeople(search, data ?? [], 0, newHasMore, count);
+      } else {
+        setProfiles((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const fresh = (data ?? []).filter(
+            (p: Profile) => !existingIds.has(p.id),
+          );
+          const merged = [...prev, ...fresh];
+          cache.setSearchPeople(
+            search,
+            merged,
+            pageToFetch,
+            newHasMore,
+            count ?? peopleTotalCount,
+          );
+          return merged;
+        });
+      }
+
+      setPeopleHasMore(newHasMore);
+      if (count !== null) setPeopleTotalCount(count);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const resetAndFetchPeople = useCallback(
+    (search = debouncedSearch) => {
+      peoplePageRef.current = 0;
+      setPeoplePage(0);
+      setProfiles([]);
+      setPeopleHasMore(true);
+      setPeopleTotalCount(null);
+      peopleHasMoreRef.current = true;
+      peopleLoadingRef.current = false;
+      fetchPeople(0, search);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [debouncedSearch],
+  );
 
   useEffect(() => {
-    if (activeSearchTab === "people") {
-      resetAndFetchPeople();
+    if (activeSearchTab !== "people") return;
+    if (!isSearching) return;
+
+    const key = makeSearchKey(debouncedSearch);
+    const entry = cache.getSearchEntry(key);
+    const stale = cache.isSearchStale(key);
+
+    if (!stale && entry?.peopleLoaded && entry.people.length > 0) {
+      peoplePageRef.current = entry.peoplePage;
+      peopleHasMoreRef.current = entry.peopleHasMore;
+      peopleLoadingRef.current = false;
+
+      setPeoplePage(entry.peoplePage);
+      setProfiles(entry.people as Profile[]);
+      setPeopleHasMore(entry.peopleHasMore);
+      setPeopleTotalCount(entry.peopleTotalCount);
+      return;
     }
-  }, [activeSearchTab, debouncedSearch]);
+
+    resetAndFetchPeople(debouncedSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSearchTab, debouncedSearch, isSearching]);
 
   useEffect(() => {
     if (peoplePage === 0) return;
+    const entry = cache.getSearchEntry(makeSearchKey(debouncedSearch));
+    if (entry && entry.peoplePage >= peoplePage) return;
+
     fetchPeople(peoplePage, debouncedSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [peoplePage]);
 
-  // People sentinel
+  // ─── People sentinel ─────────────────────────────────────────────────────
   useEffect(() => {
     const sentinel = peopleSentinelRef.current;
     if (!sentinel) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (
@@ -495,6 +937,10 @@ function Explore() {
     return () => observer.disconnect();
   }, [activeSearchTab]);
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // HELPERS
+  // ─────────────────────────────────────────────────────────────────────────
+
   const scrollPills = (direction: "left" | "right") => {
     pillsRef.current?.scrollBy({
       left: direction === "right" ? 150 : -150,
@@ -511,6 +957,20 @@ function Explore() {
   const handleTopFilter = (f: TopFilter) => {
     setTopFilter(f);
   };
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Client-side sort for search results — no re-fetch needed
+  const displayRecipes = isSearching
+    ? [...recipes].sort((a, b) =>
+        searchSort === "top-rated"
+          ? b.save_count - a.save_count
+          : new Date(b.created_at ?? 0).getTime() -
+            new Date(a.created_at ?? 0).getTime(),
+      )
+    : recipes;
 
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0rem 1rem" }}>
@@ -552,185 +1012,323 @@ function Explore() {
         )}
       </p>
 
-      {/* Top pills + Advanced Filters button */}
-      <div className={styles.pillsWrapper}>
-        <button
-          onClick={() => scrollPills("left")}
-          className={`${styles.scrollBtn} ${!canScrollLeft ? styles.scrollBtnHidden : ""}`}
-        >
-          <ChevronLeft size={16} />
-        </button>
-
-        <div ref={pillsRef} className={styles.pillsScroller}>
-          {(
-            [
-              { id: "all", label: "All Recipes" },
-              { id: "trending", label: "Trending" },
-              { id: "top-rated", label: "Top Rated" },
-            ] as { id: TopFilter; label: string }[]
-          ).map((f) => (
+      {/* ── Explore mode: top pills + filters ── */}
+      {!isSearching && (
+        <>
+          <div className={styles.pillsWrapper}>
             <button
-              key={f.id}
-              onClick={() => handleTopFilter(f.id)}
-              className={`${styles.topPill} ${topFilter === f.id ? styles.topPillActive : ""}`}
+              onClick={() => scrollPills("left")}
+              className={`${styles.scrollBtn} ${!canScrollLeft ? styles.scrollBtnHidden : ""}`}
             >
-              {f.label}
+              <ChevronLeft size={16} />
             </button>
-          ))}
-        </div>
 
-        <button
-          onClick={() => scrollPills("right")}
-          className={`${styles.scrollBtn} ${!canScrollRight ? styles.scrollBtnHidden : ""}`}
-        >
-          <ChevronRight size={16} />
-        </button>
-
-        <button
-          onClick={() => setFiltersOpen((o) => !o)}
-          className={`${styles.advancedBtn} ${filtersOpen || hasAdvancedFilters ? styles.advancedBtnActive : ""}`}
-        >
-          <Filter size={14} />
-          Recipe Filters
-        </button>
-      </div>
-
-      {/* Advanced filters panel */}
-      {filtersOpen && (
-        <div className={styles.filtersPanel}>
-          <div className={styles.filtersGrid}>
-            <div>
-              <div className={styles.filterLabel}>
-                <Utensils size={16} /> Category
-              </div>
-              <select
-                className={styles.filterSelect}
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-              >
-                <option value="">All Categories</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+            <div ref={pillsRef} className={styles.pillsScroller}>
+              {(
+                [
+                  { id: "all", label: "All Recipes" },
+                  { id: "trending", label: "Trending" },
+                  { id: "top-rated", label: "Top Rated" },
+                ] as { id: TopFilter; label: string }[]
+              ).map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => handleTopFilter(f.id)}
+                  className={`${styles.topPill} ${topFilter === f.id ? styles.topPillActive : ""}`}
+                >
+                  {f.label}
+                </button>
+              ))}
             </div>
 
-            <div>
-              <div className={styles.filterLabel}>
-                <ChefHat size={16} /> Difficulty
-              </div>
-              <select
-                className={styles.filterSelect}
-                value={selectedDifficulty}
-                onChange={(e) =>
-                  setSelectedDifficulty(e.target.value as Difficulty | "")
-                }
-              >
-                <option value="">All Difficulties</option>
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
-              </select>
-            </div>
+            <button
+              onClick={() => scrollPills("right")}
+              className={`${styles.scrollBtn} ${!canScrollRight ? styles.scrollBtnHidden : ""}`}
+            >
+              <ChevronRight size={16} />
+            </button>
 
-            <div>
-              <div className={styles.filterLabel}>
-                <Globe size={16} /> Country of Origin
-              </div>
-              <select
-                className={styles.filterSelect}
-                value={selectedCountry}
-                onChange={(e) => setSelectedCountry(e.target.value)}
-              >
-                <option value="">All Countries</option>
-                {countryOptions.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <button
+              onClick={() => setFiltersOpen((o) => !o)}
+              className={`${styles.advancedBtn} ${filtersOpen || hasAdvancedFilters ? styles.advancedBtnActive : ""}`}
+            >
+              <Filter size={14} />
+              Recipe Filters
+            </button>
           </div>
 
-          {hasAdvancedFilters && (
-            <div className={styles.badgesRow}>
-              <div className={styles.badges}>
-                {activeBadges.map((badge) => (
-                  <span
-                    key={badge.label}
-                    className={styles.badge}
-                    onClick={badge.clear}
+          {/* Advanced filters panel */}
+          {filtersOpen && (
+            <div className={styles.filtersPanel}>
+              <div className={styles.filtersGrid}>
+                <div>
+                  <div className={styles.filterLabel}>
+                    <Utensils size={16} /> Category
+                  </div>
+                  <select
+                    className={styles.filterSelect}
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
                   >
-                    {badge.label} ×
-                  </span>
-                ))}
+                    <option value="">All Categories</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <div className={styles.filterLabel}>
+                    <ChefHat size={16} /> Difficulty
+                  </div>
+                  <select
+                    className={styles.filterSelect}
+                    value={selectedDifficulty}
+                    onChange={(e) =>
+                      setSelectedDifficulty(e.target.value as Difficulty | "")
+                    }
+                  >
+                    <option value="">All Difficulties</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div className={styles.filterLabel}>
+                    <Globe size={16} /> Country of Origin
+                  </div>
+                  <select
+                    className={styles.filterSelect}
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
+                  >
+                    <option value="">All Countries</option>
+                    {countryOptions.map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <button className={styles.clearAllBtn} onClick={clearAllFilters}>
-                <X size={14} /> Clear All
-              </button>
+
+              {hasAdvancedFilters && (
+                <div className={styles.badgesRow}>
+                  <div className={styles.badges}>
+                    {activeBadges.map((badge) => (
+                      <span
+                        key={badge.label}
+                        className={styles.badge}
+                        onClick={badge.clear}
+                      >
+                        {badge.label} ×
+                      </span>
+                    ))}
+                  </div>
+                  <button
+                    className={styles.clearAllBtn}
+                    onClick={clearAllFilters}
+                  >
+                    <X size={14} /> Clear All
+                  </button>
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </>
       )}
 
-      {/* Search tabs — only show when searching */}
+      {/* ── Search mode: tabs + sort pills ── */}
       {isSearching && (
-        <div
-          style={{
-            display: "flex",
-            gap: 0,
-            marginBottom: "1rem",
-            borderBottom: "1px solid var(--border)",
-          }}
-        >
-          {(
-            [
-              { id: "recipes", label: "Recipes", count: totalCount },
-              { id: "people", label: "People", count: peopleTotalCount },
-            ] as { id: SearchTab; label: string; count: number | null }[]
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveSearchTab(tab.id)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "0.6rem 1.2rem",
-                background: "none",
-                border: "none",
-                borderBottom:
-                  activeSearchTab === tab.id
-                    ? "2px solid #f97316"
-                    : "2px solid transparent",
-                cursor: "pointer",
-                fontWeight: activeSearchTab === tab.id ? 600 : 400,
-                color: activeSearchTab === tab.id ? "#f97316" : "var(--text)",
-                fontSize: "0.95rem",
-                marginBottom: "-1px",
-              }}
-            >
-              {tab.label}
-              {tab.count !== null && (
-                <span
-                  style={{
-                    background:
-                      activeSearchTab === tab.id ? "#f97316" : "var(--border)",
-                    color: activeSearchTab === tab.id ? "#fff" : "var(--text)",
-                    borderRadius: 999,
-                    padding: "0.1rem 0.5rem",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                  }}
+        <>
+          {/* Search result tabs (Recipes / People) */}
+          <div
+            style={{
+              display: "flex",
+              gap: 0,
+              borderBottom: "1px solid var(--border)",
+              marginBottom: "0.75rem",
+            }}
+          >
+            {(
+              [
+                { id: "recipes", label: "Recipes", count: totalCount },
+                { id: "people", label: "People", count: peopleTotalCount },
+              ] as { id: SearchTab; label: string; count: number | null }[]
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveSearchTab(tab.id)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "0.6rem 1.2rem",
+                  background: "none",
+                  border: "none",
+                  borderBottom:
+                    activeSearchTab === tab.id
+                      ? "2px solid #f97316"
+                      : "2px solid transparent",
+                  cursor: "pointer",
+                  fontWeight: activeSearchTab === tab.id ? 600 : 400,
+                  color: activeSearchTab === tab.id ? "#f97316" : "var(--text)",
+                  fontSize: "0.95rem",
+                  marginBottom: "-1px",
+                }}
+              >
+                {tab.label}
+                {tab.count !== null && (
+                  <span
+                    style={{
+                      background:
+                        activeSearchTab === tab.id
+                          ? "#f97316"
+                          : "var(--border)",
+                      color:
+                        activeSearchTab === tab.id ? "#fff" : "var(--text)",
+                      borderRadius: 999,
+                      padding: "0.1rem 0.5rem",
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort pills + filter button — only shown on the Recipes search tab */}
+          {activeSearchTab === "recipes" && (
+            <>
+              <div
+                className={styles.pillsWrapper}
+                style={{ marginBottom: searchFiltersOpen ? "0.5rem" : "1rem" }}
+              >
+                <div className={styles.pillsScroller}>
+                  {(
+                    [
+                      { id: "recent", label: "Recent" },
+                      { id: "top-rated", label: "Top Rated" },
+                    ] as { id: SearchSort; label: string }[]
+                  ).map((s) => (
+                    <button
+                      key={s.id}
+                      onClick={() => setSearchSort(s.id)}
+                      className={`${styles.topPill} ${searchSort === s.id ? styles.topPillActive : ""}`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setSearchFiltersOpen((o) => !o)}
+                  className={`${styles.advancedBtn} ${searchFiltersOpen || hasSearchFilters ? styles.advancedBtnActive : ""}`}
                 >
-                  {tab.count}
-                </span>
+                  <Filter size={14} />
+                  Recipe Filters
+                </button>
+              </div>
+
+              {/* Search filter panel */}
+              {searchFiltersOpen && (
+                <div
+                  className={styles.filtersPanel}
+                  style={{ marginBottom: "1rem" }}
+                >
+                  <div className={styles.filtersGrid}>
+                    <div>
+                      <div className={styles.filterLabel}>
+                        <Utensils size={16} /> Category
+                      </div>
+                      <select
+                        className={styles.filterSelect}
+                        value={searchCategory}
+                        onChange={(e) => setSearchCategory(e.target.value)}
+                      >
+                        <option value="">All Categories</option>
+                        {categories.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className={styles.filterLabel}>
+                        <ChefHat size={16} /> Difficulty
+                      </div>
+                      <select
+                        className={styles.filterSelect}
+                        value={searchDifficulty}
+                        onChange={(e) =>
+                          setSearchDifficulty(e.target.value as Difficulty | "")
+                        }
+                      >
+                        <option value="">All Difficulties</option>
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <div className={styles.filterLabel}>
+                        <Globe size={16} /> Country of Origin
+                      </div>
+                      <select
+                        className={styles.filterSelect}
+                        value={searchCountry}
+                        onChange={(e) => setSearchCountry(e.target.value)}
+                      >
+                        <option value="">All Countries</option>
+                        {countryOptions.map((c) => (
+                          <option key={c.code} value={c.code}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {hasSearchFilters && (
+                    <div className={styles.badgesRow}>
+                      <div className={styles.badges}>
+                        {searchActiveBadges.map((badge) => (
+                          <span
+                            key={badge.label}
+                            className={styles.badge}
+                            onClick={badge.clear}
+                          >
+                            {badge.label} ×
+                          </span>
+                        ))}
+                      </div>
+                      <button
+                        className={styles.clearAllBtn}
+                        onClick={() => {
+                          setSearchCategory("");
+                          setSearchDifficulty("");
+                          setSearchCountry("");
+                        }}
+                      >
+                        <X size={14} /> Clear All
+                      </button>
+                    </div>
+                  )}
+                </div>
               )}
-            </button>
-          ))}
-        </div>
+            </>
+          )}
+        </>
       )}
 
       {/* RECIPES TAB */}
@@ -750,7 +1348,7 @@ function Explore() {
           )}
 
           <div className={styles.grid}>
-            {recipes.map((recipe) => (
+            {displayRecipes.map((recipe) => (
               <RecipeCompactCard key={recipe.id} recipe={recipe} />
             ))}
           </div>
