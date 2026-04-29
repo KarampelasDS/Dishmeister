@@ -15,7 +15,7 @@ import Dock from "./Components/Dock/Dock";
 import Explore from "./pages/Explore";
 import { useScrollRestoration } from "./Hooks/useScrollRestoration";
 import EditProfilePage from "./pages/EditProfile";
-import { Analytics } from "@vercel/analytics/next";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   useScrollRestoration(["/explore"]);
