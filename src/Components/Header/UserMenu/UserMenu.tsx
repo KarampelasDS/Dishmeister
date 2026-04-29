@@ -3,6 +3,8 @@ import { supabase } from "../../../supabase";
 import { useNavigate } from "react-router";
 import styles from "./UserMenu.module.css";
 
+const profileURL = import.meta.env.VITE_SUPABASE_PROFILE_BUCKET_URL as string;
+
 type Props = {
   username: string;
   avatarUrl?: string | null;
@@ -41,11 +43,7 @@ export default function UserMenu({
         <span>{username ? username : "Guest"}</span>
 
         <img
-          src={
-            avatarUrl
-              ? `https://yzoptrgtvvztujqwlgmo.supabase.co/storage/v1/object/public/avatars/${avatarUrl}?t=${Date.now()}`
-              : "/defaultAvatar.png"
-          }
+          src={avatarUrl ? `${profileURL}${avatarUrl}` : "/defaultAvatar.png"}
           alt="avatar"
           className={styles.avatar}
         />

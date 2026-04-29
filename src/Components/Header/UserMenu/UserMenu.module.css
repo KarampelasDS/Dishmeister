@@ -21,7 +21,8 @@
   position: absolute;
   right: 0;
   top: calc(100% + 8px);
-  background: var(--bg);
+  background: var(--header-bg);
+  border: 1px solid var(--border);
   border-radius: 12px;
   min-width: 220px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);

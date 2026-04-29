@@ -45,6 +45,7 @@ function App() {
     <div>
       <Header
         username={profile?.display_name ?? null}
+        displayName={profile?.display_name ?? null}
         avatarUrl={profile?.avatar_url ?? null}
         onLoginClick={() => setIsAuthOpen(true)}
         onToggleDarkMode={() => toggleTheme()}

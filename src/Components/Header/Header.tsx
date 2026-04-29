@@ -21,7 +21,12 @@ export default function Header(props: any) {
         />
       </div>
       <div className={styles.burgerMenu}>
-        <BurgerMenu />
+        <BurgerMenu
+          onToggleDarkMode={props.onToggleDarkMode}
+          username={props.username}
+          displayName={props.displayName}
+          avatarUrl={props.avatarUrl}
+        />
       </div>
     </div>
   );
