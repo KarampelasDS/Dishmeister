@@ -276,3 +276,36 @@
   color: var(--color-text-success);
   margin: 0;
 }
+
+@media only screen and (max-width: 600px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    flex-direction: row;
+    padding: 1rem;
+    justify-content: center;
+  }
+
+  .avatarWrap {
+    width: 64px;
+    height: 64px;
+  }
+
+  .avatar,
+  .avatarFallback {
+    width: 64px;
+    height: 64px;
+  }
+
+  .avatarEditBtn {
+    width: 22px;
+    height: 22px;
+  }
+
+  .avatarEditBtn svg {
+    width: 10px;
+    height: 10px;
+  }
+}

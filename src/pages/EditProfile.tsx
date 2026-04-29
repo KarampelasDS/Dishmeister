@@ -5,6 +5,7 @@ import { useAuth } from "../Context/AuthProvider";
 import PhotoEditor from "../Components/PhotoEditor/PhotoEditor";
 import Button from "../Components/Button/Button";
 import styles from "./EditProfilePage.module.css";
+import { ArrowLeft } from "lucide-react";
 
 const AVATAR_BUCKET = "avatars";
 const MAX_FILE_MB = 2;
@@ -181,8 +182,9 @@ export default function EditProfilePage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <button className={styles.back} onClick={() => navigate(-1)}>
-          ← Back
+          <ArrowLeft /> Back
         </button>
+        <br />
         <h1>Account Settings</h1>
       </div>
 

@@ -2,13 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../../supabase";
 import { useNavigate } from "react-router";
 import styles from "./UserMenu.module.css";
+import { useTheme } from "../../../Hooks/useTheme";
 
 const profileURL = import.meta.env.VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 
 type Props = {
   username: string;
   avatarUrl?: string | null;
-  onToggleDarkMode?: () => void;
+  onToggleDarkMode: () => void;
 };
 
 export default function UserMenu({
@@ -37,6 +38,9 @@ export default function UserMenu({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  const { theme } = useTheme();
+  const [isDark, setIsDark] = useState(theme === "dark");
+
   return (
     <div className={styles.container} ref={menuRef}>
       <div className={styles.trigger} onClick={() => setOpen((prev) => !prev)}>
@@ -57,10 +61,17 @@ export default function UserMenu({
 
           <MenuItem onClick={() => navigate("/saved")}>Saved Recipes</MenuItem>
 
-          <MenuItem onClick={onToggleDarkMode}>Dark Mode</MenuItem>
+          <MenuItem
+            onClick={() => {
+              onToggleDarkMode();
+              setIsDark((prev) => !prev);
+            }}
+          >
+            {isDark ? "Light Mode" : "Dark Mode"}
+          </MenuItem>
 
           <MenuItem onClick={logout} style={{ color: "red" }}>
-            Logout
+            {username !== null ? "Logout" : "Login"}
           </MenuItem>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import styles from "./BurgerMenu.module.css";
 import { useTheme } from "../../Hooks/useTheme";
 import { useNavigate } from "react-router";
@@ -27,13 +27,18 @@ export default function BurgerMenu({
   };
 
   const { theme } = useTheme();
+  const [isDark, setIsDark] = useState(theme === "dark");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const items = [
     { label: "Account Settings", link: "/settings" },
     { label: "Saved Recipes", link: "/saved" },
     {
-      label: theme === "light" ? "Dark Mode" : "Light Mode",
-      onClick: (e) => e.preventDefault() || onToggleDarkMode(),
+      label: isDark ? "Light Mode" : "Dark Mode",
+      onClick: (e: MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        onToggleDarkMode();
+        setIsDark((prev) => !prev);
+      },
     },
     {
       label: username !== null ? "Logout" : "Login",
