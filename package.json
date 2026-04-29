@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.0",
+    "@vercel/analytics": "^2.0.1",
     "country-flag-icons": "^1.6.15",
     "i18n-iso-countries": "^7.14.0",
     "lucide-react": "^0.563.0",

@@ -15,6 +15,7 @@ import Dock from "./Components/Dock/Dock";
 import Explore from "./pages/Explore";
 import { useScrollRestoration } from "./Hooks/useScrollRestoration";
 import EditProfilePage from "./pages/EditProfile";
+import { Analytics } from "@vercel/analytics/next";
 
 function App() {
   useScrollRestoration(["/explore"]);
@@ -43,6 +44,7 @@ function App() {
 
   return (
     <div>
+      <Analytics />
       <Header
         username={profile?.username ?? null}
         displayName={profile?.display_name ?? null}
