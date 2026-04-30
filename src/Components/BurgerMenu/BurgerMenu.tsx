@@ -129,7 +129,7 @@ export default function BurgerMenu({
               className={styles.profileSection}
               onClick={() => {
                 closeMenu();
-                navigate("/profile");
+                navigate("/profile/" + username);
               }}
             >
               <div className={styles.avatarWrapper}>
