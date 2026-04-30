@@ -97,10 +97,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f2f2f2;
+  background: var(--header-bg);
   padding: 12px;
   border-radius: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
 }
 
 .inputWrapper input {
@@ -109,12 +109,14 @@
   background: transparent;
   flex: 1;
   font-size: 14px;
+  color: var(--text);
 }
 
 .eye {
   background: none;
   border: none;
   cursor: pointer;
+  color: var(--text);
 }
 
 .submit {

@@ -102,21 +102,25 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <div className={styles.toggle}>
           <Button
             backgroundColor={
-              isLogin ? "linear-gradient(135deg, #ff6a00, #ff2e2e)" : "#ddd"
+              isLogin
+                ? "linear-gradient(135deg, #ff6a00, #ff2e2e)"
+                : "var(--header-bg)"
             }
-            textColor={isLogin ? "#fff" : "#000"}
+            textColor={"var(--text)"}
             onButtonClick={() => setIsLogin(true)}
-            outline={"0px"}
+            outline={!isLogin ? "2px solid var(--border)" : "0px"}
           >
             Login
           </Button>
           <Button
             backgroundColor={
-              !isLogin ? "linear-gradient(135deg, #ff6a00, #ff2e2e)" : "#ddd"
+              !isLogin
+                ? "linear-gradient(135deg, #ff6a00, #ff2e2e)"
+                : "var(--header-bg)"
             }
-            textColor={!isLogin ? "#fff" : "#000"}
+            textColor={"var(--text)"}
             onButtonClick={() => setIsLogin(false)}
-            outline={"0px"}
+            outline={isLogin ? "2px solid var(--border)" : "0px"}
           >
             Sign Up
           </Button>
