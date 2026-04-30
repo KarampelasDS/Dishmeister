@@ -12,6 +12,7 @@ import {
   Utensils,
   ChefHat,
   Globe,
+  Search,
 } from "lucide-react";
 import countries from "i18n-iso-countries";
 import en from "i18n-iso-countries/langs/en.json";
@@ -129,8 +130,6 @@ function Explore() {
   const cache = useFeedCache();
 
   // ─── Restore persisted tab + filters on mount ────────────────────────────
-  // We read from cache.state directly (not via getters) so the initial useState
-  // values reflect what was last cached, preventing a flicker to defaults.
   const cachedActiveTab = cache.state.activeExploreTab as TopFilter;
   const initialTopFilter: TopFilter =
     cachedActiveTab === "trending" || cachedActiveTab === "top-rated"
@@ -275,7 +274,6 @@ function Explore() {
   }, [searchCategory, searchDifficulty, searchCountry]);
 
   // ─── Restore filters when switching tabs ─────────────────────────────────
-  // When the user switches to a different tab, restore that tab's last-used filters.
   const prevTopFilter = useRef<TopFilter>(initialTopFilter);
   useEffect(() => {
     if (topFilter === prevTopFilter.current) return;
@@ -286,7 +284,6 @@ function Explore() {
     setSelectedCategory(saved.category);
     setSelectedDifficulty(saved.difficulty as Difficulty | "");
     setSelectedCountry(saved.country);
-    // Auto-expand filters if this tab has non-default filters saved
     if (saved.category || saved.difficulty || saved.country) {
       setFiltersOpen(true);
     }
@@ -343,12 +340,11 @@ function Explore() {
     setSearchInput(q);
   }, [searchParams]);
 
-  // Reset search tab and lastFetchKey when search is cleared so the explore
-  // cache restore effect always re-runs on transition back to explore mode.
+  // Reset search tab and lastFetchKey when search is cleared
   useEffect(() => {
     if (!isSearching) {
       setActiveSearchTab("recipes");
-      lastFetchKey.current = ""; // force cache restore on next explore render
+      lastFetchKey.current = "";
       setSearchFiltersOpen(false);
       setSearchCategory("");
       setSearchDifficulty("");
@@ -637,7 +633,6 @@ function Explore() {
         if (difficulty) query = query.eq("difficulty", difficulty);
         if (country) query = query.eq("country_of_origin", country);
 
-        // Always fetch by most recent; client-side sort handles display ordering
         query = query.order("created_at", { ascending: false });
 
         ({ data, error, count } = await query);
@@ -712,10 +707,6 @@ function Explore() {
     [searchCategory, searchDifficulty, searchCountry],
   );
 
-  /**
-   * Effect that runs when search mode is active.
-   * Also busts cache when sort changes (different ordering = different results).
-   */
   useEffect(() => {
     if (!isSearching) return;
 
@@ -739,7 +730,6 @@ function Explore() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, isSearching]);
 
-  // Load next page for search recipes
   useEffect(() => {
     if (page === 0) return;
     if (!isSearching) return;
@@ -958,11 +948,23 @@ function Explore() {
     setTopFilter(f);
   };
 
+  const handleMobileSearchKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.key !== "Enter") return;
+    if (searchInput.trim().length >= 3) {
+      setSearchParams({ q: searchInput.trim() });
+    } else if (searchInput.trim().length >= 1) {
+      alert("Please enter at least 3 characters.");
+    } else {
+      setSearchParams({});
+    }
+  };
+
   // ─────────────────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────
 
-  // Client-side sort for search results — no re-fetch needed
   const displayRecipes = isSearching
     ? [...recipes].sort((a, b) =>
         searchSort === "top-rated"
@@ -1011,6 +1013,21 @@ function Explore() {
           "Discover amazing recipes from our community"
         )}
       </p>
+
+      {/* ── Mobile-only search bar ── */}
+      <div className={styles.mobileSearch}>
+        <div className={styles.mobileSearchWrapper}>
+          <Search className={styles.mobileSearchIcon} />
+          <input
+            type="text"
+            placeholder="Search recipes..."
+            className={styles.mobileSearchInput}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            onKeyDown={handleMobileSearchKeyDown}
+          />
+        </div>
+      </div>
 
       {/* ── Explore mode: top pills + filters ── */}
       {!isSearching && (

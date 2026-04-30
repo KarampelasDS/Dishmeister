@@ -158,7 +158,7 @@ export default function CommentView({
         src={
           comment.profiles.avatar_url
             ? `${supabaseAvatarUrl}${comment.profiles.avatar_url}`
-            : "/default-avatar.png"
+            : "/defaultAvatar.png"
         }
         alt={comment.profiles.display_name ?? "User"}
         className={styles.avatar}

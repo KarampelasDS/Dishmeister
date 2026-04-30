@@ -205,6 +205,58 @@
   background: #dc2626;
 }
 
+/* ── Mobile search bar ── */
+.mobileSearch {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.mobileSearchWrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.mobileSearchIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--text-muted);
+  position: absolute;
+  left: 0.75rem;
+}
+
+.mobileSearchInput {
+  width: 100%;
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
+  background-color: var(--search-bg);
+  border: 2px solid var(--border);
+  border-radius: 0.5rem;
+  outline: none;
+  transition: all 0.2s ease;
+  color: var(--text);
+  font-size: 1.1rem;
+  font-family: "Segoe UI";
+  box-sizing: border-box;
+}
+
+.mobileSearchInput::placeholder {
+  color: var(--text-muted);
+}
+
+.mobileSearchInput:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+@media (min-width: 768px) {
+  .mobileSearch {
+    display: none;
+  }
+}
+
+/* ── Responsive ── */
 @media (max-width: 768px) {
   .filtersGrid {
     grid-template-columns: 1fr;
