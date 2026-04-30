@@ -66,16 +66,16 @@ export default function BurgerMenu({
     {
       label: "Account Settings",
       link: "/settings",
-      icon: <Settings size={18} />,
+      icon: <Settings size={24} />,
     },
     {
       label: "Saved Recipes",
       link: "/saved",
-      icon: <Bookmark size={18} />,
+      icon: <Bookmark size={24} />,
     },
     {
       label: isDark ? "Light Mode" : "Dark Mode",
-      icon: isDark ? <Sun size={18} /> : <Moon size={18} />,
+      icon: isDark ? <Sun size={24} /> : <Moon size={24} />,
       onClick: (e: MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
         onToggleDarkMode();
@@ -84,7 +84,7 @@ export default function BurgerMenu({
     },
     {
       label: username != null ? "Logout" : "Login",
-      icon: username != null ? <LogOut size={18} /> : <LogIn size={18} />,
+      icon: username != null ? <LogOut size={24} /> : <LogIn size={24} />,
       onClick: (e: MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
         closeMenu();
@@ -115,44 +115,44 @@ export default function BurgerMenu({
             className={styles.menuContainer}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close */}
-            <button
-              className={styles.closeBtn}
-              onClick={closeMenu}
-              aria-label="Close menu"
-            >
-              <X size={20} />
-            </button>
-
             {/* Profile */}
-            <div
-              className={styles.profileSection}
-              onClick={() => {
-                closeMenu();
-                navigate("/profile/" + username);
-              }}
-            >
-              <div className={styles.avatarWrapper}>
-                <img
-                  src={
-                    avatarUrl
-                      ? `${profileURL}${avatarUrl}`
-                      : "/defaultAvatar.png"
-                  }
-                  alt="User Avatar"
-                  className={styles.avatarImg}
-                />
+            <div className={styles.headerRow}>
+              <div
+                className={styles.profileSection}
+                onClick={() => {
+                  closeMenu();
+                  navigate("/profile/" + username);
+                }}
+              >
+                <div className={styles.avatarWrapper}>
+                  <img
+                    src={
+                      avatarUrl
+                        ? `${profileURL}${avatarUrl}`
+                        : "/defaultAvatar.png"
+                    }
+                    alt="User Avatar"
+                    className={styles.avatarImg}
+                  />
+                </div>
+                <div className={styles.profileInfo}>
+                  <span className={styles.displayName}>
+                    {displayName || "Guest"}
+                  </span>
+                  {username != null && (
+                    <span className={styles.username}>@{username}</span>
+                  )}
+                </div>
               </div>
-              <div className={styles.profileInfo}>
-                <span className={styles.displayName}>
-                  {displayName || "Guest"}
-                </span>
-                {username != null && (
-                  <span className={styles.username}>@{username}</span>
-                )}
-              </div>
+              {/* Close */}
+              <button
+                className={styles.closeBtn}
+                onClick={closeMenu}
+                aria-label="Close menu"
+              >
+                <X size={20} />
+              </button>
             </div>
-
             <div className={styles.divider} />
 
             {/* Search */}

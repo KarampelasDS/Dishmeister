@@ -10,6 +10,7 @@
   z-index: 2000;
   box-shadow: 0 5px 5px rgba(0, 0, 0, 0.1);
   padding: 10px 0;
+  box-sizing: border-box;
 }
 .appLogoContainerDesktop {
   margin: 5px;
@@ -43,5 +44,9 @@
   .burgerMenu {
     display: block;
     margin: 20px 5px;
+  }
+
+  .HeaderContainer {
+    padding: 10px 10px;
   }
 }
