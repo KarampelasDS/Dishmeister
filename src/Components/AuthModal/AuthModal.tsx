@@ -106,7 +106,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 ? "linear-gradient(135deg, #ff6a00, #ff2e2e)"
                 : "var(--header-bg)"
             }
-            textColor={"var(--text)"}
+            textColor={isLogin ? "#fff" : "var(--text)"}
             onButtonClick={() => setIsLogin(true)}
             outline={!isLogin ? "2px solid var(--border)" : "0px"}
           >
@@ -118,7 +118,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 ? "linear-gradient(135deg, #ff6a00, #ff2e2e)"
                 : "var(--header-bg)"
             }
-            textColor={"var(--text)"}
+            textColor={!isLogin ? "#fff" : "var(--text)"}
             onButtonClick={() => setIsLogin(false)}
             outline={isLogin ? "2px solid var(--border)" : "0px"}
           >
