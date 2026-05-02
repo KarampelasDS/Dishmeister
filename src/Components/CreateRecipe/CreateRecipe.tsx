@@ -594,29 +594,31 @@ function CreateRecipe() {
       </div>
 
       {photoEditorOpen && imageFile && (
-        <PhotoEditor
-          mode={"recipe"}
-          key={fileKey}
-          onClose={() => setPhotoEditorOpen(false)}
-          onSave={async (canvas) => {
-            if (!canvas) return;
+        <div className={styles.photoEditor}>
+          <PhotoEditor
+            mode={"recipe"}
+            key={fileKey}
+            onClose={() => setPhotoEditorOpen(false)}
+            onSave={async (canvas) => {
+              if (!canvas) return;
 
-            const blob = await new Promise<Blob | null>((resolve) =>
-              canvas.toBlob(resolve, "image/png", 0.9),
-            );
+              const blob = await new Promise<Blob | null>((resolve) =>
+                canvas.toBlob(resolve, "image/png", 0.9),
+              );
 
-            if (!blob) return;
+              if (!blob) return;
 
-            const file = new File([blob], "recipe.png", {
-              type: "image/png",
-            });
+              const file = new File([blob], "recipe.png", {
+                type: "image/png",
+              });
 
-            setImageFile(file);
-            setPhotoEditorOpen(false);
-          }}
-          onChangePhoto={() => fileInputRef.current?.click()}
-          imageFile={imageFile}
-        />
+              setImageFile(file);
+              setPhotoEditorOpen(false);
+            }}
+            onChangePhoto={() => fileInputRef.current?.click()}
+            imageFile={imageFile}
+          />
+        </div>
       )}
     </>
   );

@@ -4,10 +4,12 @@ import { useNavigate } from "react-router";
 import styles from "./UserMenu.module.css";
 import { useTheme } from "../../../Hooks/useTheme";
 
+import { Settings, Bookmark, Sun, Moon, LogOut, LogIn } from "lucide-react";
+
 const profileURL = import.meta.env.VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 
 type Props = {
-  username: string;
+  username?: string;
   avatarUrl?: string | null;
   onToggleDarkMode: () => void;
 };
@@ -43,8 +45,9 @@ export default function UserMenu({
 
   return (
     <div className={styles.container} ref={menuRef}>
+      {/* Trigger */}
       <div className={styles.trigger} onClick={() => setOpen((prev) => !prev)}>
-        <span>{username ? username : "Guest"}</span>
+        <span>{username || "Guest"}</span>
 
         <img
           src={avatarUrl ? `${profileURL}${avatarUrl}` : "/defaultAvatar.png"}
@@ -53,15 +56,31 @@ export default function UserMenu({
         />
       </div>
 
+      {/* Dropdown */}
       {open && (
         <div className={styles.dropdown}>
-          <MenuItem onClick={() => navigate("/settings")}>
+          <MenuItem
+            icon={<Settings size={18} />}
+            onClick={() => {
+              setOpen(false);
+              navigate("/settings");
+            }}
+          >
             Account Settings
           </MenuItem>
 
-          <MenuItem onClick={() => navigate("/saved")}>Saved Recipes</MenuItem>
+          <MenuItem
+            icon={<Bookmark size={18} />}
+            onClick={() => {
+              setOpen(false);
+              navigate("/saved");
+            }}
+          >
+            Saved Recipes
+          </MenuItem>
 
           <MenuItem
+            icon={isDark ? <Sun size={18} /> : <Moon size={18} />}
             onClick={() => {
               onToggleDarkMode();
               setIsDark((prev) => !prev);
@@ -70,8 +89,19 @@ export default function UserMenu({
             {isDark ? "Light Mode" : "Dark Mode"}
           </MenuItem>
 
-          <MenuItem onClick={logout} style={{ color: "red" }}>
-            {username !== null ? "Logout" : "Login"}
+          <MenuItem
+            icon={username ? <LogOut size={18} /> : <LogIn size={18} />}
+            onClick={() => {
+              setOpen(false);
+              if (username) {
+                logout();
+              } else {
+                navigate("/auth");
+              }
+            }}
+            style={{ color: "red" }}
+          >
+            {username ? "Logout" : "Login"}
           </MenuItem>
         </div>
       )}
@@ -80,10 +110,12 @@ export default function UserMenu({
 }
 
 function MenuItem({
+  icon,
   children,
   onClick,
   style,
 }: {
+  icon?: React.ReactNode;
   children: React.ReactNode;
   onClick?: () => void;
   style?: React.CSSProperties;
@@ -92,12 +124,16 @@ function MenuItem({
     <div
       onClick={onClick}
       style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
         padding: "12px 16px",
         cursor: "pointer",
         ...style,
       }}
     >
-      {children}
+      {icon && <span style={{ display: "flex" }}>{icon}</span>}
+      <span>{children}</span>
     </div>
   );
 }

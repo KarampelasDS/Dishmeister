@@ -25,7 +25,7 @@ export default function PhotoEditor({
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [grid, setGrid] = useState(true);
-  const {theme} = useTheme();
+  const { theme } = useTheme();
 
   const handleSave = () => {
     const canvas = editorRef.current?.getImage() ?? null;
@@ -108,6 +108,7 @@ export default function PhotoEditor({
           </div>
         </div>
 
+        {/*
         <div className={styles.gridButtonWrapper}>
           <Button
             onButtonClick={() => setGrid(!grid)}
@@ -120,6 +121,7 @@ export default function PhotoEditor({
             </div>
           </Button>
         </div>
+        */}
 
         <div className={styles.buttonRow}>
           <Button

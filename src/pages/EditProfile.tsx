@@ -5,7 +5,7 @@ import { useAuth } from "../Context/AuthProvider";
 import PhotoEditor from "../Components/PhotoEditor/PhotoEditor";
 import Button from "../Components/Button/Button";
 import styles from "./EditProfilePage.module.css";
-import { ArrowLeft } from "lucide-react";
+import { Settings, Camera } from "lucide-react";
 
 const AVATAR_BUCKET = "avatars";
 const MAX_FILE_MB = 2;
@@ -16,6 +16,7 @@ type ProfileFields = {
   username: string;
   display_name: string;
   bio: string;
+  email: string;
   username_changed_at: string | null;
 };
 
@@ -28,6 +29,7 @@ export default function EditProfilePage() {
     username: "",
     display_name: "",
     bio: "",
+    email: "",
     username_changed_at: null,
   });
   const [originalUsername, setOriginalUsername] = useState("");
@@ -45,7 +47,6 @@ export default function EditProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // Derived: is the username field locked?
   const usernameChangedAt = fields.username_changed_at
     ? new Date(fields.username_changed_at)
     : null;
@@ -76,6 +77,7 @@ export default function EditProfilePage() {
         username: data.username ?? "",
         display_name: data.display_name ?? "",
         bio: data.bio ?? "",
+        email: session.user.email ?? "",
         username_changed_at: data.username_changed_at ?? null,
       });
       setOriginalUsername(data.username ?? "");
@@ -86,7 +88,6 @@ export default function EditProfilePage() {
     fetchProfile();
   }, [session?.user.id]);
 
-  // Avatar preview URL
   useEffect(() => {
     if (!avatarFile) return;
     const url = URL.createObjectURL(avatarFile);
@@ -180,77 +181,76 @@ export default function EditProfilePage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
-        <button className={styles.back} onClick={() => navigate(-1)}>
-          <ArrowLeft /> Back
-        </button>
-        <br />
-        <h1>Account Settings</h1>
+      {/* Page Header */}
+      <div className={styles.pageHeader}>
+        <div className={styles.pageHeaderIcon}>
+          <Settings size={22} />
+        </div>
+        <div>
+          <h1 className={styles.pageTitle}>Account Settings</h1>
+          <p className={styles.pageSubtitle}>
+            Manage your account preferences and settings
+          </p>
+        </div>
       </div>
 
-      <div className={styles.layout}>
-        {/* SIDEBAR */}
-        <div className={styles.sidebar}>
-          <div className={styles.avatarWrap}>
-            {avatarDisplayUrl ? (
-              <img
-                src={avatarDisplayUrl}
-                alt="Avatar"
-                className={styles.avatar}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    "/public/defaultAvatar.png";
-                }}
-              />
-            ) : (
-              <div className={styles.avatarFallback}>
-                {fields.display_name?.[0]?.toUpperCase() ?? "?"}
-              </div>
-            )}
-
-            <button
-              className={styles.avatarEditBtn}
-              onClick={() => fileInputRef.current?.click()}
-              type="button"
-            >
-              {/* camera icon */}
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                <circle cx="12" cy="13" r="4" />
-              </svg>
-            </button>
-          </div>
-
-          <input
-            ref={fileInputRef}
-            key={fileKey}
-            type="file"
-            accept="image/*"
-            className={styles.hiddenInput}
-            onChange={handleAvatarChange}
-          />
-
-          <p className={styles.sidebarName}>{fields.display_name || "—"}</p>
-          <p className={styles.sidebarHandle}>@{fields.username || "—"}</p>
+      {/* Profile Information Card */}
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <span className={styles.cardHeaderIcon}>👤</span>
+          <h2 className={styles.cardTitle}>Profile Information</h2>
         </div>
 
-        {/* MAIN FORM */}
-        <div className={styles.main}>
-          <div className={styles.card}>
-            <p className={styles.cardTitle}>Profile information</p>
+        <div className={styles.cardBody}>
+          {/* Avatar column */}
+          <div className={styles.avatarColumn}>
+            <div className={styles.avatarWrap}>
+              {avatarDisplayUrl ? (
+                <img
+                  src={avatarDisplayUrl}
+                  alt="Avatar"
+                  className={styles.avatar}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      "/public/defaultAvatar.png";
+                  }}
+                />
+              ) : (
+                <div className={styles.avatarFallback}>
+                  {fields.display_name?.[0]?.toUpperCase() ?? "?"}
+                </div>
+              )}
+              <button
+                className={styles.avatarEditBtn}
+                onClick={() => fileInputRef.current?.click()}
+                type="button"
+                aria-label="Change avatar"
+              >
+                <Camera size={12} />
+              </button>
+            </div>
 
-            <div className={styles.fieldGrid}>
+            <input
+              ref={fileInputRef}
+              key={fileKey}
+              type="file"
+              accept="image/*"
+              className={styles.hiddenInput}
+              onChange={handleAvatarChange}
+            />
+
+            <p className={styles.avatarName}>{fields.display_name || "—"}</p>
+            <p className={styles.avatarHandle}>@{fields.username || "—"}</p>
+          </div>
+
+          {/* Form column */}
+          <div className={styles.formColumn}>
+            <div className={styles.fieldRow}>
               <div className={styles.field}>
-                <label>
-                  Display name <span className={styles.req}>*</span>
-                </label>
+                <label className={styles.label}>Display Name</label>
                 <input
                   type="text"
+                  className={styles.input}
                   value={fields.display_name}
                   onChange={(e) =>
                     setFields((p) => ({ ...p, display_name: e.target.value }))
@@ -259,94 +259,99 @@ export default function EditProfilePage() {
               </div>
 
               <div className={styles.field}>
-                <label>
-                  Username <span className={styles.req}>*</span>
+                <label className={styles.label}>
+                  Username
                   {usernameIsLocked && (
                     <span className={styles.lockedBadge}>
                       Locked until {usernameUnlockDate!.toLocaleDateString()}
                     </span>
                   )}
                 </label>
-                <div className={styles.usernameWrap}>
-                  <span className={styles.at}>@</span>
-                  <input
-                    type="text"
-                    value={fields.username}
-                    disabled={usernameIsLocked}
-                    onChange={(e) =>
-                      setFields((p) => ({
-                        ...p,
-                        username: e.target.value
-                          .toLowerCase()
-                          .replace(/\s|@/g, ""),
-                      }))
-                    }
-                  />
-                </div>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={fields.username}
+                  disabled={usernameIsLocked}
+                  onChange={(e) =>
+                    setFields((p) => ({
+                      ...p,
+                      username: e.target.value
+                        .toLowerCase()
+                        .replace(/\s|@/g, ""),
+                    }))
+                  }
+                />
                 {!usernameIsLocked && originalUsername !== fields.username && (
-                  <small>
+                  <small className={styles.hint}>
                     You won't be able to change this again for 14 days.
                   </small>
                 )}
               </div>
-
-              <div className={`${styles.field} ${styles.full}`}>
-                <label>Bio</label>
-                <textarea
-                  maxLength={150}
-                  value={fields.bio}
-                  onChange={(e) =>
-                    setFields((p) => ({ ...p, bio: e.target.value }))
-                  }
-                />
-                <small>{fields.bio.length}/150</small>
-              </div>
             </div>
-          </div>
 
-          {error && <p className={styles.error}>{error}</p>}
-          {success && <p className={styles.success}>Profile updated!</p>}
+            <div className={styles.field}>
+              <label className={styles.label}>Email</label>
+              <input
+                type="email"
+                className={styles.input}
+                value={fields.email}
+                disabled
+              />
+            </div>
 
-          <div className={styles.actions}>
-            <Button
-              text="Cancel"
-              backgroundColor="#f3f4f6"
-              textColor="#374151"
-              outline="0px"
-              isActive={!loading}
-              onButtonClick={() => navigate(-1)}
-            />
-            <Button
-              text={loading ? "Saving..." : "Save changes"}
-              backgroundColor="linear-gradient(135deg, #ff6a00, #ff2e2e)"
-              textColor="#fff"
-              outline="0px"
-              isActive={!loading}
-              onButtonClick={handleSave}
-            />
+            <div className={styles.field}>
+              <label className={styles.label}>Bio</label>
+              <textarea
+                className={styles.textarea}
+                maxLength={150}
+                value={fields.bio}
+                onChange={(e) =>
+                  setFields((p) => ({ ...p, bio: e.target.value }))
+                }
+              />
+              <small className={styles.charCount}>
+                {fields.bio.length}/150
+              </small>
+            </div>
+
+            {error && <p className={styles.error}>{error}</p>}
+            {success && <p className={styles.success}>Profile updated!</p>}
+
+            <div className={styles.actions}>
+              <Button
+                text={loading ? "Saving..." : "Save Changes"}
+                backgroundColor="linear-gradient(135deg, #ff6a00, #ff2e2e)"
+                textColor="#fff"
+                outline="0px"
+                isActive={!loading}
+                onButtonClick={handleSave}
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {avatarEditorOpen && avatarFile && (
-        <PhotoEditor
-          key={fileKey}
-          mode="profile"
-          onClose={() => setAvatarEditorOpen(false)}
-          onSave={async (canvas) => {
-            if (!canvas) return;
-            const blob = await new Promise<Blob | null>((r) =>
-              canvas.toBlob(r, "image/png", 0.9),
-            );
-            if (!blob) return;
-            setAvatarFile(
-              new File([blob], "avatar.png", { type: "image/png" }),
-            );
-            setAvatarEditorOpen(false);
-          }}
-          onChangePhoto={() => fileInputRef.current?.click()}
-          imageFile={avatarFile}
-        />
+        <div className={styles.photoEditor}>
+          <PhotoEditor
+            key={fileKey}
+            mode="profile"
+            onClose={() => setAvatarEditorOpen(false)}
+            onSave={async (canvas) => {
+              if (!canvas) return;
+              const blob = await new Promise<Blob | null>((r) =>
+                canvas.toBlob(r, "image/png", 0.9),
+              );
+              if (!blob) return;
+              setAvatarFile(
+                new File([blob], "avatar.png", { type: "image/png" }),
+              );
+              setAvatarEditorOpen(false);
+            }}
+            onChangePhoto={() => fileInputRef.current?.click()}
+            imageFile={avatarFile}
+          />
+        </div>
       )}
     </div>
   );

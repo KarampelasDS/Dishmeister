@@ -40,6 +40,12 @@ function App() {
     setIsOnboardingOpen(!!session && needsOnboarding);
   }, [session, needsOnboarding]);
 
+  useEffect(() => {
+    if (!loading && !session && location.pathname !== "/auth") {
+      navigate("/auth", { replace: true });
+    }
+  }, [session, loading, location.pathname]);
+
   if (loading) return <div>Loading...</div>;
 
   return (
@@ -90,11 +96,13 @@ function App() {
         }}
       />
 
-      {session && (
-        <OnboardingModal
-          isOpen={isOnboardingOpen}
-          onClose={() => setIsOnboardingOpen(false)}
-        />
+      {!!session && needsOnboarding && (
+        <div className="onboardingWrapper">
+          <OnboardingModal
+            isOpen={isOnboardingOpen}
+            onClose={() => setIsOnboardingOpen(false)}
+          />
+        </div>
       )}
     </div>
   );
