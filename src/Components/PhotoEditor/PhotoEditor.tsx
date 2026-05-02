@@ -1,6 +1,6 @@
 import styles from "./PhotoEditor.module.css";
 import Button from "../Button/Button";
-import { X, Search, RotateCcw, Grid2x2 } from "lucide-react";
+import { X, Search, RotateCcw } from "lucide-react";
 import AvatarEditor from "react-avatar-editor";
 import { useRef, useState } from "react";
 import { useTheme } from "../../Hooks/useTheme";
@@ -24,7 +24,7 @@ export default function PhotoEditor({
 
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
-  const [grid, setGrid] = useState(true);
+  const [grid] = useState(true);
   const { theme } = useTheme();
 
   const handleSave = () => {

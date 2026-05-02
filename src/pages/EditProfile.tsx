@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router";
 import { supabase } from "../supabase";
 import { useAuth } from "../Context/AuthProvider";
 import PhotoEditor from "../Components/PhotoEditor/PhotoEditor";
@@ -22,7 +21,6 @@ type ProfileFields = {
 
 export default function EditProfilePage() {
   const { session, refreshProfile } = useAuth();
-  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fields, setFields] = useState<ProfileFields>({
