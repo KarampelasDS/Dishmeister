@@ -7,6 +7,7 @@ import countries from "i18n-iso-countries";
 import en from "i18n-iso-countries/langs/en.json";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
 import { useLocalDraft } from "../../Hooks/useLocalDraft";
+import { compressImage } from "../../utils/compressImage";
 
 type Category = {
   id: string;
@@ -146,14 +147,14 @@ function CreateRecipe() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!["image/png", "image/jpeg"].includes(file.type)) {
-      alert("Only PNG and JPEG files are allowed.");
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      alert("Only PNG, JPEG, and WebP files are allowed.");
       e.target.value = "";
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be under 5MB.");
+    if (file.size > 20 * 1024 * 1024) {
+      alert("Image must be under 20MB.");
       e.target.value = "";
       return;
     }
@@ -605,14 +606,12 @@ function CreateRecipe() {
               const blob = await new Promise<Blob | null>((resolve) =>
                 canvas.toBlob(resolve, "image/png", 0.9),
               );
-
               if (!blob) return;
 
-              const file = new File([blob], "recipe.png", {
-                type: "image/png",
-              });
+              const raw = new File([blob], "recipe.png", { type: "image/png" });
+              const compressed = await compressImage(raw);
 
-              setImageFile(file);
+              setImageFile(compressed);
               setPhotoEditorOpen(false);
             }}
             onChangePhoto={() => fileInputRef.current?.click()}

@@ -6,6 +6,7 @@ import styles from "../CreateRecipe/CreateRecipe.module.css";
 import countries from "i18n-iso-countries";
 import en from "i18n-iso-countries/langs/en.json";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
+import { compressImage } from "../../utils/compressImage";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 
@@ -164,8 +165,8 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be under 5MB.");
+    if (file.size > 20 * 1024 * 1024) {
+      alert("Image must be under 20MB.");
       e.target.value = "";
       return;
     }
@@ -599,14 +600,16 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
             onClose={() => setPhotoEditorOpen(false)}
             onSave={async (canvas) => {
               if (!canvas) return;
+
               const blob = await new Promise<Blob | null>((resolve) =>
                 canvas.toBlob(resolve, "image/png", 0.9),
               );
               if (!blob) return;
-              const file = new File([blob], "recipe.png", {
-                type: "image/png",
-              });
-              setImageFile(file);
+
+              const raw = new File([blob], "recipe.png", { type: "image/png" });
+              const compressed = await compressImage(raw);
+
+              setImageFile(compressed);
               setPhotoEditorOpen(false);
             }}
             onChangePhoto={() => fileInputRef.current?.click()}
