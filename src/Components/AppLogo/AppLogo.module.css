@@ -8,7 +8,7 @@
 }
 
 .text {
-  font-family: "Alike Angular", serif;
+  font-family: "Alike Angular", serif !important;
   font-weight: 700;
   font-size: 2rem;
 
