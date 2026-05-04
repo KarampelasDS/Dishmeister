@@ -1,6 +1,9 @@
 import imageCompression from "browser-image-compression";
 
-export async function compressImage(file: File, mode: "recipe"): Promise<File> {
+export async function compressImage(
+  file: File,
+  mode: "recipe" | "profile",
+): Promise<File> {
   console.log(mode);
   return imageCompression(file, {
     maxSizeMB: mode === "recipe" ? 1 : 0.3,
