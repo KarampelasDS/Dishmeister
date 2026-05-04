@@ -93,6 +93,7 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
     recipe.instructions,
   );
   const [loading, setLoading] = useState(false);
+  const [compressing, setCompressing] = useState(false);
 
   // null means "no new image picked — keep existing"
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -597,7 +598,9 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
           <PhotoEditor
             mode={"recipe"}
             key={fileKey}
-            onClose={() => setPhotoEditorOpen(false)}
+            onClose={() => {
+              if (!compressing) setPhotoEditorOpen(false);
+            }}
             onSave={async (canvas) => {
               if (!canvas) return;
 
@@ -606,13 +609,17 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
               );
               if (!blob) return;
 
+              setCompressing(true);
               const raw = new File([blob], "recipe.png", { type: "image/png" });
-              const compressed = await compressImage(raw);
+              const compressed = await compressImage(raw, "recipe");
+              setCompressing(false);
 
               setImageFile(compressed);
               setPhotoEditorOpen(false);
             }}
-            onChangePhoto={() => fileInputRef.current?.click()}
+            onChangePhoto={() => {
+              if (!compressing) fileInputRef.current?.click();
+            }}
             imageFile={imageFile}
           />
         </div>

@@ -64,6 +64,7 @@ function CreateRecipe() {
   );
   const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
   const [fileKey, setFileKey] = useState(0);
+  const [compressing, setCompressing] = useState(false);
 
   const setField = <K extends keyof typeof defaultDraft>(
     key: K,
@@ -599,7 +600,9 @@ function CreateRecipe() {
           <PhotoEditor
             mode={"recipe"}
             key={fileKey}
-            onClose={() => setPhotoEditorOpen(false)}
+            onClose={() => {
+              if (!compressing) setPhotoEditorOpen(false);
+            }}
             onSave={async (canvas) => {
               if (!canvas) return;
 
@@ -608,13 +611,17 @@ function CreateRecipe() {
               );
               if (!blob) return;
 
+              setCompressing(true);
               const raw = new File([blob], "recipe.png", { type: "image/png" });
-              const compressed = await compressImage(raw);
+              const compressed = await compressImage(raw, "recipe");
+              setCompressing(false);
 
               setImageFile(compressed);
               setPhotoEditorOpen(false);
             }}
-            onChangePhoto={() => fileInputRef.current?.click()}
+            onChangePhoto={() => {
+              if (!compressing) fileInputRef.current?.click();
+            }}
             imageFile={imageFile}
           />
         </div>

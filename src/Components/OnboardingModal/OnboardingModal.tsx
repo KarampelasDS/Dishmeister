@@ -33,6 +33,7 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [compressing, setCompressing] = useState(false);
 
   useEffect(() => {
     if (!avatarFile) {
@@ -211,7 +212,9 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
           {avatarEditorOpen && avatarFile && (
             <PhotoEditor
               key={fileKey}
-              onClose={() => setAvatarEditorOpen(false)}
+              onClose={() => {
+                if (!compressing) setAvatarEditorOpen(false);
+              }}
               onSave={async (canvas) => {
                 if (!canvas) return;
 
@@ -220,16 +223,19 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
                 );
 
                 if (!blob) return;
-
+                setCompressing(true);
                 const raw = new File([blob], "avatar.png", {
                   type: "image/png",
                 });
                 const compressed = await compressImage(raw, "profile");
+                setCompressing(false);
 
                 setAvatarFile(compressed);
                 setAvatarEditorOpen(false);
               }}
-              onChangePhoto={() => fileInputRef.current?.click()}
+              onChangePhoto={() => {
+                if (!compressing) fileInputRef.current?.click();
+              }}
               imageFile={avatarFile}
             />
           )}

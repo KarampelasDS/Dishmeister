@@ -45,6 +45,7 @@ export default function EditProfilePage() {
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [compressing, setCompressing] = useState(false);
 
   const usernameChangedAt = fields.username_changed_at
     ? new Date(fields.username_changed_at)
@@ -335,7 +336,9 @@ export default function EditProfilePage() {
           <PhotoEditor
             key={fileKey}
             mode="profile"
-            onClose={() => setAvatarEditorOpen(false)}
+            onClose={() => {
+              if (!compressing) setAvatarEditorOpen(false);
+            }}
             onSave={async (canvas) => {
               if (!canvas) return;
               const blob = await new Promise<Blob | null>((r) =>
@@ -343,12 +346,16 @@ export default function EditProfilePage() {
               );
               if (!blob) return;
 
+              setCompressing(true);
               const raw = new File([blob], "avatar.png", { type: "image/png" });
               const compressed = await compressImage(raw, "profile");
+              setCompressing(false);
               setAvatarFile(compressed);
               setAvatarEditorOpen(false);
             }}
-            onChangePhoto={() => fileInputRef.current?.click()}
+            onChangePhoto={() => {
+              if (!compressing) fileInputRef.current?.click();
+            }}
             imageFile={avatarFile}
           />
         </div>
