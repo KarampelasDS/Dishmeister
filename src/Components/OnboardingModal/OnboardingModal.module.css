@@ -66,6 +66,7 @@
   resize: none;
   height: 100px;
   font-family: "Segoe UI";
+  flex-shrink: 0;
 }
 
 .form small {
@@ -172,6 +173,7 @@
   background: #f5f5f5;
   background: var(--header-bg);
   border: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .usernamePrefix {
