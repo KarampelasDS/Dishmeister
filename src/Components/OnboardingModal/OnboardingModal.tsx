@@ -4,6 +4,7 @@ import styles from "./OnboardingModal.module.css";
 import Button from "../Button/Button";
 import { useAuth } from "../../Context/AuthProvider";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
+import { compressImage } from "../../utils/compressImage";
 
 const AVATAR_BUCKET = "avatars";
 const MAX_FILE_MB = 2;
@@ -220,11 +221,12 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
 
                 if (!blob) return;
 
-                const file = new File([blob], "avatar.png", {
+                const raw = new File([blob], "avatar.png", {
                   type: "image/png",
                 });
+                const compressed = await compressImage(raw, "profile");
 
-                setAvatarFile(file);
+                setAvatarFile(compressed);
                 setAvatarEditorOpen(false);
               }}
               onChangePhoto={() => fileInputRef.current?.click()}

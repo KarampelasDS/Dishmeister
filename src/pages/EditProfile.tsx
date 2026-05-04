@@ -5,9 +5,10 @@ import PhotoEditor from "../Components/PhotoEditor/PhotoEditor";
 import Button from "../Components/Button/Button";
 import styles from "./EditProfilePage.module.css";
 import { Settings, Camera } from "lucide-react";
+import { compressImage } from "../utils/compressImage";
 
 const AVATAR_BUCKET = "avatars";
-const MAX_FILE_MB = 2;
+const MAX_FILE_MB = 20;
 const SUPABASE_AVATAR_URL = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 
@@ -341,9 +342,10 @@ export default function EditProfilePage() {
                 canvas.toBlob(r, "image/png", 0.9),
               );
               if (!blob) return;
-              setAvatarFile(
-                new File([blob], "avatar.png", { type: "image/png" }),
-              );
+
+              const raw = new File([blob], "avatar.png", { type: "image/png" });
+              const compressed = await compressImage(raw, "profile");
+              setAvatarFile(compressed);
               setAvatarEditorOpen(false);
             }}
             onChangePhoto={() => fileInputRef.current?.click()}
