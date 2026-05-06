@@ -20,6 +20,13 @@ type ProfileFields = {
   username_changed_at: string | null;
 };
 
+const USERNAME_PATTERN = /^[a-z0-9_]+$/;
+
+type AppError = {
+  title: string;
+  detail?: string;
+};
+
 export default function EditProfilePage() {
   const { session, refreshProfile } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -43,7 +50,7 @@ export default function EditProfilePage() {
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AppError | null>(null);
   const [success, setSuccess] = useState(false);
   const [compressing, setCompressing] = useState(false);
 
@@ -68,7 +75,10 @@ export default function EditProfilePage() {
         .single();
 
       if (error || !data) {
-        setError("Failed to load profile.");
+        setError({
+          title: "We couldn't load your profile.",
+          detail: "Refresh the page and try again.",
+        });
         setFetching(false);
         return;
       }
@@ -101,11 +111,17 @@ export default function EditProfilePage() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      setError("Avatar must be an image file.");
+      setError({
+        title: "That file isn't an image.",
+        detail: "Choose a JPG, PNG, WebP, or another image file.",
+      });
       return;
     }
     if (file.size > MAX_FILE_MB * 1024 * 1024) {
-      setError(`Avatar must be under ${MAX_FILE_MB}MB.`);
+      setError({
+        title: "That avatar is too large.",
+        detail: `Choose an image under ${MAX_FILE_MB}MB.`,
+      });
       return;
     }
 
@@ -129,32 +145,110 @@ export default function EditProfilePage() {
     return path;
   };
 
+  const getSaveError = (err: any): AppError => {
+    const message = String(err?.message ?? "").toLowerCase();
+    const details = String(err?.details ?? "").toLowerCase();
+    const code = String(err?.code ?? "");
+
+    if (
+      code === "23505" ||
+      message.includes("duplicate") ||
+      details.includes("already exists")
+    ) {
+      return {
+        title: "That username is already taken.",
+        detail: "Try adding a word, number, or underscore to make it yours.",
+      };
+    }
+
+    if (message.includes("storage") || message.includes("upload")) {
+      return {
+        title: "The avatar upload failed.",
+        detail: "Try a smaller image or upload it again in a moment.",
+      };
+    }
+
+    return {
+      title: "We couldn't save your profile.",
+      detail: "Check your connection and try again.",
+    };
+  };
+
+  const validateProfile = () => {
+    const username = fields.username.trim();
+
+    if (!username) {
+      setError({
+        title: "Choose a username.",
+        detail: "Your username is how people find your profile.",
+      });
+      return null;
+    }
+
+    if (!USERNAME_PATTERN.test(username)) {
+      setError({
+        title: "Use only lowercase letters, numbers, and underscores.",
+        detail: "For example: chef_maria or baker42.",
+      });
+      return null;
+    }
+
+    if (!fields.display_name.trim()) {
+      setError({
+        title: "Add a display name.",
+        detail: "This is the name people see on your recipes and profile.",
+      });
+      return null;
+    }
+
+    return {
+      username,
+      displayName: fields.display_name.trim(),
+      bio: fields.bio.trim(),
+    };
+  };
+
+  const usernameIsTaken = async (username: string) => {
+    if (!session?.user.id || username === originalUsername) return false;
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("username", username)
+      .neq("id", session.user.id)
+      .maybeSingle();
+
+    if (error) throw error;
+    return Boolean(data);
+  };
+
   const handleSave = async () => {
     setError(null);
     setSuccess(false);
 
-    if (!/^[a-z0-9_]+$/.test(fields.username)) {
-      setError(
-        "Username can only contain lowercase letters, numbers, and underscores.",
-      );
-      return;
-    }
-
-    if (!fields.display_name.trim()) {
-      setError("Display name is required.");
-      return;
-    }
+    const profile = validateProfile();
+    if (!profile) return;
 
     try {
       setLoading(true);
+      const taken = await usernameIsTaken(profile.username);
+
+      if (taken) {
+        setError({
+          title: "That username is already taken.",
+          detail: "Try adding a word, number, or underscore to make it yours.",
+        });
+        return;
+      }
+
       const uploadedPath = await uploadAvatar();
 
       const { error } = await supabase
         .from("profiles")
         .update({
-          username: fields.username,
-          display_name: fields.display_name.trim(),
-          bio: fields.bio.trim(),
+          username: profile.username,
+          display_name: profile.displayName,
+          bio: profile.bio,
           avatar_url: uploadedPath,
         })
         .eq("id", session!.user.id);
@@ -162,14 +256,13 @@ export default function EditProfilePage() {
       if (error) throw error;
 
       await refreshProfile();
-      setOriginalUsername(fields.username);
+      setOriginalUsername(profile.username);
       setSuccess(true);
+      location.href = `/profiles/${profile.username}`;
     } catch (err: any) {
-      setError(err.message || "Something went wrong.");
+      setError(getSaveError(err));
     } finally {
       setLoading(false);
-      location.reload();
-      location.href = `/profiles/${fields.username}`;
     }
   };
 
@@ -314,7 +407,12 @@ export default function EditProfilePage() {
               </small>
             </div>
 
-            {error && <p className={styles.error}>{error}</p>}
+            {error && (
+              <div className={styles.error} role="alert" aria-live="polite">
+                <strong>{error.title}</strong>
+                {error.detail && <span>{error.detail}</span>}
+              </div>
+            )}
             {success && <p className={styles.success}>Profile updated!</p>}
 
             <div className={styles.actions}>
