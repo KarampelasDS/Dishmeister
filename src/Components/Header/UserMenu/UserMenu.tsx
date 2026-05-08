@@ -63,7 +63,7 @@ export default function UserMenu({
           alt="avatar"
           className={styles.avatar}
         />
-        {open ? <ChevronDown /> : <ChevronUp />}
+        {open ? <ChevronUp /> : <ChevronDown />}
       </div>
 
       {/* Dropdown */}
