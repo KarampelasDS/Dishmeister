@@ -4,7 +4,16 @@ import { useNavigate } from "react-router";
 import styles from "./UserMenu.module.css";
 import { useTheme } from "../../../Hooks/useTheme";
 
-import { Settings, Bookmark, Sun, Moon, LogOut, LogIn } from "lucide-react";
+import {
+  Settings,
+  Bookmark,
+  Sun,
+  Moon,
+  LogOut,
+  LogIn,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 
 const profileURL = import.meta.env.VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 
@@ -54,6 +63,7 @@ export default function UserMenu({
           alt="avatar"
           className={styles.avatar}
         />
+        {open ? <ChevronDown /> : <ChevronUp />}
       </div>
 
       {/* Dropdown */}
