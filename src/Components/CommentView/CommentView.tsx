@@ -140,17 +140,22 @@ export default function CommentView({
 
   return (
     <div className={styles.wrapper}>
-      <ReportModal
-        isOpen={reportModalOpen}
-        onClose={() => setReportModalOpen(false)}
-        targetType="comment"
-        targetId={reportingId}
-      />
-      <ErrorModal
-        isOpen={errorModal.open}
-        onClose={() => setErrorModal({ ...errorModal, open: false })}
-        message={errorModal.message}
-      />
+      {reportModalOpen && (
+        <ReportModal
+          isOpen={reportModalOpen}
+          onClose={() => setReportModalOpen(false)}
+          targetType="comment"
+          targetId={reportingId}
+        />
+      )}
+      {errorModal.open && (
+        <ErrorModal
+          isOpen={errorModal.open}
+          onClose={() => setErrorModal({ ...errorModal, open: false })}
+          message={errorModal.message}
+        />
+      )}
+
 
       <img
         src={

@@ -88,11 +88,14 @@ function UsernameModal({ userId, onSuccess }: Props) {
 
   return (
     <div style={overlayStyle}>
-      <ErrorModal
-        isOpen={errorModal.open}
-        onClose={() => setErrorModal({ ...errorModal, open: false })}
-        message={errorModal.message}
-      />
+      {errorModal.open && (
+        <ErrorModal
+          isOpen={errorModal.open}
+          onClose={() => setErrorModal({ ...errorModal, open: false })}
+          message={errorModal.message}
+        />
+      )}
+
       <div style={modalStyle}>
 
         <h2>Complete your profile</h2>

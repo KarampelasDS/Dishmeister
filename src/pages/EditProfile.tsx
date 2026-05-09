@@ -411,12 +411,15 @@ export default function EditProfilePage() {
             </div>
 
             {success && <p className={styles.success}>Profile updated!</p>}
-            <ErrorModal
-              isOpen={!!error}
-              onClose={() => setError(null)}
-              title={error?.title}
-              message={error?.detail || ""}
-            />
+            {error && (
+              <ErrorModal
+                isOpen={!!error}
+                onClose={() => setError(null)}
+                title={error.title}
+                message={error.detail || ""}
+              />
+            )}
+
 
 
             <div className={styles.actions}>

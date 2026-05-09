@@ -26,7 +26,6 @@ import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
 import ErrorModal from "../ErrorModal/ErrorModal";
 
-
 type Recipe = {
   id: string;
   title: string;
@@ -106,7 +105,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [errorModal, setErrorModal] = useState({ open: false, message: "" });
 
-
   const title = r?.title ?? "Creamy Carbonara";
   const cover = r?.image_url ?? "/assets/pasta.jpg";
   const difficulty = r?.difficulty ?? "Medium";
@@ -151,11 +149,13 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setErrorModal({ open: true, message: "You must be logged in to react to a recipe." });
+      setErrorModal({
+        open: true,
+        message: "You must be logged in to react to a recipe.",
+      });
       setIsReacting(false);
       return;
     }
-
 
     const prevLikes = likes;
     const prevDislikes = dislikes;
@@ -300,202 +300,204 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
 
   return (
     <>
-      <ReportModal
-        isOpen={reportModalOpen}
-        onClose={() => setReportModalOpen(false)}
-        targetType="recipe"
-        targetId={r.id}
-      />
-      <ErrorModal
-        isOpen={errorModal.open}
-        onClose={() => setErrorModal({ ...errorModal, open: false })}
-        message={errorModal.message}
-      />
-      <article
- className={styles.container}>
-      <header className={styles.header}>
-        <img
-          src={`${supabaseUrl}${cover}`}
-          alt={title}
-          className={styles.cover}
+      {reportModalOpen && (
+        <ReportModal
+          isOpen={reportModalOpen}
+          onClose={() => setReportModalOpen(false)}
+          targetType="recipe"
+          targetId={r.id}
         />
-        <div className={styles.topRightMenu} ref={menuRef}>
-          <button
-            className={styles.menuButton}
-            aria-label="More options"
-            onClick={() => setMenuOpen((o) => !o)}
-          >
-            <EllipsisVertical color="white" size={24} />
-          </button>
-          {menuOpen && (
-            <div className={styles.menuDropdown}>
-              <button
-                className={styles.menuItem}
-                onClick={() => {
-                  handleSave();
-                  setMenuOpen(false);
-                }}
-                disabled={isSaving}
-              >
-                {isSaved ? <BookmarkCheck color="#f59e0b" /> : <Bookmark />}
-                {isSaved ? "Unsave" : "Save"}
-              </button>
-              <button
-                className={styles.menuItem}
-                onClick={() => {
-                  console.log("share");
-                  setMenuOpen(false);
-                }}
-              >
-                <Forward />
-                Share
-              </button>
-                  <button
-                    className={styles.menuItem}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setReportModalOpen(true);
-                      setMenuOpen(false);
-                    }}
-                  >
-                    <MessageSquareWarning color="#cd3131" />
-                    <span style={{ color: "#cd3131" }}>Report</span>
-                  </button>
+      )}
+      {errorModal.open && (
+        <ErrorModal
+          isOpen={errorModal.open}
+          onClose={() => setErrorModal({ ...errorModal, open: false })}
+          message={errorModal.message}
+        />
+      )}
 
-            </div>
-          )}
-        </div>
-        <div className={styles.headerOverlay}>
-          <h3 className={styles.title}>{title}</h3>
-          <div className={styles.badges}>
-            <span className={styles.badge}>
-              <Clock /> {timeLabel}
-            </span>
-            <span
-              className={`${styles.badge} ${
-                difficulty === "Easy"
-                  ? styles.easy
-                  : difficulty === "Medium"
-                    ? styles.medium
-                    : styles.hard
-              }`}
-            >
-              <ChefHat /> {difficulty}
-            </span>
-            <div className={styles.reactionButtons}>
-              <span
-                onClick={() => handleReaction("like")}
-                className={`${styles.badge} ${styles.reactionBadge} ${currentReaction === "like" ? styles.activebadge : ""}`}
-                style={{ cursor: "pointer" }}
-              >
-                <ThumbsUp className={styles.reactionButton} size={24} />
-              </span>
-              <span
-                onClick={() => handleReaction("dislike")}
-                className={`${styles.badge} ${styles.reactionBadge} ${currentReaction === "dislike" ? styles.activebadge : ""}`}
-                style={{ cursor: "pointer" }}
-              >
-                <ThumbsDown className={styles.reactionButton} size={24} />
-              </span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <section className={styles.content}>
-        <div className={styles.authorRow}>
+      <article className={styles.container}>
+        <header className={styles.header}>
           <img
-            className={styles.avatar}
-            src={`${supabaseAvatarUrl}${authorAvatar}`}
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "/defaultAvatar.png";
-            }}
-            alt={authorName}
-            onClick={() => navigate(`/profiles/${authorUsername}`)}
-            style={{ cursor: "pointer" }}
+            src={`${supabaseUrl}${cover}`}
+            alt={title}
+            className={styles.cover}
           />
-          <div className={styles.authorInfo}>
-            <div className={styles.authorName}>
-              <span
-                onClick={() => navigate(`/profiles/${authorUsername}`)}
-                style={{ cursor: "pointer" }}
-              >
-                {authorName}
-              </span>
-            </div>
-            <div className={styles.authorMeta}>
-              <span
-                onClick={() => navigate(`/profiles/${authorUsername}`)}
-                style={{ cursor: "pointer" }}
-              >
-                {"@" + authorUsername}
-              </span>
-            </div>
-          </div>
-          <div className={styles.metaCounts}>
-            <div
-              onClick={() => navigate(`/recipes/${r.id}#comments`)}
-              style={{ cursor: "pointer" }}
+          <div className={styles.topRightMenu} ref={menuRef}>
+            <button
+              className={styles.menuButton}
+              aria-label="More options"
+              onClick={() => setMenuOpen((o) => !o)}
             >
-              <MessageCircle /> {comment_count}
-            </div>
-            <div>
-              <Bookmark /> {saveCount}
+              <EllipsisVertical color="white" size={24} />
+            </button>
+            {menuOpen && (
+              <div className={styles.menuDropdown}>
+                <button
+                  className={styles.menuItem}
+                  onClick={() => {
+                    handleSave();
+                    setMenuOpen(false);
+                  }}
+                  disabled={isSaving}
+                >
+                  {isSaved ? <BookmarkCheck color="#f59e0b" /> : <Bookmark />}
+                  {isSaved ? "Unsave" : "Save"}
+                </button>
+                <button
+                  className={styles.menuItem}
+                  onClick={() => {
+                    console.log("share");
+                    setMenuOpen(false);
+                  }}
+                >
+                  <Forward />
+                  Share
+                </button>
+                <button
+                  className={styles.menuItem}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setReportModalOpen(true);
+                    setMenuOpen(false);
+                  }}
+                >
+                  <MessageSquareWarning color="#cd3131" />
+                  <span style={{ color: "#cd3131" }}>Report</span>
+                </button>
+              </div>
+            )}
+          </div>
+          <div className={styles.headerOverlay}>
+            <h3 className={styles.title}>{title}</h3>
+            <div className={styles.badges}>
+              <span className={styles.badge}>
+                <Clock /> {timeLabel}
+              </span>
+              <span
+                className={`${styles.badge} ${
+                  difficulty === "Easy"
+                    ? styles.easy
+                    : difficulty === "Medium"
+                      ? styles.medium
+                      : styles.hard
+                }`}
+              >
+                <ChefHat /> {difficulty}
+              </span>
+              <div className={styles.reactionButtons}>
+                <span
+                  onClick={() => handleReaction("like")}
+                  className={`${styles.badge} ${styles.reactionBadge} ${currentReaction === "like" ? styles.activebadge : ""}`}
+                  style={{ cursor: "pointer" }}
+                >
+                  <ThumbsUp className={styles.reactionButton} size={24} />
+                </span>
+                <span
+                  onClick={() => handleReaction("dislike")}
+                  className={`${styles.badge} ${styles.reactionBadge} ${currentReaction === "dislike" ? styles.activebadge : ""}`}
+                  style={{ cursor: "pointer" }}
+                >
+                  <ThumbsDown className={styles.reactionButton} size={24} />
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        </header>
 
-        <p className={styles.description}>{description}</p>
+        <section className={styles.content}>
+          <div className={styles.authorRow}>
+            <img
+              className={styles.avatar}
+              src={`${supabaseAvatarUrl}${authorAvatar}`}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/defaultAvatar.png";
+              }}
+              alt={authorName}
+              onClick={() => navigate(`/profiles/${authorUsername}`)}
+              style={{ cursor: "pointer" }}
+            />
+            <div className={styles.authorInfo}>
+              <div className={styles.authorName}>
+                <span
+                  onClick={() => navigate(`/profiles/${authorUsername}`)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {authorName}
+                </span>
+              </div>
+              <div className={styles.authorMeta}>
+                <span
+                  onClick={() => navigate(`/profiles/${authorUsername}`)}
+                  style={{ cursor: "pointer" }}
+                >
+                  {"@" + authorUsername}
+                </span>
+              </div>
+            </div>
+            <div className={styles.metaCounts}>
+              <div
+                onClick={() => navigate(`/recipes/${r.id}#comments`)}
+                style={{ cursor: "pointer" }}
+              >
+                <MessageCircle /> {comment_count}
+              </div>
+              <div>
+                <Bookmark /> {saveCount}
+              </div>
+            </div>
+          </div>
 
-        <div className={styles.statsRow}>
-          <ProfileStat
-            stat="Servings"
-            statAmount={recipe?.servings.toString()}
-            border="2px solid var(--stat1-border)"
-            background="var(--stat1-bg)"
-            iconColor="var(--stat1-icon)"
-          />
-          <ProfileStat
-            stat="Rating"
-            statAmount={rating.toString() + "%"}
-            border="2px solid var(--stat2-border)"
-            background="var(--stat2-bg)"
-            iconColor="var(--stat2-icon)"
-          />
-          <ProfileStat
-            stat="Category"
-            statAmount={recipe?.categories.name}
-            border="2px solid var(--stat3-border)"
-            background="var(--stat3-bg)"
-            iconColor="var(--stat3-icon)"
-          />
-        </div>
+          <p className={styles.description}>{description}</p>
 
-        <div className={styles.footer}>
-          <Button
-            text={"View Recipe"}
-            backgroundColor={"linear-gradient(90deg,#ff7a18,#ef4444)"}
-            textColor="#fff"
-            fontSize="1rem"
-            onButtonClick={() => navigate(`/recipes/${r.id}`)}
-            type="button"
-            outline={"0px"}
-          />
-          <Button
-            backgroundColor="#fff"
-            textColor="#374151"
-            outline={`1px solid var(--border)`}
-            onButtonClick={() => handleSave()}
-            type="button"
-            isActive={!isSaving}
-          >
-            {isSaved ? <BookmarkCheck color="#f59e0b" /> : <Bookmark />}
-            {isSaved ? "Unsave" : "Save"}
-          </Button>
-        </div>
-      </section>
-    </article>
+          <div className={styles.statsRow}>
+            <ProfileStat
+              stat="Servings"
+              statAmount={recipe?.servings.toString()}
+              border="2px solid var(--stat1-border)"
+              background="var(--stat1-bg)"
+              iconColor="var(--stat1-icon)"
+            />
+            <ProfileStat
+              stat="Rating"
+              statAmount={rating.toString() + "%"}
+              border="2px solid var(--stat2-border)"
+              background="var(--stat2-bg)"
+              iconColor="var(--stat2-icon)"
+            />
+            <ProfileStat
+              stat="Category"
+              statAmount={recipe?.categories.name}
+              border="2px solid var(--stat3-border)"
+              background="var(--stat3-bg)"
+              iconColor="var(--stat3-icon)"
+            />
+          </div>
+
+          <div className={styles.footer}>
+            <Button
+              text={"View Recipe"}
+              backgroundColor={"linear-gradient(90deg,#ff7a18,#ef4444)"}
+              textColor="#fff"
+              fontSize="1rem"
+              onButtonClick={() => navigate(`/recipes/${r.id}`)}
+              type="button"
+              outline={"0px"}
+            />
+            <Button
+              backgroundColor="#fff"
+              textColor="#374151"
+              outline={`1px solid var(--border)`}
+              onButtonClick={() => handleSave()}
+              type="button"
+              isActive={!isSaving}
+            >
+              {isSaved ? <BookmarkCheck color="#f59e0b" /> : <Bookmark />}
+              {isSaved ? "Unsave" : "Save"}
+            </Button>
+          </div>
+        </section>
+      </article>
     </>
   );
 }
-

@@ -30,7 +30,6 @@ export default function SuccessModal({
 
   if (!isOpen) return null;
 
-
   return (
     <div className={styles.wrapper} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>

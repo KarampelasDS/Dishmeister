@@ -311,16 +311,21 @@ function CreateRecipe() {
 
   return (
     <>
-      <SuccessModal
-        isOpen={showSuccess}
-        onClose={() => setShowSuccess(false)}
-        message="Your delicious recipe has been shared with the world!"
-      />
-      <ErrorModal
-        isOpen={errorModal.open}
-        onClose={() => setErrorModal({ ...errorModal, open: false })}
-        message={errorModal.message}
-      />
+      {showSuccess && (
+        <SuccessModal
+          isOpen={showSuccess}
+          onClose={() => setShowSuccess(false)}
+          message="Your delicious recipe has been shared with the world!"
+        />
+      )}
+      {errorModal.open && (
+        <ErrorModal
+          isOpen={errorModal.open}
+          onClose={() => setErrorModal({ ...errorModal, open: false })}
+          message={errorModal.message}
+        />
+      )}
+
       <div className={styles.page}>
         <div className={styles.card}>
           {/* HEADER */}

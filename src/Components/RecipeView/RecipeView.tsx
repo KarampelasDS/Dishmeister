@@ -397,17 +397,22 @@ export default function RecipeView({
           onCancel={() => setDeleteConfirmOpen(false)}
         />
       )}
-      <ReportModal
-        isOpen={reportModalOpen}
-        onClose={() => setReportModalOpen(false)}
-        targetType="recipe"
-        targetId={recipe.id}
-      />
-      <ErrorModal
-        isOpen={errorModal.open}
-        onClose={() => setErrorModal({ ...errorModal, open: false })}
-        message={errorModal.message}
-      />
+      {reportModalOpen && (
+        <ReportModal
+          isOpen={reportModalOpen}
+          onClose={() => setReportModalOpen(false)}
+          targetType="recipe"
+          targetId={recipe.id}
+        />
+      )}
+      {errorModal.open && (
+        <ErrorModal
+          isOpen={errorModal.open}
+          onClose={() => setErrorModal({ ...errorModal, open: false })}
+          message={errorModal.message}
+        />
+      )}
+
 
 
       <div className={styles.backRow}>
