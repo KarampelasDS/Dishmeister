@@ -30,7 +30,7 @@ import EditRecipe from "../EditRecipe/EditRecipe";
 import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
 import ErrorModal from "../ErrorModal/ErrorModal";
-
+import { useAuth } from "../../Context/AuthProvider";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
@@ -106,6 +106,7 @@ export default function RecipeView({
   onCommentDeleted,
 }: RecipeViewProps) {
   const { invalidate, patchRecipe } = useFeedCache();
+  const auth = useAuth();
 
   const convertTimeToMinutes = (
     preparationTime: number,
@@ -155,8 +156,6 @@ export default function RecipeView({
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [errorModal, setErrorModal] = useState({ open: false, message: "" });
 
-
-
   const [reacting, setReacting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -188,7 +187,6 @@ export default function RecipeView({
     }
   }, [location.hash, comments]);
 
-
   const handleReaction = async (reaction: "like" | "dislike") => {
     if (reacting) return;
     setReacting(true);
@@ -198,10 +196,12 @@ export default function RecipeView({
     } = await supabase.auth.getUser();
     if (!user) {
       setReacting(false);
-      setErrorModal({ open: true, message: "You must be logged in to react to a recipe." });
+      setErrorModal({
+        open: true,
+        message: "You must be logged in to react to a recipe.",
+      });
       return;
     }
-
 
     const prevLikes = likes;
     const prevDislikes = dislikes;
@@ -413,8 +413,6 @@ export default function RecipeView({
         />
       )}
 
-
-
       <div className={styles.backRow}>
         <span onClick={onBack}>
           <ArrowLeft size={18} />
@@ -482,17 +480,18 @@ export default function RecipeView({
                   <MessageSquareWarning color="#cd3131" />
                   Report
                 </button>
-
-                <button
-                  className={styles.menuItem}
-                  onClick={() => {
-                    setDeleteConfirmOpen(true);
-                    setMenuOpen(false);
-                  }}
-                >
-                  <Trash color="#cd3131" />
-                  Delete
-                </button>
+                {auth.profile?.username === recipe.profiles.username && (
+                  <button
+                    className={styles.menuItem}
+                    onClick={() => {
+                      setDeleteConfirmOpen(true);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <Trash color="#cd3131" />
+                    Delete
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -684,7 +683,6 @@ export default function RecipeView({
               onUserClick={onUserClick}
             />
           </div>
-
         </div>
       </div>
     </div>
