@@ -528,8 +528,8 @@ function CreateRecipe() {
             </div>
             {draft.ingredients.map((ingredient, index) => (
               <div key={index} className={styles.dynamicRow}>
-                <input
-                  className={styles.input}
+                <textarea
+                  className={`${styles.textarea} ${styles.ingredientTextarea}`}
                   value={ingredient}
                   onChange={(e) => updateIngredient(index, e.target.value)}
                   placeholder={`Ingredient ${index + 1}`}

@@ -269,6 +269,7 @@
 .description {
   color: var(--text);
   margin-top: 6px;
+  white-space: pre-wrap;
 }
 
 .statsGrid {
@@ -331,6 +332,7 @@
 
 .ingredientsBox li {
   margin-bottom: 8px;
+  white-space: pre-wrap;
 }
 
 .ingredientsBox li::marker {
@@ -346,6 +348,10 @@
   gap: 12px;
   margin-bottom: 14px;
   align-items: start;
+}
+
+.step p {
+  white-space: pre-wrap;
 }
 
 .stepNumber {
