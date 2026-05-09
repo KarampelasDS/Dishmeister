@@ -51,24 +51,28 @@
 }
 
 .menuButton {
-  background: rgba(0, 0, 0, 0.12);
-  padding: 0.35rem 0.6rem;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: 0.86rem;
-  align-items: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  align-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  padding: 0.6rem;
+  border-radius: 50%;
   display: flex;
-  gap: 0.3rem;
-  border: 0px;
-  padding: 8px 8px;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   cursor: pointer;
+  transition: all 0.2s ease;
+  width: 40px;
+  height: 40px;
 }
 
 .menuButton:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3);
 }
+
 
 .menuDropdown {
   position: absolute;
@@ -120,24 +124,41 @@
   display: flex;
   gap: 0.6rem;
   align-items: end;
+  min-height: 50px;
+  padding-top:2px;
 }
 
 .badge {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
   padding: 0.35rem 0.6rem;
   border-radius: 999px;
   font-weight: 700;
   font-size: 0.86rem;
   align-items: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
   align-content: center;
   display: flex;
   gap: 0.3rem;
+  color: white;
 }
 
+
 .reactionBadge:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.3);
 }
+
+
+.reactionBadge.activebadge:hover {
+  filter: brightness(1.1);
+  transform: translateY(-2px) scale(1.02);
+}
+
+
 
 .reactionButtons {
   display: flex;
@@ -145,13 +166,58 @@
   margin-left: auto;
 }
 
-.reactionButton {
-  padding: 10px 8px;
+.reactionBadge {
+  padding: 0.6rem 0.8rem;
+  min-width: 50px;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  color: white;
+}
+
+
+.reactionBadge:active {
+  animation: reactionPop 0.3s ease-out;
+}
+
+@keyframes reactionPop {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.8); }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 .activebadge {
-  background: rgba(255, 255, 255, 0.5);
+  background: linear-gradient(135deg, #f97316, #ef4444, #ec4899) !important;
+  border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
 }
+
+
+
+
+.reactionButton {
+  transition: transform 0.2s ease;
+}
+
+.activebadge svg {
+  fill: rgba(255, 255, 255, 0.15);
+  stroke: white;
+  stroke-width: 2.5px;
+}
+
+
+
+
+
+
 
 .content {
   padding: 1.25rem 1.5rem 1.5rem 1.5rem;
@@ -251,20 +317,21 @@
 }
 
 .easy {
-  background: #dcfce7;
-  color: #15803d;
-  border-color: #bbf7d0;
+  background: rgba(22, 163, 74, 0.2);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.4);
 }
 .medium {
-  background: #ffedd5;
-  color: #c2410c;
-  border-color: #fed7aa;
+  background: rgba(234, 88, 12, 0.2);
+  color: #fb923c;
+  border-color: rgba(251, 146, 60, 0.4);
 }
 .hard {
-  background: #fee2e2;
-  color: #b91c1c;
-  border-color: #fecaca;
+  background: rgba(220, 38, 38, 0.2);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.4);
 }
+
 
 @media (max-width: 860px) {
   .statsRow {

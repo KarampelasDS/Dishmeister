@@ -67,24 +67,28 @@
 }
 
 .menuButton {
-  background: rgba(0, 0, 0, 0.12);
-  padding: 0.35rem 0.6rem;
-  border-radius: 999px;
-  font-weight: 700;
-  font-size: 0.86rem;
-  align-items: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  align-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  padding: 0.6rem;
+  border-radius: 50%;
   display: flex;
-  gap: 0.3rem;
-  border: 0px;
-  padding: 8px 8px;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   cursor: pointer;
+  transition: all 0.2s ease;
+  width: 42px;
+  height: 42px;
 }
 
 .menuButton:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  transform: scale(1.1);
+  border-color: rgba(255, 255, 255, 0.3);
 }
+
 
 .menuDropdown {
   position: absolute;
@@ -124,16 +128,21 @@
 }
 
 .badge {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
   padding: 0.5rem 0.75rem;
   border-radius: 999px;
   font-weight: 700;
   font-size: 1.1rem;
   align-items: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   display: flex;
   gap: 0.4rem;
+  color: white;
 }
+
 
 .badge svg {
   width: 1.2em;
@@ -141,19 +150,23 @@
 }
 
 .easy {
-  background: #dcfce7;
-  color: #15803d;
+  background: rgba(22, 163, 74, 0.2);
+  color: #4ade80;
+  border: 1.5px solid rgba(74, 222, 128, 0.4);
 }
 
 .medium {
-  background: #ffedd5;
-  color: #c2410c;
+  background: rgba(234, 88, 12, 0.2);
+  color: #fb923c;
+  border: 1.5px solid rgba(251, 146, 60, 0.4);
 }
 
 .hard {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: rgba(220, 38, 38, 0.2);
+  color: #f87171;
+  border: 1.5px solid rgba(248, 113, 113, 0.4);
 }
+
 
 .body {
   padding: 24px;
@@ -235,31 +248,57 @@
 }
 
 .activeLike {
-  background: #ffe5e5;
-  color: #e63946;
+  background: linear-gradient(135deg, #f97316, #ef4444, #ec4899) !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+  border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.activeLike svg {
+  fill: rgba(255, 255, 255, 0.15);
+  stroke: white;
 }
 
 .activeLike:hover {
-  background: #ffd6d6;
+  filter: brightness(1.1);
+  transform: scale(1.05);
 }
 
 .activeDislike {
-  background: #ffe5e5;
-  color: #e63946;
+  background: linear-gradient(135deg, #6366f1, #a855f7) !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+  border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+
+.activeDislike svg {
+  fill: rgba(255, 255, 255, 0.15);
+  stroke: white;
 }
 
 .activeDislike:hover {
-  background: #ffd6d6;
+  filter: brightness(1.1);
+  transform: scale(1.05);
 }
 
 .activeSave {
-  background: #fef3c7;
-  color: #f59e0b;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+  color: white !important;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  border: 1.5px solid rgba(255, 255, 255, 0.3) !important;
+}
+
+.activeSave svg {
+  fill: rgba(255, 255, 255, 0.15);
+  stroke: white;
 }
 
 .activeSave:hover {
-  background: #fed7aa;
+  filter: brightness(1.1);
+  transform: scale(1.05);
 }
+
 
 .title {
   font-size: 26px;
