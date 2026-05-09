@@ -14,8 +14,7 @@ import AddComment from "../AddComment/AddComment";
 import styles from "./CommentView.module.css";
 import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
-
-
+import ErrorModal from "../ErrorModal/ErrorModal";
 
 const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
@@ -47,23 +46,6 @@ interface CommentViewProps {
   onUserClick: (username: string) => void;
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} minute${mins !== 1 ? "s" : ""} ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hour${hrs !== 1 ? "s" : ""} ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days} day${days !== 1 ? "s" : ""} ago`;
-  const weeks = Math.floor(days / 7);
-  if (weeks < 5) return `${weeks} week${weeks !== 1 ? "s" : ""} ago`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months} month${months !== 1 ? "s" : ""} ago`;
-  const years = Math.floor(days / 365);
-  return `${years} year${years !== 1 ? "s" : ""} ago`;
-}
-
 export default function CommentView({
   comment,
   currentUserId,
@@ -85,11 +67,10 @@ export default function CommentView({
   const [replyMenuOpen, setReplyMenuOpen] = useState<string | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportingId, setReportingId] = useState("");
-
+  const [errorModal, setErrorModal] = useState({ open: false, message: "" });
 
   const commentMenuRef = useClickOutside(() => setMenuOpen(false));
   const replyMenuRef = useClickOutside(() => setReplyMenuOpen(null));
-
 
   const handleReaction = async (reaction: "like" | "dislike") => {
     if (reacting) return;
@@ -103,7 +84,6 @@ export default function CommentView({
       setErrorModal({ open: true, message: "You must be logged in to react." });
       return;
     }
-
 
     const prevLikes = likes;
     const prevDislikes = dislikes;
@@ -150,18 +130,12 @@ export default function CommentView({
       setLikes(prevLikes);
       setDislikes(prevDislikes);
       setCurrentReaction(prevReaction);
-      alert(error.message);
+      setErrorModal({ open: true, message: error.message });
     }
 
     setReacting(false);
   };
 
-  const handleDelete = () => {
-    setMenuOpen(false);
-    onCommentDeleted(comment.id);
-  };
-
-  const isOwnComment = currentUserId === comment.profiles.id;
   const replyCount = comment.replies.length;
 
   return (
@@ -172,14 +146,19 @@ export default function CommentView({
         targetType="comment"
         targetId={reportingId}
       />
-      <img
+      <ErrorModal
+        isOpen={errorModal.open}
+        onClose={() => setErrorModal({ ...errorModal, open: false })}
+        message={errorModal.message}
+      />
 
+      <img
         src={
           comment.profiles.avatar_url
             ? `${supabaseAvatarUrl}${comment.profiles.avatar_url}`
             : "/defaultAvatar.png"
         }
-        alt={comment.profiles.display_name ?? "User"}
+        alt={comment.profiles.display_name ?? comment.profiles.username ?? ""}
         className={styles.avatar}
         onClick={() => onUserClick(comment.profiles.username ?? "")}
       />
@@ -194,44 +173,47 @@ export default function CommentView({
               {comment.profiles.display_name ?? comment.profiles.username}
             </span>
             <span className={styles.timestamp}>
-              {timeAgo(comment.created_at)}
+              {new Date(comment.created_at).toLocaleDateString()}
             </span>
           </div>
 
           <div ref={commentMenuRef} style={{ position: "relative" }}>
             <button
               className={styles.menuBtn}
-              onClick={() => setMenuOpen((o) => !o)}
+              onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Comment options"
             >
               <EllipsisVertical size={16} />
             </button>
-
             {menuOpen && (
               <div className={styles.menuDropdown}>
-                {isOwnComment ? (
-                  <button className={styles.menuItem} onClick={handleDelete}>
+                {currentUserId === comment.profiles.id ? (
+                  <button
+                    className={styles.menuItem}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onCommentDeleted(comment.id);
+                    }}
+                  >
                     <Trash2 size={15} color="#cd3131" />
                     <span style={{ color: "#cd3131" }}>Delete</span>
                   </button>
                 ) : (
                   <button
-                  className={styles.menuItem}
-                  onClick={() => {
-                    setReportingId(comment.id);
-                    setReportModalOpen(true);
-                    setMenuOpen(false);
-                  }}
-                >
-                  <MessageSquareWarning size={15} color="#cd3131" />
-                  <span style={{ color: "#cd3131" }}>Report</span>
-                </button>
-
+                    className={styles.menuItem}
+                    onClick={() => {
+                      setReportingId(comment.id);
+                      setReportModalOpen(true);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <MessageSquareWarning size={15} color="#cd3131" />
+                    <span style={{ color: "#cd3131" }}>Report</span>
+                  </button>
                 )}
               </div>
             )}
           </div>
-
         </div>
 
         <p className={styles.content}>{comment.content}</p>
@@ -311,9 +293,9 @@ export default function CommentView({
                   src={
                     reply.profiles.avatar_url
                       ? `${supabaseAvatarUrl}${reply.profiles.avatar_url}`
-                      : "/default-avatar.png"
+                      : "/defaultAvatar.png"
                   }
-                  alt={reply.profiles.display_name ?? "User"}
+                  alt={reply.profiles.display_name ?? reply.profiles.username ?? ""}
                   className={styles.replyAvatar}
                   onClick={() => onUserClick(reply.profiles.username ?? "")}
                 />
@@ -327,15 +309,15 @@ export default function CommentView({
                         {reply.profiles.display_name ?? reply.profiles.username}
                       </span>
                       <span className={styles.timestamp}>
-                        {timeAgo(reply.created_at)}
+                        {new Date(reply.created_at).toLocaleDateString()}
                       </span>
                     </div>
                     <div ref={replyMenuRef} style={{ position: "relative" }}>
                       <button
                         className={styles.menuBtn}
                         onClick={() =>
-                          setReplyMenuOpen((o) =>
-                            o === reply.id ? null : reply.id,
+                          setReplyMenuOpen(
+                            replyMenuOpen === reply.id ? null : reply.id,
                           )
                         }
                         aria-label="Reply options"
@@ -357,22 +339,20 @@ export default function CommentView({
                             </button>
                           ) : (
                             <button
-                            className={styles.menuItem}
-                            onClick={() => {
-                              setReportingId(reply.id);
-                              setReportModalOpen(true);
-                              setReplyMenuOpen(null);
-                            }}
-                          >
-                            <MessageSquareWarning size={15} color="#cd3131" />
-                            <span style={{ color: "#cd3131" }}>Report</span>
-                          </button>
-
+                              className={styles.menuItem}
+                              onClick={() => {
+                                setReportingId(reply.id);
+                                setReportModalOpen(true);
+                                setReplyMenuOpen(null);
+                              }}
+                            >
+                              <MessageSquareWarning size={15} color="#cd3131" />
+                              <span style={{ color: "#cd3131" }}>Report</span>
+                            </button>
                           )}
                         </div>
                       )}
                     </div>
-
                   </div>
                   <p className={styles.content}>{reply.content}</p>
                 </div>
