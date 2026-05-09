@@ -15,6 +15,7 @@ import styles from "./CommentView.module.css";
 import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
 import ErrorModal from "../ErrorModal/ErrorModal";
+import { formatRelativeTime } from "../../utils/formatDate";
 
 const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
@@ -178,7 +179,7 @@ export default function CommentView({
               {comment.profiles.display_name ?? comment.profiles.username}
             </span>
             <span className={styles.timestamp}>
-              {new Date(comment.created_at).toLocaleDateString()}
+              {formatRelativeTime(comment.created_at)}
             </span>
           </div>
 
@@ -314,7 +315,7 @@ export default function CommentView({
                         {reply.profiles.display_name ?? reply.profiles.username}
                       </span>
                       <span className={styles.timestamp}>
-                        {new Date(reply.created_at).toLocaleDateString()}
+                        {formatRelativeTime(reply.created_at)}
                       </span>
                     </div>
                     <div ref={replyMenuRef} style={{ position: "relative" }}>
