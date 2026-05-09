@@ -8,6 +8,9 @@ import { useNavigate } from "react-router";
 import { useFeedCache } from "../../Context/FeedCacheContext";
 import type { ReactNode } from "react";
 import { useClickOutside } from "../../Hooks/useClickOutside";
+import ReportModal from "../ReportModal/ReportModal";
+import ErrorModal from "../ErrorModal/ErrorModal";
+
 
 
 import {
@@ -100,6 +103,9 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const r = recipe as Recipe;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [errorModal, setErrorModal] = useState({ open: false, message: "" });
+
 
 
   const title = r?.title ?? "Creamy Carbonara";
@@ -143,10 +149,11 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      alert("You must be logged in to save a recipe.");
+      setErrorModal({ open: true, message: "You must be logged in to save a recipe." });
       setIsSaving(false);
       return;
     }
+
     const prevSaved = isSaved;
     const prevSaveCount = saveCount;
     let error: any = null;
@@ -212,7 +219,20 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   }, [likes, dislikes]);
 
   return (
-    <article
+    <>
+      <ReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        targetType="recipe"
+        targetId={recipe?.id || ""}
+      />
+      <ErrorModal
+        isOpen={errorModal.open}
+        onClose={() => setErrorModal({ ...errorModal, open: false })}
+        message={errorModal.message}
+      />
+      <article
+
       onClick={() => navigate(`/recipes/${recipe?.id}`)}
       className={styles.container}
     >
@@ -263,12 +283,14 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
                 className={styles.menuItem}
                 onClick={(e) => {
                   e.stopPropagation();
+                  setReportModalOpen(true);
                   setMenuOpen(false);
                 }}
               >
                 <MessageSquareWarning color="#cd3131" />
                 Report
               </button>
+
             </div>
           )}
         </div>
@@ -354,5 +376,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         </div>
       </section>
     </article>
+    </>
   );
 }
+

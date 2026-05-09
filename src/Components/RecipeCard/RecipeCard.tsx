@@ -23,6 +23,9 @@ import { useFeedCache } from "../../Context/FeedCacheContext";
 import type { ReactNode } from "react";
 
 import { useClickOutside } from "../../Hooks/useClickOutside";
+import ReportModal from "../ReportModal/ReportModal";
+import ErrorModal from "../ErrorModal/ErrorModal";
+
 
 type Recipe = {
   id: string;
@@ -100,6 +103,9 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const r = recipe as Recipe;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [errorModal, setErrorModal] = useState({ open: false, message: "" });
+
 
   const title = r?.title ?? "Creamy Carbonara";
   const cover = r?.image_url ?? "/assets/pasta.jpg";
@@ -145,10 +151,11 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      alert("You must be logged in to react to a recipe.");
+      setErrorModal({ open: true, message: "You must be logged in to react to a recipe." });
       setIsReacting(false);
       return;
     }
+
 
     const prevLikes = likes;
     const prevDislikes = dislikes;
@@ -292,7 +299,20 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   }, [likes, dislikes]);
 
   return (
-    <article className={styles.container}>
+    <>
+      <ReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        targetType="recipe"
+        targetId={r.id}
+      />
+      <ErrorModal
+        isOpen={errorModal.open}
+        onClose={() => setErrorModal({ ...errorModal, open: false })}
+        message={errorModal.message}
+      />
+      <article
+ className={styles.container}>
       <header className={styles.header}>
         <img
           src={`${supabaseUrl}${cover}`}
@@ -330,16 +350,18 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
                 <Forward />
                 Share
               </button>
-              <button
-                className={styles.menuItem}
-                onClick={() => {
-                  console.log("report");
-                  setMenuOpen(false);
-                }}
-              >
-                <MessageSquareWarning color="#cd3131" />
-                Report
-              </button>
+                  <button
+                    className={styles.menuItem}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setReportModalOpen(true);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <MessageSquareWarning color="#cd3131" />
+                    <span style={{ color: "#cd3131" }}>Report</span>
+                  </button>
+
             </div>
           )}
         </div>
@@ -473,5 +495,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         </div>
       </section>
     </article>
+    </>
   );
 }
+

@@ -28,6 +28,9 @@ import ConfirmModal from "../ConfirmModal/ConfirmModal";
 import { useFeedCache } from "../../Context/FeedCacheContext";
 import EditRecipe from "../EditRecipe/EditRecipe";
 import { useClickOutside } from "../../Hooks/useClickOutside";
+import ReportModal from "../ReportModal/ReportModal";
+import ErrorModal from "../ErrorModal/ErrorModal";
+
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
@@ -149,6 +152,10 @@ export default function RecipeView({
   const [saveCount, setSaveCount] = useState<number>(recipe.save_count);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [errorModal, setErrorModal] = useState({ open: false, message: "" });
+
+
 
   const [reacting, setReacting] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -190,10 +197,11 @@ export default function RecipeView({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      alert("You must be logged in to react to a recipe.");
       setReacting(false);
+      setErrorModal({ open: true, message: "You must be logged in to react to a recipe." });
       return;
     }
+
 
     const prevLikes = likes;
     const prevDislikes = dislikes;
@@ -389,6 +397,19 @@ export default function RecipeView({
           onCancel={() => setDeleteConfirmOpen(false)}
         />
       )}
+      <ReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        targetType="recipe"
+        targetId={recipe.id}
+      />
+      <ErrorModal
+        isOpen={errorModal.open}
+        onClose={() => setErrorModal({ ...errorModal, open: false })}
+        message={errorModal.message}
+      />
+
+
       <div className={styles.backRow}>
         <span onClick={onBack}>
           <ArrowLeft size={18} />
@@ -449,13 +470,14 @@ export default function RecipeView({
                 <button
                   className={styles.menuItem}
                   onClick={() => {
-                    console.log("report");
+                    setReportModalOpen(true);
                     setMenuOpen(false);
                   }}
                 >
                   <MessageSquareWarning color="#cd3131" />
                   Report
                 </button>
+
                 <button
                   className={styles.menuItem}
                   onClick={() => {

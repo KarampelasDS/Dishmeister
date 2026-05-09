@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../supabase";
+import ErrorModal from "./ErrorModal/ErrorModal";
+
 
 type Props = {
   userId: string;
@@ -14,15 +16,18 @@ function UsernameModal({ userId, onSuccess }: Props) {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errorModal, setErrorModal] = useState({ open: false, message: "" });
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      alert("Only image files allowed");
+      setErrorModal({ open: true, message: "Only image files allowed" });
       return;
     }
+
 
     setAvatarFile(file);
     setPreviewUrl(URL.createObjectURL(file));
@@ -38,9 +43,10 @@ function UsernameModal({ userId, onSuccess }: Props) {
       .upload(filePath, avatarFile, { upsert: true });
 
     if (uploadError) {
-      alert(uploadError.message);
+      setErrorModal({ open: true, message: uploadError.message });
       return null;
     }
+
 
     // Manually build public URL using env variable
     const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/avatars/${filePath}`;
@@ -52,9 +58,10 @@ function UsernameModal({ userId, onSuccess }: Props) {
     const trimmed = usernameInput.trim();
 
     if (trimmed.length < 3) {
-      alert("Username must be at least 3 characters");
+      setErrorModal({ open: true, message: "Username must be at least 3 characters" });
       return;
     }
+
 
     setLoading(true);
 
@@ -71,16 +78,23 @@ function UsernameModal({ userId, onSuccess }: Props) {
     setLoading(false);
 
     if (error) {
-      alert(error.message);
+      setErrorModal({ open: true, message: error.message });
       return;
     }
+
 
     onSuccess();
   };
 
   return (
     <div style={overlayStyle}>
+      <ErrorModal
+        isOpen={errorModal.open}
+        onClose={() => setErrorModal({ ...errorModal, open: false })}
+        message={errorModal.message}
+      />
       <div style={modalStyle}>
+
         <h2>Complete your profile</h2>
 
         <div style={{ marginBottom: 16, textAlign: "center" }}>
@@ -122,23 +136,41 @@ export default UsernameModal;
 
 const overlayStyle: CSSProperties = {
   position: "fixed",
-  inset: 0,
-  background: "rgba(0,0,0,0.5)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
+  top: 0,
+  left: 0,
+  width: "100%",
+  height: "100%",
+  background: "rgba(0,0,0,0.6)",
+  backdropFilter: "blur(8px)",
+  zIndex: 10000,
 };
 
+
+
 const modalStyle: CSSProperties = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  margin: "auto",
+  
+  width: "90%",
+  maxWidth: 400,
+  height: "fit-content",
+  maxHeight: "90vh",
+  overflowY: "auto",
+  
   background: "#000000",
   padding: 24,
-  borderRadius: 8,
-  minWidth: 320,
+  borderRadius: 16,
   display: "flex",
   flexDirection: "column",
   gap: 12,
+  zIndex: 10001,
+  boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
 };
+
 
 const avatarPreviewStyle: CSSProperties = {
   width: 120,

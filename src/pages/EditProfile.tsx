@@ -4,6 +4,7 @@ import { useAuth } from "../Context/AuthProvider";
 import PhotoEditor from "../Components/PhotoEditor/PhotoEditor";
 import Button from "../Components/Button/Button";
 import Loader from "../Components/Loader/Loader";
+import ErrorModal from "../Components/ErrorModal/ErrorModal";
 
 import styles from "./EditProfilePage.module.css";
 import { Settings, Camera } from "lucide-react";
@@ -409,13 +410,14 @@ export default function EditProfilePage() {
               </small>
             </div>
 
-            {error && (
-              <div className={styles.error} role="alert" aria-live="polite">
-                <strong>{error.title}</strong>
-                {error.detail && <span>{error.detail}</span>}
-              </div>
-            )}
             {success && <p className={styles.success}>Profile updated!</p>}
+            <ErrorModal
+              isOpen={!!error}
+              onClose={() => setError(null)}
+              title={error?.title}
+              message={error?.detail || ""}
+            />
+
 
             <div className={styles.actions}>
               <Button

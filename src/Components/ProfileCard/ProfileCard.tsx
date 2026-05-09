@@ -5,6 +5,8 @@ import { Mail, ArrowLeft, Pencil, EllipsisVertical, Forward, MessageSquareWarnin
 import { useNavigate } from "react-router";
 import { useState } from "react";
 import { useClickOutside } from "../../Hooks/useClickOutside";
+import ReportModal from "../ReportModal/ReportModal";
+
 
 
 type profileType = {
@@ -38,11 +40,20 @@ export default function ProfileCard({
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+
 
 
   return (
     <>
+      <ReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        targetType="user"
+        targetId={profile?.id || ""}
+      />
       <div className={styles.backRow}>
+
         <span onClick={() => navigate(-1)}>
           <ArrowLeft size={18} />
           <span>Back</span>
@@ -73,13 +84,14 @@ export default function ProfileCard({
                 <button
                   className={styles.menuItem}
                   onClick={() => {
-                    console.log("Report");
+                    setReportModalOpen(true);
                     setMenuOpen(false);
                   }}
                 >
                   <MessageSquareWarning color="#cd3131" />
                   <span style={{ color: "#cd3131" }}>Report</span>
                 </button>
+
               </div>
             )}
           </div>

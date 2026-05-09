@@ -8,6 +8,8 @@ import en from "i18n-iso-countries/langs/en.json";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
 import { useLocalDraft } from "../../Hooks/useLocalDraft";
 import { compressImage } from "../../utils/compressImage";
+import SuccessModal from "../SuccessModal/SuccessModal";
+import ErrorModal from "../ErrorModal/ErrorModal";
 
 type Category = {
   id: string;
@@ -65,6 +67,8 @@ function CreateRecipe() {
   const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
   const [fileKey, setFileKey] = useState(0);
   const [compressing, setCompressing] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [errorModal, setErrorModal] = useState({ open: false, message: "" });
 
   const setField = <K extends keyof typeof defaultDraft>(
     key: K,
@@ -149,13 +153,16 @@ function CreateRecipe() {
     if (!file) return;
 
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-      alert("Only PNG, JPEG, and WebP files are allowed.");
+      setErrorModal({
+        open: true,
+        message: "Only PNG, JPEG, and WebP files are allowed.",
+      });
       e.target.value = "";
       return;
     }
 
     if (file.size > 20 * 1024 * 1024) {
-      alert("Image must be under 20MB.");
+      setErrorModal({ open: true, message: "Image must be under 20MB." });
       e.target.value = "";
       return;
     }
@@ -175,12 +182,18 @@ function CreateRecipe() {
     const hasEmptyInstruction = draft.instructions.some((i) => !i.trim());
 
     if (hasEmptyIngredient) {
-      alert("All ingredient fields must be filled in.");
+      setErrorModal({
+        open: true,
+        message: "All ingredient fields must be filled in.",
+      });
       return;
     }
 
     if (hasEmptyInstruction) {
-      alert("All instruction steps must be filled in.");
+      setErrorModal({
+        open: true,
+        message: "All instruction steps must be filled in.",
+      });
       return;
     }
 
@@ -195,12 +208,15 @@ function CreateRecipe() {
       draft.cookingTime === "" ||
       !draft.categoryId
     ) {
-      alert("All required fields must be filled");
+      setErrorModal({
+        open: true,
+        message: "All required fields must be filled",
+      });
       return;
     }
 
     if (!imageFile && !draft.savedImageBase64) {
-      alert("Recipe image is required.");
+      setErrorModal({ open: true, message: "Recipe image is required." });
       return;
     }
 
@@ -209,7 +225,7 @@ function CreateRecipe() {
       Number(draft.cookingTime) < 0 ||
       draft.servings <= 0
     ) {
-      alert("Invalid numeric values");
+      setErrorModal({ open: true, message: "Invalid numeric values" });
       return;
     }
 
@@ -220,7 +236,10 @@ function CreateRecipe() {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      alert("You must be logged in");
+      setErrorModal({
+        open: true,
+        message: "You must be logged in to create a recipe.",
+      });
       setLoading(false);
       return;
     }
@@ -236,7 +255,7 @@ function CreateRecipe() {
     }
 
     if (!fileToUpload) {
-      alert("Recipe image is required.");
+      setErrorModal({ open: true, message: "Recipe image is required." });
       setLoading(false);
       return;
     }
@@ -252,7 +271,7 @@ function CreateRecipe() {
       });
 
     if (uploadError) {
-      alert(uploadError.message);
+      setErrorModal({ open: true, message: uploadError.message });
       setLoading(false);
       return;
     }
@@ -278,7 +297,7 @@ function CreateRecipe() {
 
     if (error) {
       await supabase.storage.from("recipe-images").remove([filePath]);
-      alert(error.message);
+      setErrorModal({ open: true, message: error.message });
       return;
     }
 
@@ -287,11 +306,21 @@ function CreateRecipe() {
     setDraft(defaultDraft);
     setImageFile(null);
     setPreviewImage(FALLBACK_IMAGE);
-    alert("Recipe created!");
+    setShowSuccess(true);
   };
 
   return (
     <>
+      <SuccessModal
+        isOpen={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        message="Your delicious recipe has been shared with the world!"
+      />
+      <ErrorModal
+        isOpen={errorModal.open}
+        onClose={() => setErrorModal({ ...errorModal, open: false })}
+        message={errorModal.message}
+      />
       <div className={styles.page}>
         <div className={styles.card}>
           {/* HEADER */}

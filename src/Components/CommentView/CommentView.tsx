@@ -13,6 +13,8 @@ import { supabase } from "../../supabase";
 import AddComment from "../AddComment/AddComment";
 import styles from "./CommentView.module.css";
 import { useClickOutside } from "../../Hooks/useClickOutside";
+import ReportModal from "../ReportModal/ReportModal";
+
 
 
 const supabaseAvatarUrl = import.meta.env
@@ -81,6 +83,9 @@ export default function CommentView({
   const [repliesOpen, setRepliesOpen] = useState(false);
   const [reacting, setReacting] = useState(false);
   const [replyMenuOpen, setReplyMenuOpen] = useState<string | null>(null);
+  const [reportModalOpen, setReportModalOpen] = useState(false);
+  const [reportingId, setReportingId] = useState("");
+
 
   const commentMenuRef = useClickOutside(() => setMenuOpen(false));
   const replyMenuRef = useClickOutside(() => setReplyMenuOpen(null));
@@ -94,10 +99,11 @@ export default function CommentView({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      alert("You must be logged in to react.");
       setReacting(false);
+      setErrorModal({ open: true, message: "You must be logged in to react." });
       return;
     }
+
 
     const prevLikes = likes;
     const prevDislikes = dislikes;
@@ -160,7 +166,14 @@ export default function CommentView({
 
   return (
     <div className={styles.wrapper}>
+      <ReportModal
+        isOpen={reportModalOpen}
+        onClose={() => setReportModalOpen(false)}
+        targetType="comment"
+        targetId={reportingId}
+      />
       <img
+
         src={
           comment.profiles.avatar_url
             ? `${supabaseAvatarUrl}${comment.profiles.avatar_url}`
@@ -203,15 +216,17 @@ export default function CommentView({
                   </button>
                 ) : (
                   <button
-                    className={styles.menuItem}
-                    onClick={() => {
-                      console.log("report", comment.id);
-                      setMenuOpen(false);
-                    }}
-                  >
-                    <MessageSquareWarning size={15} color="#cd3131" />
-                    <span style={{ color: "#cd3131" }}>Report</span>
-                  </button>
+                  className={styles.menuItem}
+                  onClick={() => {
+                    setReportingId(comment.id);
+                    setReportModalOpen(true);
+                    setMenuOpen(false);
+                  }}
+                >
+                  <MessageSquareWarning size={15} color="#cd3131" />
+                  <span style={{ color: "#cd3131" }}>Report</span>
+                </button>
+
                 )}
               </div>
             )}
@@ -342,15 +357,17 @@ export default function CommentView({
                             </button>
                           ) : (
                             <button
-                              className={styles.menuItem}
-                              onClick={() => {
-                                console.log("report", reply.id);
-                                setReplyMenuOpen(null);
-                              }}
-                            >
-                              <MessageSquareWarning size={15} color="#cd3131" />
-                              <span style={{ color: "#cd3131" }}>Report</span>
-                            </button>
+                            className={styles.menuItem}
+                            onClick={() => {
+                              setReportingId(reply.id);
+                              setReportModalOpen(true);
+                              setReplyMenuOpen(null);
+                            }}
+                          >
+                            <MessageSquareWarning size={15} color="#cd3131" />
+                            <span style={{ color: "#cd3131" }}>Report</span>
+                          </button>
+
                           )}
                         </div>
                       )}
