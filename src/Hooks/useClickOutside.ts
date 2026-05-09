@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
  * Hook that alerts clicks outside of the passed ref
  */
 export function useClickOutside(handler: () => void) {
-  const domNode = useRef<any>();
+  const domNode = useRef<any>(null);
 
   useEffect(() => {
     const maybeHandler = (event: MouseEvent) => {

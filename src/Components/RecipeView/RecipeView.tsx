@@ -374,7 +374,7 @@ export default function RecipeView({
           setLocalRecipe((prev) => ({ ...prev, ...updatedFields }));
           patchRecipe(recipe.id, updatedFields);
           setIsEditing(false);
-          location.reload();
+          window.location.reload();
         }}
       />
     );
