@@ -119,7 +119,12 @@
   font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+
 
 .badges {
   display: flex;
@@ -189,7 +194,12 @@
 .authorName {
   font-weight: 600;
   font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
+
 
 .authorMeta {
   font-size: 0.85rem;

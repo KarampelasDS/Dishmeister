@@ -347,7 +347,12 @@ function CreateRecipe() {
               value={draft.title}
               onChange={(e) => setField("title", e.target.value)}
               placeholder="e.g., Creamy Carbonara"
+              maxLength={80}
             />
+            <small className={styles.charCounter}>
+              {draft.title.length}/80
+            </small>
+
           </div>
 
           {/* DESCRIPTION */}
@@ -360,7 +365,12 @@ function CreateRecipe() {
               value={draft.description}
               onChange={(e) => setField("description", e.target.value)}
               placeholder="Tell us about your recipe..."
+              maxLength={300}
             />
+            <small className={styles.charCounter}>
+              {draft.description.length}/300
+            </small>
+
           </div>
 
           {/* GRID: TIME + SERVINGS */}
@@ -377,10 +387,14 @@ function CreateRecipe() {
                   onChange={(e) =>
                     setField(
                       "preparationTime",
-                      e.target.value === "" ? "" : Number(e.target.value),
+                      e.target.value === ""
+                        ? ""
+                        : Math.min(9999, Number(e.target.value)),
                     )
                   }
+                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 />
+
                 <select
                   value={draft.preparationUnit}
                   onChange={(e) =>
@@ -408,10 +422,14 @@ function CreateRecipe() {
                   onChange={(e) =>
                     setField(
                       "cookingTime",
-                      e.target.value === "" ? "" : Number(e.target.value),
+                      e.target.value === ""
+                        ? ""
+                        : Math.min(9999, Number(e.target.value)),
                     )
                   }
+                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 />
+
                 <select
                   value={draft.cookingUnit}
                   onChange={(e) =>
@@ -444,11 +462,14 @@ function CreateRecipe() {
                 <span>{draft.servings}</span>
                 <button
                   type="button"
-                  onClick={() => setField("servings", draft.servings + 1)}
+                  onClick={() =>
+                    setField("servings", Math.min(99, draft.servings + 1))
+                  }
                   aria-label="Increase servings"
                 >
                   +
                 </button>
+
               </div>
             </div>
           </div>
@@ -528,12 +549,19 @@ function CreateRecipe() {
             </div>
             {draft.ingredients.map((ingredient, index) => (
               <div key={index} className={styles.dynamicRow}>
-                <textarea
-                  className={`${styles.textarea} ${styles.ingredientTextarea}`}
-                  value={ingredient}
-                  onChange={(e) => updateIngredient(index, e.target.value)}
-                  placeholder={`Ingredient ${index + 1}`}
-                />
+                <div style={{ flex: 1 }}>
+                  <textarea
+                    className={`${styles.textarea} ${styles.ingredientTextarea}`}
+                    value={ingredient}
+                    onChange={(e) => updateIngredient(index, e.target.value)}
+                    placeholder={`Ingredient ${index + 1}`}
+                    maxLength={100}
+                  />
+                  <small className={styles.charCounter}>
+                    {ingredient.length}/100
+                  </small>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => removeIngredient(index)}
@@ -563,12 +591,19 @@ function CreateRecipe() {
             {draft.instructions.map((instruction, index) => (
               <div key={index} className={styles.dynamicRow}>
                 <div className={styles.stepIndex}>{index + 1}</div>
-                <textarea
-                  className={styles.textarea}
-                  value={instruction}
-                  onChange={(e) => updateInstruction(index, e.target.value)}
-                  placeholder={`Step ${index + 1}`}
-                />
+                <div style={{ flex: 1 }}>
+                  <textarea
+                    className={styles.textarea}
+                    value={instruction}
+                    onChange={(e) => updateInstruction(index, e.target.value)}
+                    placeholder={`Step ${index + 1}`}
+                    maxLength={500}
+                  />
+                  <small className={styles.charCounter}>
+                    {instruction.length}/500
+                  </small>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => removeInstruction(index)}

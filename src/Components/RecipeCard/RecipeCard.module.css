@@ -106,7 +106,11 @@
   font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 
 .badges {
   display: flex;
@@ -171,12 +175,20 @@
 
 .authorName {
   font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 
 .authorMeta {
   font-size: 0.85rem;
   color: var(--text-muted, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 
 .metaCounts {
   display: flex;

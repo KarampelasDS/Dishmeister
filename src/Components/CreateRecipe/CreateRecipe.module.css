@@ -97,6 +97,7 @@ input[type="number"] {
 
 .ingredientTextarea {
   min-height: 68px;
+  max-width: 93%;
 }
 
 .input:focus,
@@ -296,6 +297,10 @@ input[type="number"] {
   margin-bottom: 0.85rem;
 }
 
+.dynamicRow textarea {
+  max-width: 93%;
+}
+
 .removeBtn {
   width: 42px;
   height: 42px;
@@ -330,6 +335,14 @@ input[type="number"] {
   display: flex;
   gap: 1rem;
   margin-top: 2rem;
+}
+
+.charCounter {
+  display: block;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+  margin-top: 0.25rem;
 }
 
 .required {
