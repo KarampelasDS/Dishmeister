@@ -1,8 +1,11 @@
 import styles from "./ProfileCard.module.css";
 import ProfileStat from "../ProfileStat/ProfileStat";
 import Button from "../Button/Button";
-import { Mail, ArrowLeft, Pencil } from "lucide-react";
+import { Mail, ArrowLeft, Pencil, EllipsisVertical, Forward, MessageSquareWarning } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useState } from "react";
+import { useClickOutside } from "../../Hooks/useClickOutside";
+
 
 type profileType = {
   id: string;
@@ -33,6 +36,9 @@ export default function ProfileCard({
     .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useClickOutside(() => setMenuOpen(false));
+
 
   return (
     <>
@@ -44,7 +50,41 @@ export default function ProfileCard({
       </div>
       <div className={styles.profileWindow}>
         <div className={styles.banner}>
+          <div className={styles.topRightMenu} ref={menuRef}>
+            <button
+              className={styles.menuButton}
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="More options"
+            >
+              <EllipsisVertical color="white" size={24} />
+            </button>
+            {menuOpen && (
+              <div className={styles.menuDropdown}>
+                <button
+                  className={styles.menuItem}
+                  onClick={() => {
+                    console.log("Share");
+                    setMenuOpen(false);
+                  }}
+                >
+                  <Forward />
+                  Share
+                </button>
+                <button
+                  className={styles.menuItem}
+                  onClick={() => {
+                    console.log("Report");
+                    setMenuOpen(false);
+                  }}
+                >
+                  <MessageSquareWarning color="#cd3131" />
+                  <span style={{ color: "#cd3131" }}>Report</span>
+                </button>
+              </div>
+            )}
+          </div>
           <div className={styles.profilePicContainer}>
+
             <img
               className={styles.profilePic}
               src={`${supabaseAvatarUrl}/${profile?.avatar_url}`}

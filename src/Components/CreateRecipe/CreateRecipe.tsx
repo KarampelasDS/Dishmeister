@@ -246,7 +246,10 @@ function CreateRecipe() {
 
     const { error: uploadError } = await supabase.storage
       .from("recipe-images")
-      .upload(filePath, fileToUpload, { upsert: false });
+      .upload(filePath, fileToUpload, {
+        cacheControl: "31536000",
+        upsert: false,
+      });
 
     if (uploadError) {
       alert(uploadError.message);
@@ -352,7 +355,6 @@ function CreateRecipe() {
             <small className={styles.charCounter}>
               {draft.title.length}/80
             </small>
-
           </div>
 
           {/* DESCRIPTION */}
@@ -370,7 +372,6 @@ function CreateRecipe() {
             <small className={styles.charCounter}>
               {draft.description.length}/300
             </small>
-
           </div>
 
           {/* GRID: TIME + SERVINGS */}
@@ -469,7 +470,6 @@ function CreateRecipe() {
                 >
                   +
                 </button>
-
               </div>
             </div>
           </div>

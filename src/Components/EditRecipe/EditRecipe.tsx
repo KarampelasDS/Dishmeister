@@ -240,7 +240,10 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
 
       const { error: uploadError } = await supabase.storage
         .from("recipe-images")
-        .upload(filePath, imageFile, { upsert: false });
+        .upload(filePath, imageFile, {
+          cacheControl: "31536000",
+          upsert: false,
+        });
 
       if (uploadError) {
         alert(uploadError.message);

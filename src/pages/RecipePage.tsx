@@ -4,7 +4,6 @@ import RecipeView from "../Components/RecipeView/RecipeView";
 import { supabase } from "../supabase";
 import Loader from "../Components/Loader/Loader";
 
-
 type Recipe = {
   id: string;
   title: string;

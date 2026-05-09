@@ -112,7 +112,7 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
 
     const { error } = await supabase.storage
       .from(AVATAR_BUCKET)
-      .upload(path, avatarFile, { upsert: true });
+      .upload(path, avatarFile, { cacheControl: "31536000", upsert: true });
 
     if (error) throw error;
 

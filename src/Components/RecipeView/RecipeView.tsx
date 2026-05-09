@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router";
+
 import {
   ArrowLeft,
   ThumbsUp,
@@ -26,7 +28,6 @@ import ConfirmModal from "../ConfirmModal/ConfirmModal";
 import { useFeedCache } from "../../Context/FeedCacheContext";
 import EditRecipe from "../EditRecipe/EditRecipe";
 import { useClickOutside } from "../../Hooks/useClickOutside";
-
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
@@ -168,6 +169,18 @@ export default function RecipeView({
     recipe.preparation_unit,
     recipe.cooking_unit,
   );
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.hash === "#comments") {
+      const element = document.getElementById("comments");
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [location.hash, comments]);
+
 
   const handleReaction = async (reaction: "like" | "dislike") => {
     if (reacting) return;
@@ -392,7 +405,6 @@ export default function RecipeView({
             className={styles.heroImage}
           />
           <div className={styles.topRightMenu} ref={menuRef}>
-
             <button
               className={styles.menuButton}
               aria-label="More options"
@@ -634,15 +646,18 @@ export default function RecipeView({
           </div>
 
           {/* COMMENTS */}
-          <CommentsSection
-            comments={comments}
-            currentUserAvatar={currentUserAvatar}
-            currentUserId={currentUserId}
-            recipeId={recipe.id}
-            onCommentAdded={onCommentAdded}
-            onCommentDeleted={onCommentDeleted}
-            onUserClick={onUserClick}
-          />
+          <div id="comments">
+            <CommentsSection
+              comments={comments}
+              currentUserAvatar={currentUserAvatar}
+              currentUserId={currentUserId}
+              recipeId={recipe.id}
+              onCommentAdded={onCommentAdded}
+              onCommentDeleted={onCommentDeleted}
+              onUserClick={onUserClick}
+            />
+          </div>
+
         </div>
       </div>
     </div>

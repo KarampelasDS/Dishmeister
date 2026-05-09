@@ -101,7 +101,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
 
-
   const title = r?.title ?? "Creamy Carbonara";
   const cover = r?.image_url ?? "/assets/pasta.jpg";
   const difficulty = r?.difficulty ?? "Medium";
@@ -301,7 +300,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           className={styles.cover}
         />
         <div className={styles.topRightMenu} ref={menuRef}>
-
           <button
             className={styles.menuButton}
             aria-label="More options"
@@ -413,7 +411,10 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
             </div>
           </div>
           <div className={styles.metaCounts}>
-            <div>
+            <div
+              onClick={() => navigate(`/recipes/${r.id}#comments`)}
+              style={{ cursor: "pointer" }}
+            >
               <MessageCircle /> {comment_count}
             </div>
             <div>
