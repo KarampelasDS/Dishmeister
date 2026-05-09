@@ -124,8 +124,6 @@
   text-overflow: ellipsis;
 }
 
-
-
 .badges {
   display: flex;
   gap: 0.6rem;
@@ -164,7 +162,7 @@
 }
 
 .content {
-  padding: 0.5rem;
+  padding: 0.75rem 0.85rem;
   min-width: 0;
   height: 70px;
   display: flex;
@@ -177,6 +175,7 @@
   align-items: center;
   gap: 0.55rem;
   border-top: 1px solid var(--border);
+  padding-top: 6px;
 }
 
 .avatar {
@@ -198,8 +197,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-
 
 .authorMeta {
   font-size: 0.85rem;
