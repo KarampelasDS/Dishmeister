@@ -25,6 +25,7 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  cursor: pointer;
 }
 
 .headerOverlay {
@@ -73,7 +74,6 @@
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-
 .menuDropdown {
   position: absolute;
   top: 120%;
@@ -118,14 +118,12 @@
   line-height: 1.2;
 }
 
-
-
 .badges {
   display: flex;
   gap: 0.6rem;
   align-items: end;
   min-height: 50px;
-  padding-top:2px;
+  padding-top: 2px;
 }
 
 .badge {
@@ -145,20 +143,16 @@
   color: white;
 }
 
-
 .reactionBadge:hover {
   background: rgba(0, 0, 0, 0.5);
   transform: translateY(-2px);
   border-color: rgba(255, 255, 255, 0.3);
 }
 
-
 .reactionBadge.activebadge:hover {
   filter: brightness(1.1);
   transform: translateY(-2px) scale(1.02);
 }
-
-
 
 .reactionButtons {
   display: flex;
@@ -181,16 +175,23 @@
   color: white;
 }
 
-
 .reactionBadge:active {
   animation: reactionPop 0.3s ease-out;
 }
 
 @keyframes reactionPop {
-  0% { transform: scale(1); }
-  40% { transform: scale(0.8); }
-  70% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(0.8);
+  }
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .activebadge {
@@ -199,9 +200,6 @@
   color: white !important;
   box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
 }
-
-
-
 
 .reactionButton {
   transition: transform 0.2s ease;
@@ -212,12 +210,6 @@
   stroke: white;
   stroke-width: 2.5px;
 }
-
-
-
-
-
-
 
 .content {
   padding: 1.25rem 1.5rem 1.5rem 1.5rem;
@@ -250,7 +242,6 @@
   text-overflow: ellipsis;
 }
 
-
 .authorMeta {
   font-size: 0.85rem;
   color: var(--text-muted, #6b7280);
@@ -258,7 +249,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 
 .metaCounts {
   display: flex;
@@ -284,7 +274,6 @@
   text-overflow: ellipsis;
   word-break: break-word;
 }
-
 
 .statsRow {
   display: grid;
@@ -331,7 +320,6 @@
   color: #f87171;
   border-color: rgba(248, 113, 113, 0.4);
 }
-
 
 @media (max-width: 860px) {
   .statsRow {

@@ -322,6 +322,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
             src={`${supabaseUrl}${cover}`}
             alt={title}
             className={styles.cover}
+            onClick={() => navigate(`/recipes/${r.id}`)}
           />
           <div className={styles.topRightMenu} ref={menuRef}>
             <button

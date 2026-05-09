@@ -3,6 +3,8 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import { supabase } from "../../supabase";
 import styles from "./ReportModal.module.css";
 import ErrorModal from "../ErrorModal/ErrorModal";
+import SuccessModal from "../SuccessModal/SuccessModal";
+
 
 
 interface ReportModalProps {
@@ -64,14 +66,10 @@ export default function ReportModal({
       if (error) throw error;
 
       setSuccess(true);
-      setTimeout(() => {
-        setSuccess(false);
-        onClose();
-        setSelectedReason("");
-        setOtherDetails("");
-      }, 2000);
-
+      setSelectedReason("");
+      setOtherDetails("");
     } catch (error: any) {
+
       console.error("Error submitting report:", error);
       let msg = error.message || "Failed to submit report. Please try again.";
       
@@ -97,85 +95,83 @@ export default function ReportModal({
 
   return (
     <div className={styles.wrapper} onClick={onClose}>
-      <ErrorModal 
-        isOpen={errorModal.open} 
-        onClose={() => setErrorModal({ ...errorModal, open: false })}
-        message={errorModal.message}
-      />
+      {errorModal.open && (
+        <ErrorModal 
+          isOpen={errorModal.open} 
+          onClose={() => setErrorModal({ ...errorModal, open: false })}
+          message={errorModal.message}
+        />
+      )}
+      {success && (
+        <SuccessModal
+          isOpen={success}
+          onClose={() => {
+            setSuccess(false);
+            onClose();
+          }}
+          title="Report Submitted"
+          message="Thank you for helping us keep Dishmeister safe. We will review this report shortly."
+        />
+      )}
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-
-        {success ? (
-          <div className={styles.scrollContent} style={{ textAlign: "center", padding: "2rem" }}>
-            <div className={styles.iconCircle} style={{ margin: "0 auto 1.5rem", background: "rgba(34, 197, 94, 0.1)", color: "#22c55e" }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+        <div className={styles.scrollContent}>
+          <div className={styles.header}>
+            <div className={styles.iconCircle}>
+              <AlertTriangle size={24} />
             </div>
-            <h2 className={styles.title}>Report Submitted</h2>
-            <p className={styles.subtitle}>Thank you for helping us keep Dishmeister safe. We will review this report shortly.</p>
+            <h2 className={styles.title}>Report {targetType}</h2>
           </div>
-        ) : (
-          <>
-            <div className={styles.scrollContent}>
-              <div className={styles.header}>
-                <div className={styles.iconCircle}>
-                  <AlertTriangle size={24} />
-                </div>
-                <h2 className={styles.title}>Report {targetType}</h2>
-              </div>
 
-              <p className={styles.subtitle}>
-                Why are you reporting this {targetType}? Your report is anonymous, 
-                except if you're reporting an intellectual property infringement.
-              </p>
+          <p className={styles.subtitle}>
+            Why are you reporting this {targetType}? Your report is anonymous, 
+            except if you're reporting an intellectual property infringement.
+          </p>
 
-              <div className={styles.optionsGrid}>
-                {REPORT_REASONS.map((reason) => (
-                  <div 
-                    key={reason}
-                    className={`${styles.option} ${selectedReason === reason ? styles.selected : ""}`}
-                    onClick={() => setSelectedReason(reason)}
-                  >
-                    <div className={styles.radioCircle} />
-                    <span className={styles.optionLabel}>{reason}</span>
-                  </div>
-                ))}
-              </div>
-
-              {selectedReason === "Other" && (
-                <textarea
-                  className={styles.textArea}
-                  placeholder="Please provide more details..."
-                  value={otherDetails}
-                  onChange={(e) => setOtherDetails(e.target.value)}
-                />
-              )}
-            </div>
-
-            <div className={styles.actions}>
-
-              <button 
-                className={styles.cancelBtn} 
-                onClick={onClose}
-                disabled={isSubmitting}
+          <div className={styles.optionsGrid}>
+            {REPORT_REASONS.map((reason) => (
+              <div 
+                key={reason}
+                className={`${styles.option} ${selectedReason === reason ? styles.selected : ""}`}
+                onClick={() => setSelectedReason(reason)}
               >
-                Cancel
-              </button>
-              <button 
-                className={styles.submitBtn}
-                onClick={handleSubmit}
-                disabled={!selectedReason || isSubmitting || (selectedReason === "Other" && !otherDetails.trim())}
-              >
-                {isSubmitting ? (
-                  <Loader2 className={styles.spin} size={20} />
-                ) : (
-                  "Submit Report"
-                )}
-              </button>
-            </div>
-          </>
-        )}
+                <div className={styles.radioCircle} />
+                <span className={styles.optionLabel}>{reason}</span>
+              </div>
+            ))}
+          </div>
+
+          {selectedReason === "Other" && (
+            <textarea
+              className={styles.textArea}
+              placeholder="Please provide more details..."
+              value={otherDetails}
+              onChange={(e) => setOtherDetails(e.target.value)}
+            />
+          )}
+        </div>
+
+        <div className={styles.actions}>
+          <button 
+            className={styles.cancelBtn} 
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </button>
+          <button 
+            className={styles.submitBtn}
+            onClick={handleSubmit}
+            disabled={!selectedReason || isSubmitting || (selectedReason === "Other" && !otherDetails.trim())}
+          >
+            {isSubmitting ? (
+              <Loader2 className={styles.spin} size={20} />
+            ) : (
+              "Submit Report"
+            )}
+          </button>
+        </div>
       </div>
     </div>
+
   );
 }
