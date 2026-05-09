@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../supabase";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
+import Loader from "../Components/Loader/Loader";
+
 import styles from "./Explore.module.css";
 import { useFeedCache } from "../Context/FeedCacheContext";
 
@@ -242,11 +244,8 @@ function SavedRecipes() {
 
       <div ref={sentinelRef} style={{ height: 1 }} />
 
-      {loading && (
-        <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
-          Loading recipes...
-        </p>
-      )}
+      {loading && <Loader />}
+
 
       {!hasMore && recipes.length > 0 && (
         <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>

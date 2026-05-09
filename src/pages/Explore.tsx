@@ -3,6 +3,8 @@ import { supabase } from "../supabase";
 import { useSearchParams } from "react-router";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
 import ProfileCompactCard from "../Components/ProfileCompactCard/ProfileCompactCard";
+import Loader from "../Components/Loader/Loader";
+
 import styles from "./Explore.module.css";
 import {
   ChevronLeft,
@@ -1372,11 +1374,8 @@ function Explore() {
 
           <div ref={sentinelRef} style={{ height: 1 }} />
 
-          {loading && (
-            <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
-              Loading recipes...
-            </p>
-          )}
+          {loading && <Loader />}
+
 
           {!hasMore && recipes.length > 0 && (
             <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>
@@ -1414,11 +1413,8 @@ function Explore() {
 
           <div ref={peopleSentinelRef} style={{ height: 1 }} />
 
-          {peopleLoading && (
-            <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
-              Loading users...
-            </p>
-          )}
+          {peopleLoading && <Loader />}
+
 
           {!peopleHasMore && profiles.length > 0 && (
             <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>

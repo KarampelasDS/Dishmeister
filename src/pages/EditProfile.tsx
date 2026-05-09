@@ -3,6 +3,8 @@ import { supabase } from "../supabase";
 import { useAuth } from "../Context/AuthProvider";
 import PhotoEditor from "../Components/PhotoEditor/PhotoEditor";
 import Button from "../Components/Button/Button";
+import Loader from "../Components/Loader/Loader";
+
 import styles from "./EditProfilePage.module.css";
 import { Settings, Camera } from "lucide-react";
 import { compressImage } from "../utils/compressImage";
@@ -270,7 +272,7 @@ export default function EditProfilePage() {
     avatarPreviewUrl ??
     (currentAvatarPath ? `${SUPABASE_AVATAR_URL}/${currentAvatarPath}` : null);
 
-  if (fetching) return <p style={{ padding: "2rem" }}>Loading...</p>;
+  if (fetching) return <Loader fullPage />;
 
   return (
     <div className={styles.page}>

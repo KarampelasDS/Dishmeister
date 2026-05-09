@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "../supabase";
 import RecipeCard from "../Components/RecipeCard/RecipeCard";
+import Loader from "../Components/Loader/Loader";
+
 import styles from "./HomePage.module.css";
 import { Sparkles, Users } from "lucide-react";
 import { useFeedCache } from "../Context/FeedCacheContext";
@@ -302,7 +304,7 @@ function HomePage() {
 
       <div ref={sentinelRef} style={{ height: 1 }} />
 
-      {loading && <p style={{ textAlign: "center" }}>Loading...</p>}
+      {loading && <Loader />}
 
       {!hasMore && recipes.length > 0 && (
         <p style={{ textAlign: "center" }}>You're all caught up</p>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import RecipeCard from "../Components/RecipeCard/RecipeCard";
+import Loader from "../Components/Loader/Loader";
+
 
 type Recipe = {
   id: string;
@@ -112,7 +114,7 @@ function Recipes() {
     <div style={{ maxWidth: 720, margin: "0 auto", padding: "1rem" }}>
       <h1>Recipes</h1>
 
-      {loading && <p>Loading...</p>}
+      {loading && <Loader />}
 
       {!loading && recipes.length === 0 && <p>No recipes yet.</p>}
 

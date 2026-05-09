@@ -3,6 +3,8 @@ import ProfileCard from "../Components/ProfileCard/ProfileCard";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabase";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
+import Loader from "../Components/Loader/Loader";
+
 import styles from "./ProfilePage.module.css";
 import { useFeedCache } from "../Context/FeedCacheContext";
 
@@ -307,11 +309,8 @@ export default function Profile() {
       <div ref={sentinelRef} style={{ height: 1 }} />
 
       {/* Loading indicator */}
-      {loading && (
-        <p style={{ textAlign: "center", padding: "1rem", color: "#888" }}>
-          Loading more recipes...
-        </p>
-      )}
+      {loading && <Loader />}
+
 
       {/* End of results */}
       {!hasMore && recipes.length > 0 && (

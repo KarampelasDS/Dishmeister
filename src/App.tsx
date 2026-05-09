@@ -16,6 +16,8 @@ import Explore from "./pages/Explore";
 import { useScrollRestoration } from "./Hooks/useScrollRestoration";
 import EditProfilePage from "./pages/EditProfile";
 import { Analytics } from "@vercel/analytics/react";
+import Loader from "./Components/Loader/Loader";
+
 
 function App() {
   useScrollRestoration(["/explore"]);
@@ -46,7 +48,7 @@ function App() {
     }
   }, [session, loading, location.pathname]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <Loader fullPage />;
 
   return (
     <div>

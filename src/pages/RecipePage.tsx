@@ -2,6 +2,8 @@ import { useParams, useNavigate } from "react-router";
 import { useState, useEffect, useCallback } from "react";
 import RecipeView from "../Components/RecipeView/RecipeView";
 import { supabase } from "../supabase";
+import Loader from "../Components/Loader/Loader";
+
 
 type Recipe = {
   id: string;
@@ -190,7 +192,7 @@ export default function RecipePage() {
     [currentUserId, id],
   );
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <Loader fullPage />;
   if (!recipe) return <div>Recipe not found</div>;
 
   const handleCommentDeleted = async (commentId: string) => {
