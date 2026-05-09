@@ -276,6 +276,12 @@ function CreateRecipe() {
       return;
     }
 
+    await supabase.from("storage_objects").insert({
+      bucket: "recipe-images",
+      path: filePath,
+      uploaded_by: user.id,
+    });
+
     const { error } = await supabase.from("recipes").insert({
       author_id: user.id,
       title: draft.title.trim(),
@@ -297,9 +303,17 @@ function CreateRecipe() {
 
     if (error) {
       await supabase.storage.from("recipe-images").remove([filePath]);
+      await supabase.from("storage_objects").delete().eq("path", filePath);
       setErrorModal({ open: true, message: error.message });
+      setLoading(false);
       return;
     }
+
+    await supabase
+      .from("storage_objects")
+      .update({ referenced: true })
+      .eq("bucket", "recipe-images")
+      .eq("path", filePath);
 
     // Clear draft and reset state
     localStorage.removeItem(DRAFT_KEY);

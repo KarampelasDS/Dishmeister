@@ -231,7 +231,6 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
       return;
     }
 
-    // Only upload a new image if the user actually changed it
     let newImagePath: string | null = null;
 
     if (imageFile) {
@@ -250,6 +249,13 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
         setLoading(false);
         return;
       }
+
+      // track the new upload
+      await supabase.from("storage_objects").insert({
+        bucket: "recipe-images",
+        path: filePath,
+        uploaded_by: user.id,
+      });
 
       newImagePath = filePath;
     }
@@ -276,18 +282,32 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
       .eq("id", recipe.id);
 
     if (error) {
-      // If we uploaded a new image but the update failed, clean it up
       if (newImagePath) {
         await supabase.storage.from("recipe-images").remove([newImagePath]);
+        await supabase
+          .from("storage_objects")
+          .delete()
+          .eq("path", newImagePath);
       }
       alert(error.message);
       setLoading(false);
       return;
     }
 
-    // Old image cleanup — fire and forget after a successful update
     if (newImagePath) {
-      await supabase.storage.from("recipe-images").remove([recipe.image_url]);
+      // mark new image as referenced
+      await supabase
+        .from("storage_objects")
+        .update({ referenced: true })
+        .eq("bucket", "recipe-images")
+        .eq("path", newImagePath);
+
+      // mark old image as unreferenced so the cron job cleans it up
+      await supabase
+        .from("storage_objects")
+        .update({ referenced: false })
+        .eq("bucket", "recipe-images")
+        .eq("path", recipe.image_url);
     }
 
     setLoading(false);

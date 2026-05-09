@@ -116,6 +116,12 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
 
     if (error) throw error;
 
+    await supabase.from("storage_objects").insert({
+      bucket: AVATAR_BUCKET,
+      path,
+      uploaded_by: userId,
+    });
+
     return path;
   };
 
@@ -144,6 +150,14 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
       });
 
       if (error) throw error;
+
+      if (uploadedPath) {
+        await supabase
+          .from("storage_objects")
+          .update({ referenced: true })
+          .eq("bucket", AVATAR_BUCKET)
+          .eq("path", uploadedPath);
+      }
 
       await refreshProfile();
       onClose();

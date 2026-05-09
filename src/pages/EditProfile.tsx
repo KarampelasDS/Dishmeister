@@ -145,6 +145,13 @@ export default function EditProfilePage() {
       .upload(path, avatarFile, { cacheControl: "31536000", upsert: true });
 
     if (error) throw error;
+
+    await supabase.from("storage_objects").insert({
+      bucket: AVATAR_BUCKET,
+      path,
+      uploaded_by: session.user.id,
+    });
+
     return path;
   };
 
@@ -257,6 +264,23 @@ export default function EditProfilePage() {
         .eq("id", session!.user.id);
 
       if (error) throw error;
+
+      // mark new avatar as referenced, old one as unreferenced
+      if (avatarFile && uploadedPath) {
+        await supabase
+          .from("storage_objects")
+          .update({ referenced: true })
+          .eq("bucket", AVATAR_BUCKET)
+          .eq("path", uploadedPath);
+
+        if (currentAvatarPath) {
+          await supabase
+            .from("storage_objects")
+            .update({ referenced: false })
+            .eq("bucket", AVATAR_BUCKET)
+            .eq("path", currentAvatarPath);
+        }
+      }
 
       await refreshProfile();
       setOriginalUsername(profile.username);
@@ -419,8 +443,6 @@ export default function EditProfilePage() {
                 message={error.detail || ""}
               />
             )}
-
-
 
             <div className={styles.actions}>
               <Button
