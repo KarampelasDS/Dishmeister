@@ -22,6 +22,8 @@ import {
 import { useFeedCache } from "../../Context/FeedCacheContext";
 import type { ReactNode } from "react";
 
+import { useClickOutside } from "../../Hooks/useClickOutside";
+
 type Recipe = {
   id: string;
   title: string;
@@ -97,6 +99,8 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
 
   const r = recipe as Recipe;
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useClickOutside(() => setMenuOpen(false));
+
 
   const title = r?.title ?? "Creamy Carbonara";
   const cover = r?.image_url ?? "/assets/pasta.jpg";
@@ -296,7 +300,8 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           alt={title}
           className={styles.cover}
         />
-        <div className={styles.topRightMenu}>
+        <div className={styles.topRightMenu} ref={menuRef}>
+
           <button
             className={styles.menuButton}
             aria-label="More options"

@@ -12,6 +12,8 @@ import {
 import { supabase } from "../../supabase";
 import AddComment from "../AddComment/AddComment";
 import styles from "./CommentView.module.css";
+import { useClickOutside } from "../../Hooks/useClickOutside";
+
 
 const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
@@ -79,6 +81,10 @@ export default function CommentView({
   const [repliesOpen, setRepliesOpen] = useState(false);
   const [reacting, setReacting] = useState(false);
   const [replyMenuOpen, setReplyMenuOpen] = useState<string | null>(null);
+
+  const commentMenuRef = useClickOutside(() => setMenuOpen(false));
+  const replyMenuRef = useClickOutside(() => setReplyMenuOpen(null));
+
 
   const handleReaction = async (reaction: "like" | "dislike") => {
     if (reacting) return;
@@ -179,35 +185,38 @@ export default function CommentView({
             </span>
           </div>
 
-          <button
-            className={styles.menuBtn}
-            onClick={() => setMenuOpen((o) => !o)}
-            aria-label="Comment options"
-          >
-            <EllipsisVertical size={16} />
-          </button>
+          <div ref={commentMenuRef} style={{ position: "relative" }}>
+            <button
+              className={styles.menuBtn}
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="Comment options"
+            >
+              <EllipsisVertical size={16} />
+            </button>
 
-          {menuOpen && (
-            <div className={styles.menuDropdown}>
-              {isOwnComment ? (
-                <button className={styles.menuItem} onClick={handleDelete}>
-                  <Trash2 size={15} color="#cd3131" />
-                  <span style={{ color: "#cd3131" }}>Delete</span>
-                </button>
-              ) : (
-                <button
-                  className={styles.menuItem}
-                  onClick={() => {
-                    console.log("report", comment.id);
-                    setMenuOpen(false);
-                  }}
-                >
-                  <MessageSquareWarning size={15} color="#cd3131" />
-                  <span style={{ color: "#cd3131" }}>Report</span>
-                </button>
-              )}
-            </div>
-          )}
+            {menuOpen && (
+              <div className={styles.menuDropdown}>
+                {isOwnComment ? (
+                  <button className={styles.menuItem} onClick={handleDelete}>
+                    <Trash2 size={15} color="#cd3131" />
+                    <span style={{ color: "#cd3131" }}>Delete</span>
+                  </button>
+                ) : (
+                  <button
+                    className={styles.menuItem}
+                    onClick={() => {
+                      console.log("report", comment.id);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <MessageSquareWarning size={15} color="#cd3131" />
+                    <span style={{ color: "#cd3131" }}>Report</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
         </div>
 
         <p className={styles.content}>{comment.content}</p>
@@ -306,44 +315,47 @@ export default function CommentView({
                         {timeAgo(reply.created_at)}
                       </span>
                     </div>
-                    <button
-                      className={styles.menuBtn}
-                      onClick={() =>
-                        setReplyMenuOpen((o) =>
-                          o === reply.id ? null : reply.id,
-                        )
-                      }
-                      aria-label="Reply options"
-                    >
-                      <EllipsisVertical size={16} />
-                    </button>
-                    {replyMenuOpen === reply.id && (
-                      <div className={styles.menuDropdown}>
-                        {currentUserId === reply.profiles.id ? (
-                          <button
-                            className={styles.menuItem}
-                            onClick={() => {
-                              setReplyMenuOpen(null);
-                              onCommentDeleted(reply.id);
-                            }}
-                          >
-                            <Trash2 size={15} color="#cd3131" />
-                            <span style={{ color: "#cd3131" }}>Delete</span>
-                          </button>
-                        ) : (
-                          <button
-                            className={styles.menuItem}
-                            onClick={() => {
-                              console.log("report", reply.id);
-                              setReplyMenuOpen(null);
-                            }}
-                          >
-                            <MessageSquareWarning size={15} color="#cd3131" />
-                            <span style={{ color: "#cd3131" }}>Report</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
+                    <div ref={replyMenuRef} style={{ position: "relative" }}>
+                      <button
+                        className={styles.menuBtn}
+                        onClick={() =>
+                          setReplyMenuOpen((o) =>
+                            o === reply.id ? null : reply.id,
+                          )
+                        }
+                        aria-label="Reply options"
+                      >
+                        <EllipsisVertical size={16} />
+                      </button>
+                      {replyMenuOpen === reply.id && (
+                        <div className={styles.menuDropdown}>
+                          {currentUserId === reply.profiles.id ? (
+                            <button
+                              className={styles.menuItem}
+                              onClick={() => {
+                                setReplyMenuOpen(null);
+                                onCommentDeleted(reply.id);
+                              }}
+                            >
+                              <Trash2 size={15} color="#cd3131" />
+                              <span style={{ color: "#cd3131" }}>Delete</span>
+                            </button>
+                          ) : (
+                            <button
+                              className={styles.menuItem}
+                              onClick={() => {
+                                console.log("report", reply.id);
+                                setReplyMenuOpen(null);
+                              }}
+                            >
+                              <MessageSquareWarning size={15} color="#cd3131" />
+                              <span style={{ color: "#cd3131" }}>Report</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                   </div>
                   <p className={styles.content}>{reply.content}</p>
                 </div>

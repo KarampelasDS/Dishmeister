@@ -25,6 +25,8 @@ import "react-tooltip/dist/react-tooltip.css";
 import ConfirmModal from "../ConfirmModal/ConfirmModal";
 import { useFeedCache } from "../../Context/FeedCacheContext";
 import EditRecipe from "../EditRecipe/EditRecipe";
+import { useClickOutside } from "../../Hooks/useClickOutside";
+
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
@@ -145,6 +147,8 @@ export default function RecipeView({
   const [isSaved, setIsSaved] = useState(recipe.is_saved);
   const [saveCount, setSaveCount] = useState<number>(recipe.save_count);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useClickOutside(() => setMenuOpen(false));
+
   const [reacting, setReacting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -387,7 +391,8 @@ export default function RecipeView({
             alt={recipe.title}
             className={styles.heroImage}
           />
-          <div className={styles.topRightMenu}>
+          <div className={styles.topRightMenu} ref={menuRef}>
+
             <button
               className={styles.menuButton}
               aria-label="More options"
