@@ -76,7 +76,6 @@ body {
   justify-content: center;
   align-items: center;
   padding: 2rem;
-  width: 100%;
 }
 
 .loader-full-page {
@@ -108,4 +107,3 @@ body {
     transform: rotate(360deg);
   }
 }
-
