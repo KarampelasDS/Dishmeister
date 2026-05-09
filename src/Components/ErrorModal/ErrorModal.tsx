@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { XCircle } from "lucide-react";
 import styles from "./ErrorModal.module.css";
+
 import { useWebHaptics } from "web-haptics/react";
-import { useEffect } from "react";
+
 
 interface ErrorModalProps {
   isOpen: boolean;
@@ -19,15 +21,22 @@ export default function ErrorModal({
   const { trigger } = useWebHaptics();
 
   useEffect(() => {
-    trigger([
-      { duration: 40, intensity: 0.7 },
-      { delay: 40, duration: 40, intensity: 0.7 },
-      { delay: 40, duration: 40, intensity: 0.9 },
-      { delay: 40, duration: 50, intensity: 0.6 },
-    ]);
-  }, []);
+    if (isOpen) {
+      if ("vibrate" in navigator) {
+        navigator.vibrate([100, 50, 100]); // Error pattern
+      } else {
+        trigger([
+          { duration: 40, intensity: 0.7 },
+          { delay: 40, duration: 40, intensity: 0.7 },
+          { delay: 40, duration: 40, intensity: 0.9 },
+          { delay: 40, duration: 50, intensity: 0.6 },
+        ]);
+      }
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
 
   return (
     <div className={styles.wrapper} onClick={onClose}>

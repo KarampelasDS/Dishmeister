@@ -19,9 +19,17 @@ export default function SuccessModal({
   const { trigger } = useWebHaptics();
 
   useEffect(() => {
-    trigger([{ duration: 30 }, { delay: 60, duration: 40, intensity: 1 }]);
-  }, []);
+    if (isOpen) {
+      if ("vibrate" in navigator) {
+        navigator.vibrate(40); // Success pattern
+      } else {
+        trigger([{ duration: 30 }, { delay: 60, duration: 40, intensity: 1 }]);
+      }
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
 
   return (
     <div className={styles.wrapper} onClick={onClose}>
