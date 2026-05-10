@@ -315,7 +315,7 @@ function CreateRecipe() {
       .eq("bucket", "recipe-images")
       .eq("path", filePath);
 
-    // Clear draft and reset state
+    // Clear draft & reset state
     localStorage.removeItem(DRAFT_KEY);
     setDraft(defaultDraft);
     setImageFile(null);
