@@ -60,6 +60,11 @@ export default function UserMenu({
 
         <img
           src={avatarUrl ? `${profileURL}${avatarUrl}` : "/defaultAvatar.png"}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null;
+            target.src = "/defaultAvatar.png";
+          }}
           alt="avatar"
           className={styles.avatar}
         />

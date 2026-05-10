@@ -164,6 +164,11 @@ export default function CommentView({
             ? `${supabaseAvatarUrl}${comment.profiles.avatar_url}`
             : "/defaultAvatar.png"
         }
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.onerror = null;
+          target.src = "/defaultAvatar.png";
+        }}
         alt={comment.profiles.display_name ?? comment.profiles.username ?? ""}
         className={styles.avatar}
         onClick={() => onUserClick(comment.profiles.username ?? "")}
@@ -301,6 +306,11 @@ export default function CommentView({
                       ? `${supabaseAvatarUrl}${reply.profiles.avatar_url}`
                       : "/defaultAvatar.png"
                   }
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null;
+                    target.src = "/defaultAvatar.png";
+                  }}
                   alt={reply.profiles.display_name ?? reply.profiles.username ?? ""}
                   className={styles.replyAvatar}
                   onClick={() => onUserClick(reply.profiles.username ?? "")}

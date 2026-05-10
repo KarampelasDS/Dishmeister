@@ -331,8 +331,9 @@ export default function EditProfilePage() {
                   alt="Avatar"
                   className={styles.avatar}
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      "/public/defaultAvatar.png";
+                    const target = e.target as HTMLImageElement;
+                    target.onerror = null;
+                    target.src = "/defaultAvatar.png";
                   }}
                 />
               ) : (

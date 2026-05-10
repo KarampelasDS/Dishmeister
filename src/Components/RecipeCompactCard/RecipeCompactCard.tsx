@@ -330,7 +330,9 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
             className={styles.avatar}
             src={`${supabaseAvatarUrl}${authorAvatar}`}
             onError={(e) => {
-              (e.target as HTMLImageElement).src = "/defaultAvatar.png";
+              const target = e.target as HTMLImageElement;
+              target.onerror = null;
+              target.src = "/defaultAvatar.png";
             }}
             alt={authorName}
             onClick={(e) => {

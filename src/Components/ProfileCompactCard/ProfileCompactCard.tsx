@@ -27,7 +27,9 @@ export default function ProfileCompactCard({
       <img
         src={`${supabaseUrl}${profilePictureUrl}`}
         onError={(e) => {
-          (e.target as HTMLImageElement).src = "/public/defaultAvatar.png";
+          const target = e.target as HTMLImageElement;
+          target.onerror = null;
+          target.src = "/defaultAvatar.png";
         }}
         alt="Profile Picture"
         className={styles.profilePicture}

@@ -131,6 +131,11 @@ export default function BurgerMenu({
                         ? `${profileURL}${avatarUrl}`
                         : "/defaultAvatar.png"
                     }
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null;
+                      target.src = "/defaultAvatar.png";
+                    }}
                     alt="User Avatar"
                     className={styles.avatarImg}
                   />
