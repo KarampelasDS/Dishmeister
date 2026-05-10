@@ -79,8 +79,13 @@ export default function AddComment({
         src={
           currentUserAvatar
             ? `${supabaseAvatarUrl}${currentUserAvatar}`
-            : "/default-avatar.png"
+            : "/defaultAvatar.png"
         }
+        onError={(e) => {
+          const target = e.target as HTMLImageElement;
+          target.onerror = null;
+          target.src = "/defaultAvatar.png";
+        }}
         alt="Your avatar"
         className={styles.avatar}
       />
