@@ -25,15 +25,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     if (!isOpen) return;
     invalidateAll();
 
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-
-    document.addEventListener("keydown", handleEsc);
     document.body.style.overflow = "hidden";
-
     return () => {
-      document.removeEventListener("keydown", handleEsc);
       document.body.style.overflow = "auto";
     };
   }, [isOpen, onClose]);
@@ -82,13 +75,10 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
-  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClose();
-  };
 
   return (
-    <div className={styles.overlay} onMouseDown={handleBackdrop}>
-      <div className={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
+    <div className={styles.overlay}>
+      <div className={styles.modal}>
         {/* HEADER */}
         <div className={styles.header}>
           <div className={styles.logo}>
@@ -178,9 +168,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           </div>
         </form>
 
-        <button className={styles.close} onClick={onClose}>
-          ×
-        </button>
       </div>
     </div>
   );

@@ -7,7 +7,6 @@
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(8px);
   z-index: 10000;
-  animation: fadeIn 0.3s ease;
 }
 
 
@@ -29,7 +28,6 @@
   border-radius: 16px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
   z-index: 10001;
-  animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 @keyframes modalPop {

@@ -67,9 +67,6 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
     return null;
   }
 
-  const handleBackdrop = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) onClose();
-  };
 
   const validateAvatar = (file: File) => {
     const isImage = file.type.startsWith("image/");
@@ -169,7 +166,7 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
   };
 
   return (
-    <div className={styles.overlay} onMouseDown={handleBackdrop}>
+    <div className={styles.overlay}>
       <div className={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
         <div className={styles.header}>
           <h1>Complete Your Profile</h1>
