@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router";
+import { useParams } from "react-router";
 import ProfileCard from "../Components/ProfileCard/ProfileCard";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabase";
@@ -80,7 +80,6 @@ const SHARED_SELECT = `
 export default function Profile() {
   const { invalidate } = useFeedCache();
   const { setIsAuthOpen } = useAuth();
-  const navigate = useNavigate();
   const { username } = useParams<{ username: string }>();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<profileType | null>(null);
@@ -322,7 +321,6 @@ export default function Profile() {
 
       {/* Loading indicator */}
       {loading && <Loader />}
-
 
       {/* End of results */}
       {!hasMore && recipes.length > 0 && (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation } from "react-router";
 
 import {
   ArrowLeft,
@@ -177,7 +177,6 @@ export default function RecipeView({
   );
 
   const location = useLocation();
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (location.hash === "#comments") {

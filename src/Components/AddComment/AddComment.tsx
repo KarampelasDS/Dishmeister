@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { Send } from "lucide-react";
-import { useNavigate } from "react-router";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../Context/AuthProvider";
 import styles from "./AddComment.module.css";
@@ -26,7 +25,6 @@ export default function AddComment({
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const { setIsAuthOpen, showError } = useAuth();
-  const navigate = useNavigate();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const autoResize = () => {
