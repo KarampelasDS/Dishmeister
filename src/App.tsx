@@ -17,14 +17,23 @@ import { useScrollRestoration } from "./Hooks/useScrollRestoration";
 import EditProfilePage from "./pages/EditProfile";
 import { Analytics } from "@vercel/analytics/react";
 import Loader from "./Components/Loader/Loader";
+import ErrorModal from "./Components/ErrorModal/ErrorModal";
 
 
 function App() {
   useScrollRestoration(["/explore"]);
-  const { session, profile, loading, needsOnboarding } = useAuth();
+  const { 
+    session, 
+    profile, 
+    loading, 
+    needsOnboarding, 
+    isAuthOpen, 
+    setIsAuthOpen,
+    isErrorOpen,
+    setIsErrorOpen,
+    errorMsg 
+  } = useAuth();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
-
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   const { toggleTheme } = useTheme();
   const location = useLocation();
@@ -36,17 +45,13 @@ function App() {
     if (location.pathname === "/auth") {
       setIsAuthOpen(true);
     }
-  }, [location.pathname]);
+  }, [location.pathname, setIsAuthOpen]);
 
   useEffect(() => {
     setIsOnboardingOpen(!!session && needsOnboarding);
   }, [session, needsOnboarding]);
 
-  useEffect(() => {
-    if (!loading && !session && location.pathname !== "/auth") {
-      navigate("/auth", { replace: true });
-    }
-  }, [session, loading, location.pathname]);
+  /* ---------------- GUEST REDIRECTS (removed global redirect) ---------------- */
 
   if (loading) return <Loader fullPage />;
 
@@ -69,23 +74,47 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/recipes" element={<Recipes />} />
         <Route path="/explore" element={<Explore />} />
-        <Route path="/saved" element={<SavedRecipes />} />
+        <Route
+          path="/saved"
+          element={
+            session ? (
+              <SavedRecipes />
+            ) : (
+              <div className="guest-action-prompt">
+                <h2>Log in to see your saved recipes</h2>
+                <button onClick={() => setIsAuthOpen(true)}>Log In</button>
+              </div>
+            )
+          }
+        />
         <Route
           path="/recipes/new"
           element={
             session ? (
               <CreateRecipePage />
             ) : (
-              <div>
-                <p>You must log in to create a recipe.</p>
-                <button onClick={() => setIsAuthOpen(true)}>Login</button>
+              <div className="guest-action-prompt">
+                <h2>Log in to create a recipe</h2>
+                <button onClick={() => setIsAuthOpen(true)}>Log In</button>
               </div>
             )
           }
         />
         <Route path="/recipes/:id" element={<RecipePage />} />
         <Route path="/profiles/:username" element={<ProfilePage />} />
-        <Route path="/settings" element={<EditProfilePage />} />
+        <Route
+          path="/settings"
+          element={
+            session ? (
+              <EditProfilePage />
+            ) : (
+              <div className="guest-action-prompt">
+                <h2>Log in to edit your profile</h2>
+                <button onClick={() => setIsAuthOpen(true)}>Log In</button>
+              </div>
+            )
+          }
+        />
       </Routes>
 
       <AuthModal
@@ -96,6 +125,12 @@ function App() {
             navigate("/");
           }
         }}
+      />
+
+      <ErrorModal
+        isOpen={isErrorOpen}
+        onClose={() => setIsErrorOpen(false)}
+        message={errorMsg}
       />
 
       {!!session && needsOnboarding && (

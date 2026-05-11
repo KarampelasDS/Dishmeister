@@ -49,10 +49,11 @@ function Recipes() {
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    // get current user
     const {
       data: { user },
     } = await supabase.auth.getUser();
+
+    const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
 
     const { data, error } = await supabase
       .from("recipes")
@@ -81,11 +82,13 @@ function Recipes() {
           user_id
         ),
         recipe_saves!left (
-        recipe_id,
-        saved_by)
+          recipe_id,
+          saved_by
+        )
       `,
       )
-      .eq("recipe_reactions.user_id", user?.id ?? "")
+      .eq("recipe_reactions.user_id", userId)
+      .eq("recipe_saves.saved_by", userId)
       .order("created_at", { ascending: false })
       .range(from, to);
 

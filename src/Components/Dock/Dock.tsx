@@ -1,6 +1,7 @@
 import styles from "./Dock.module.css";
 import { Home, Compass, SquarePlus, User, Bookmark } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useAuth } from "../../Context/AuthProvider";
 
 interface DockProps {
   currentUserId: string | null;
@@ -52,6 +53,7 @@ const dockItems = (userId: string | null) => [
 
 export default function Dock({ currentUserId, currentUrl }: DockProps) {
   const navigate = useNavigate();
+  const { setIsAuthOpen } = useAuth();
   const items = dockItems(currentUserId);
 
   return (
@@ -70,7 +72,13 @@ export default function Dock({ currentUserId, currentUrl }: DockProps) {
                 "--hover-color": glowColor,
               } as React.CSSProperties
             }
-            onClick={() => navigate(url)}
+            onClick={() => {
+              if (!currentUserId && (key === "new" || key === "saved" || key === "profile")) {
+                setIsAuthOpen(true);
+              } else {
+                navigate(url);
+              }
+            }}
           >
             <div className={styles.glow} style={{ background: glowColor }} />
             <div className={styles.inner}>

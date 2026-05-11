@@ -14,6 +14,7 @@ import styles from "./BurgerMenu.module.css";
 import { useTheme } from "../../Hooks/useTheme";
 import { useNavigate } from "react-router";
 import { supabase } from "../../supabase";
+import { useAuth } from "../../Context/AuthProvider";
 const profileURL = import.meta.env.VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 
 type BurgerMenuProps = {
@@ -30,6 +31,7 @@ export default function BurgerMenu({
   onToggleDarkMode,
 }: BurgerMenuProps) {
   const navigate = useNavigate();
+  const { setIsAuthOpen, showError } = useAuth();
   const { theme } = useTheme();
   const [isDark, setIsDark] = useState(theme === "dark");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -47,7 +49,7 @@ export default function BurgerMenu({
 
   const logout = async () => {
     await supabase.auth.signOut();
-    navigate("/auth");
+    navigate("/");
   };
 
   const handleSearchSubmit = () => {
@@ -56,7 +58,7 @@ export default function BurgerMenu({
     if (q.length >= 3) {
       navigate(`/explore?q=${encodeURIComponent(q)}`);
     } else if (q.length >= 1) {
-      alert("Please enter at least 3 characters.");
+      showError("Please enter at least 3 characters.");
     } else {
       navigate("/explore");
     }
@@ -65,12 +67,14 @@ export default function BurgerMenu({
   const items = [
     {
       label: "Account Settings",
-      link: "/settings",
+      link: username != null ? "/settings" : undefined,
+      onClick: username == null ? () => { closeMenu(); setIsAuthOpen(true); } : undefined,
       icon: <Settings size={24} />,
     },
     {
       label: "Saved Recipes",
-      link: "/saved",
+      link: username != null ? "/saved" : undefined,
+      onClick: username == null ? () => { closeMenu(); setIsAuthOpen(true); } : undefined,
       icon: <Bookmark size={24} />,
     },
     {
@@ -91,7 +95,7 @@ export default function BurgerMenu({
         if (username != null) {
           logout();
         } else {
-          navigate("/auth");
+          setIsAuthOpen(true);
         }
       },
     },
@@ -144,8 +148,10 @@ export default function BurgerMenu({
                   <span className={styles.displayName}>
                     {displayName || "Guest"}
                   </span>
-                  {username != null && (
+                  {username != null ? (
                     <span className={styles.username}>@{username}</span>
+                  ) : (
+                    <span className={styles.username} onClick={(e) => { e.stopPropagation(); closeMenu(); setIsAuthOpen(true); }}>Click to log in</span>
                   )}
                 </div>
               </div>

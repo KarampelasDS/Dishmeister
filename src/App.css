@@ -107,3 +107,36 @@ body {
     transform: rotate(360deg);
   }
 }
+.guest-action-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+  text-align: center;
+  gap: 1.5rem;
+}
+
+.guest-action-prompt h2 {
+  font-size: 1.5rem;
+  color: var(--text);
+  max-width: 400px;
+}
+
+.guest-action-prompt button {
+  padding: 12px 32px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.guest-action-prompt button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(255, 105, 0, 0.4);
+}

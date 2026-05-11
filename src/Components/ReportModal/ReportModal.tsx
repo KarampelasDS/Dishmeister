@@ -2,7 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { supabase } from "../../supabase";
 import styles from "./ReportModal.module.css";
-import ErrorModal from "../ErrorModal/ErrorModal";
+import { useAuth } from "../../Context/AuthProvider";
 import SuccessModal from "../SuccessModal/SuccessModal";
 
 
@@ -32,7 +32,7 @@ export default function ReportModal({
   const [otherDetails, setOtherDetails] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [errorModal, setErrorModal] = useState({ open: false, message: "" });
+  const { setIsAuthOpen, showError } = useAuth();
 
 
   if (!isOpen) return null;
@@ -45,7 +45,7 @@ export default function ReportModal({
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        alert("You must be logged in to report content.");
+        setIsAuthOpen(true);
         setIsSubmitting(false);
         return;
       }
@@ -82,10 +82,7 @@ export default function ReportModal({
         msg = "You have already reported this user.";
       }
 
-      setErrorModal({ 
-        open: true, 
-        message: msg 
-      });
+      showError(msg);
     } finally {
 
       setIsSubmitting(false);
@@ -95,13 +92,6 @@ export default function ReportModal({
 
   return (
     <div className={styles.wrapper} onClick={onClose}>
-      {errorModal.open && (
-        <ErrorModal 
-          isOpen={errorModal.open} 
-          onClose={() => setErrorModal({ ...errorModal, open: false })}
-          message={errorModal.message}
-        />
-      )}
       {success && (
         <SuccessModal
           isOpen={success}

@@ -19,12 +19,12 @@ import {
   MessageSquareWarning,
   MessageCircle,
 } from "lucide-react";
+import { useAuth } from "../../Context/AuthProvider";
 import { useFeedCache } from "../../Context/FeedCacheContext";
 import type { ReactNode } from "react";
 
 import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
-import ErrorModal from "../ErrorModal/ErrorModal";
 
 type Recipe = {
   id: string;
@@ -64,6 +64,7 @@ interface RecipeCardProps {
 export default function RecipeCard({ recipe }: RecipeCardProps) {
   const navigate = useNavigate();
   const { invalidate, patchRecipe } = useFeedCache();
+  const { setIsAuthOpen, showError } = useAuth();
 
   const convertTimeToMinutes = (
     preparationTime: number,
@@ -103,7 +104,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [errorModal, setErrorModal] = useState({ open: false, message: "" });
 
   const title = r?.title ?? "Creamy Carbonara";
   const cover = r?.image_url ?? "/assets/pasta.jpg";
@@ -149,10 +149,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setErrorModal({
-        open: true,
-        message: "You must be logged in to react to a recipe.",
-      });
+      setIsAuthOpen(true);
       setIsReacting(false);
       return;
     }
@@ -217,7 +214,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         dislike_count: prevDislikes,
         current_user_reaction: prevReaction,
       });
-      alert(error.message);
+      showError(error.message);
     }
 
     setIsReacting(false);
@@ -231,7 +228,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      alert("You must be logged in to save a recipe.");
+      setIsAuthOpen(true);
       setIsSaving(false);
       return;
     }
@@ -256,7 +253,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
         patchRecipe(r.id, { is_saved: prevSaved, save_count: prevSaveCount });
-        alert(error.message);
+        showError(error.message);
         setIsSaving(false);
         return;
       }
@@ -276,7 +273,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
         patchRecipe(r.id, { is_saved: prevSaved, save_count: prevSaveCount });
-        alert(error.message);
+        showError(error.message);
         setIsSaving(false);
         return;
       }
@@ -306,13 +303,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           onClose={() => setReportModalOpen(false)}
           targetType="recipe"
           targetId={r.id}
-        />
-      )}
-      {errorModal.open && (
-        <ErrorModal
-          isOpen={errorModal.open}
-          onClose={() => setErrorModal({ ...errorModal, open: false })}
-          message={errorModal.message}
         />
       )}
 

@@ -16,6 +16,12 @@ interface AuthContextType {
   needsOnboarding: boolean;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  isAuthOpen: boolean;
+  setIsAuthOpen: (open: boolean) => void;
+  showError: (message: string) => void;
+  errorMsg: string;
+  isErrorOpen: boolean;
+  setIsErrorOpen: (open: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -25,6 +31,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  const [isErrorOpen, setIsErrorOpen] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const showError = (message: string) => {
+    setErrorMsg(message);
+    setIsErrorOpen(true);
+  };
 
   /* ---------------- FETCH PROFILE ---------------- */
 
@@ -94,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchProfile(session.user.id);
   };
 
+
   return (
     <AuthContext.Provider
       value={{
@@ -103,6 +119,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         needsOnboarding,
         signOut,
         refreshProfile,
+        isAuthOpen,
+        setIsAuthOpen,
+        showError,
+        isErrorOpen,
+        setIsErrorOpen,
+        errorMsg,
       }}
     >
       {children}

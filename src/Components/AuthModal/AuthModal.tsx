@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mail, Lock, Eye, EyeOff, ChefHat } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ChefHat, X } from "lucide-react";
 import { supabase } from "../../supabase";
 import styles from "./AuthModal.module.css";
 import Button from "../Button/Button";
@@ -77,8 +77,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <button className={styles.close} onClick={onClose}>
+          <X size={20} />
+        </button>
         {/* HEADER */}
         <div className={styles.header}>
           <div className={styles.logo}>

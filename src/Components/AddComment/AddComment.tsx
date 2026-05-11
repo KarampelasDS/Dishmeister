@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Send } from "lucide-react";
+import { useNavigate } from "react-router";
 import { supabase } from "../../supabase";
+import { useAuth } from "../../Context/AuthProvider";
 import styles from "./AddComment.module.css";
 
 const supabaseAvatarUrl = import.meta.env
@@ -23,6 +25,8 @@ export default function AddComment({
 }: AddCommentProps) {
   const [content, setContent] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { setIsAuthOpen, showError } = useAuth();
+  const navigate = useNavigate();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const autoResize = () => {
@@ -44,7 +48,7 @@ export default function AddComment({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      alert("You must be logged in to comment.");
+      setIsAuthOpen(true);
       return;
     }
 
@@ -58,7 +62,7 @@ export default function AddComment({
     setSubmitting(false);
 
     if (error) {
-      alert(error.message);
+      showError(error.message);
       return;
     }
 

@@ -9,7 +9,7 @@ import { useFeedCache } from "../../Context/FeedCacheContext";
 import type { ReactNode } from "react";
 import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
-import ErrorModal from "../ErrorModal/ErrorModal";
+import { useAuth } from "../../Context/AuthProvider";
 
 
 
@@ -65,6 +65,7 @@ interface RecipeCardProps {
 export default function RecipeCard({ recipe }: RecipeCardProps) {
   const navigate = useNavigate();
   const { invalidate, patchRecipe } = useFeedCache();
+  const { setIsAuthOpen, showError } = useAuth();
   const convertTimeToMinutes = (
     preparationTime: number,
     cookingTime: number,
@@ -104,7 +105,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
   const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [errorModal, setErrorModal] = useState({ open: false, message: "" });
 
 
 
@@ -149,7 +149,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      setErrorModal({ open: true, message: "You must be logged in to save a recipe." });
+      setIsAuthOpen(true);
       setIsSaving(false);
       return;
     }
@@ -176,7 +176,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           is_saved: prevSaved,
           save_count: prevSaveCount,
         });
-        alert(error.message);
+        showError(error.message);
         setIsSaving(false);
         return;
       }
@@ -197,7 +197,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           is_saved: prevSaved,
           save_count: prevSaveCount,
         });
-        alert(error.message);
+        showError(error.message);
         setIsSaving(false);
         return;
       }
@@ -226,13 +226,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           onClose={() => setReportModalOpen(false)}
           targetType="recipe"
           targetId={recipe?.id || ""}
-        />
-      )}
-      {errorModal.open && (
-        <ErrorModal
-          isOpen={errorModal.open}
-          onClose={() => setErrorModal({ ...errorModal, open: false })}
-          message={errorModal.message}
         />
       )}
 

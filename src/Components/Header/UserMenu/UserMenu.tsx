@@ -3,6 +3,7 @@ import { supabase } from "../../../supabase";
 import { useNavigate } from "react-router";
 import styles from "./UserMenu.module.css";
 import { useTheme } from "../../../Hooks/useTheme";
+import { useAuth } from "../../../Context/AuthProvider";
 
 import {
   Settings,
@@ -32,9 +33,11 @@ export default function UserMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  const { setIsAuthOpen } = useAuth();
+
   const logout = async () => {
     await supabase.auth.signOut();
-    navigate("/auth");
+    navigate("/");
   };
 
   // Close on outside click
@@ -59,7 +62,7 @@ export default function UserMenu({
         <span>{username || "Guest"}</span>
 
         <img
-          src={avatarUrl ? `${profileURL}${avatarUrl}` : "/defaultAvatar.png"}
+          src={username && avatarUrl ? `${profileURL}${avatarUrl}` : "/defaultAvatar.png"}
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.onerror = null;
@@ -78,7 +81,11 @@ export default function UserMenu({
             icon={<Settings size={18} />}
             onClick={() => {
               setOpen(false);
-              navigate("/settings");
+              if (username) {
+                navigate("/settings");
+              } else {
+                setIsAuthOpen(true);
+              }
             }}
           >
             Account Settings
@@ -88,7 +95,11 @@ export default function UserMenu({
             icon={<Bookmark size={18} />}
             onClick={() => {
               setOpen(false);
-              navigate("/saved");
+              if (username) {
+                navigate("/saved");
+              } else {
+                setIsAuthOpen(true);
+              }
             }}
           >
             Saved Recipes
@@ -111,10 +122,10 @@ export default function UserMenu({
               if (username) {
                 logout();
               } else {
-                navigate("/auth");
+                setIsAuthOpen(true);
               }
             }}
-            style={{ color: "red" }}
+            style={username ? { color: "red" } : undefined}
           >
             {username ? "Logout" : "Login"}
           </MenuItem>

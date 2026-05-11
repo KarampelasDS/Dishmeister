@@ -23,6 +23,7 @@ import {
   makeExploreFilterKey,
   makeSearchKey,
 } from "../Context/FeedCacheContext";
+import { useAuth } from "../Context/AuthProvider";
 import type { ExploreTabKey } from "../Context/FeedCacheContext";
 
 countries.registerLocale(en);
@@ -130,6 +131,7 @@ function useDebounce<T>(value: T, delay: number): T {
 function Explore() {
   const [searchParams, setSearchParams] = useSearchParams();
   const cache = useFeedCache();
+  const { showError } = useAuth();
 
   // ─── Restore persisted tab + filters on mount ────────────────────────────
   const cachedActiveTab = cache.state.activeExploreTab as TopFilter;
@@ -384,10 +386,13 @@ function Explore() {
         count: number | null = null;
 
       for (let attempt = 0; attempt < retries; attempt++) {
+        const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
+
         let query = supabase
           .from("recipes")
           .select(SHARED_SELECT, { count: "exact" })
-          .eq("recipe_reactions.user_id", user?.id ?? "")
+          .eq("recipe_reactions.user_id", userId)
+          .eq("recipe_saves.saved_by", userId)
           .range(from, to);
 
         if (search.trim().length >= 3) {
@@ -622,10 +627,13 @@ function Explore() {
         count: number | null = null;
 
       for (let attempt = 0; attempt < retries; attempt++) {
+        const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
+
         let query = supabase
           .from("recipes")
           .select(SHARED_SELECT, { count: "exact" })
-          .eq("recipe_reactions.user_id", user?.id ?? "")
+          .eq("recipe_reactions.user_id", userId)
+          .eq("recipe_saves.saved_by", userId)
           .range(from, to)
           .or(
             `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%,category_name.ilike.%${search.trim()}%,ingredients_text.ilike.%${search.trim()}%`,
@@ -957,7 +965,7 @@ function Explore() {
     if (searchInput.trim().length >= 3) {
       setSearchParams({ q: searchInput.trim() });
     } else if (searchInput.trim().length >= 1) {
-      alert("Please enter at least 3 characters.");
+      showError("Please enter at least 3 characters.");
     } else {
       setSearchParams({});
     }

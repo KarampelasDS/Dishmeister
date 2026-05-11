@@ -1,4 +1,4 @@
-import { useParams } from "react-router";
+import { useParams, useNavigate } from "react-router";
 import ProfileCard from "../Components/ProfileCard/ProfileCard";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "../supabase";
@@ -7,6 +7,7 @@ import Loader from "../Components/Loader/Loader";
 
 import styles from "./ProfilePage.module.css";
 import { useFeedCache } from "../Context/FeedCacheContext";
+import { useAuth } from "../Context/AuthProvider";
 
 type profileType = {
   id: string;
@@ -72,11 +73,14 @@ const SHARED_SELECT = `
   comment_count,
   profiles!recipes_author_id_fkey(id, display_name, avatar_url, username, follower_count),
   categories(*),
+  recipe_reactions!left (reaction, user_id),
   recipe_saves!left (recipe_id, saved_by)
 `;
 
 export default function Profile() {
   const { invalidate } = useFeedCache();
+  const { setIsAuthOpen } = useAuth();
+  const navigate = useNavigate();
   const { username } = useParams<{ username: string }>();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<profileType | null>(null);
@@ -105,11 +109,18 @@ export default function Profile() {
 
     let data, error, count;
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
+
     for (let attempt = 0; attempt < retries; attempt++) {
       ({ data, error, count } = await supabase
         .from("recipes")
         .select(SHARED_SELECT, { count: "exact" })
         .eq("author_id", profile.id)
+        .eq("recipe_reactions.user_id", userId)
+        .eq("recipe_saves.saved_by", userId)
         .order("created_at", { ascending: false })
         .range(from, to));
 
@@ -133,6 +144,7 @@ export default function Profile() {
 
     const transformed = (data ?? []).map((recipe: any) => ({
       ...recipe,
+      current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
       is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
     }));
 
@@ -156,7 +168,7 @@ export default function Profile() {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      alert("User not authenticated");
+      setIsAuthOpen(true);
       return;
     }
 

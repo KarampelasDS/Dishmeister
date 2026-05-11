@@ -115,6 +115,7 @@ function SavedRecipes() {
       .from("recipe_saves")
       .select(SHARED_SELECT, { count: "exact" })
       .eq("saved_by", user.id)
+      .eq("recipes.recipe_reactions.user_id", user.id)
       .order("created_at", { ascending: false })
       .range(from, to);
 

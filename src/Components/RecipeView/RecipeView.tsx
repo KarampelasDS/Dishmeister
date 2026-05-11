@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 import {
   ArrowLeft,
@@ -106,7 +106,7 @@ export default function RecipeView({
   onCommentDeleted,
 }: RecipeViewProps) {
   const { invalidate, patchRecipe } = useFeedCache();
-  const auth = useAuth();
+  const { profile, setIsAuthOpen, showError } = useAuth();
 
   const convertTimeToMinutes = (
     preparationTime: number,
@@ -177,6 +177,7 @@ export default function RecipeView({
   );
 
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (location.hash === "#comments") {
@@ -196,10 +197,7 @@ export default function RecipeView({
     } = await supabase.auth.getUser();
     if (!user) {
       setReacting(false);
-      setErrorModal({
-        open: true,
-        message: "You must be logged in to react to a recipe.",
-      });
+      setIsAuthOpen(true);
       return;
     }
 
@@ -263,7 +261,7 @@ export default function RecipeView({
         dislike_count: prevDislikes,
         current_user_reaction: prevReaction,
       });
-      alert(error.message);
+      showError(error.message);
     }
 
     setReacting(false);
@@ -277,7 +275,7 @@ export default function RecipeView({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) {
-      alert("You must be logged in to save a recipe.");
+      setIsAuthOpen(true);
       setSaving(false);
       return;
     }
@@ -305,7 +303,7 @@ export default function RecipeView({
           is_saved: prevSaved,
           save_count: prevSaveCount,
         });
-        alert(error.message);
+        showError(error.message);
         setSaving(false);
         return;
       }
@@ -328,7 +326,7 @@ export default function RecipeView({
           is_saved: prevSaved,
           save_count: prevSaveCount,
         });
-        alert(error.message);
+        showError(error.message);
         setSaving(false);
         return;
       }
@@ -344,11 +342,11 @@ export default function RecipeView({
       data: { user },
     } = await supabase.auth.getUser();
     if (user?.id !== recipe.profiles.id) {
-      alert("You can only delete your own recipes.");
+      showError("You can only delete your own recipes.");
       setDeleteConfirmOpen(false);
       return;
     } else if (!user) {
-      alert("You must be logged in to delete a recipe.");
+      showError("You must be logged in to delete a recipe.");
       setDeleteConfirmOpen(false);
       return;
     }
@@ -363,7 +361,7 @@ export default function RecipeView({
       .match({ id: recipe.id });
     error = res.error;
     if (error) {
-      alert(error.message);
+      showError(error.message);
       setDeleteConfirmOpen(false);
       return;
     }
@@ -480,7 +478,7 @@ export default function RecipeView({
                   <MessageSquareWarning color="#cd3131" />
                   Report
                 </button>
-                {auth.profile?.username === recipe.profiles.username && (
+                {profile?.username === recipe.profiles.username && (
                   <button
                     className={styles.menuItem}
                     onClick={() => {

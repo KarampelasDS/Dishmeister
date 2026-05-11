@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { supabase } from "../../supabase";
+import { useAuth } from "../../Context/AuthProvider";
 import Button from "../Button/Button";
 import styles from "../CreateRecipe/CreateRecipe.module.css";
 
@@ -67,6 +68,7 @@ interface EditRecipeProps {
 }
 
 function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
+  const { showError } = useAuth();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [title, setTitle] = useState(recipe.title);
@@ -161,13 +163,13 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
     if (!file) return;
 
     if (!["image/png", "image/jpeg"].includes(file.type)) {
-      alert("Only PNG and JPEG files are allowed.");
+      showError("Only PNG and JPEG files are allowed.");
       e.target.value = "";
       return;
     }
 
     if (file.size > 20 * 1024 * 1024) {
-      alert("Image must be under 20MB.");
+      showError("Image must be under 20MB.");
       e.target.value = "";
       return;
     }
@@ -187,11 +189,11 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
     const hasEmptyInstruction = instructions.some((i) => !i.trim());
 
     if (hasEmptyIngredient) {
-      alert("All ingredient fields must be filled in.");
+      showError("All ingredient fields must be filled in.");
       return;
     }
     if (hasEmptyInstruction) {
-      alert("All instruction steps must be filled in.");
+      showError("All instruction steps must be filled in.");
       return;
     }
 
@@ -206,7 +208,7 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
       cookingTime === "" ||
       !categoryId
     ) {
-      alert("All required fields must be filled");
+      showError("All required fields must be filled");
       return;
     }
 
@@ -215,7 +217,7 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
       Number(cookingTime) < 0 ||
       servings <= 0
     ) {
-      alert("Invalid numeric values");
+      showError("Invalid numeric values");
       return;
     }
 
@@ -226,7 +228,7 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
     } = await supabase.auth.getUser();
 
     if (!user || user.id !== recipe.profiles.id) {
-      alert("You can only edit your own recipes.");
+      showError("You can only edit your own recipes.");
       setLoading(false);
       return;
     }
@@ -245,7 +247,7 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
         });
 
       if (uploadError) {
-        alert(uploadError.message);
+        showError(uploadError.message);
         setLoading(false);
         return;
       }
@@ -289,7 +291,7 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
           .delete()
           .eq("path", newImagePath);
       }
-      alert(error.message);
+      showError(error.message);
       setLoading(false);
       return;
     }

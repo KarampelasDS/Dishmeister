@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import RecipeView from "../Components/RecipeView/RecipeView";
 import { supabase } from "../supabase";
 import Loader from "../Components/Loader/Loader";
+import { useAuth } from "../Context/AuthProvider";
 
 type Recipe = {
   id: string;
@@ -55,6 +56,7 @@ interface Comment {
 export default function RecipePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { showError } = useAuth();
 
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -74,6 +76,7 @@ export default function RecipePage() {
 
       const userId = user?.id ?? null;
       setCurrentUserId(userId);
+      const effectiveUserId = userId ?? "00000000-0000-0000-0000-000000000000";
 
       const { data, error } = await supabase
         .from("recipes")
@@ -102,7 +105,8 @@ export default function RecipePage() {
         `,
         )
         .eq("id", id)
-        .eq("recipe_reactions.user_id", userId ?? "")
+        .eq("recipe_reactions.user_id", effectiveUserId)
+        .eq("recipe_saves.saved_by", effectiveUserId)
         .single();
 
       if (error) {
@@ -202,7 +206,7 @@ export default function RecipePage() {
       .match({ id: commentId });
     if (error) {
       await fetchComments();
-      alert(error.message);
+      showError(error.message);
     }
   };
 

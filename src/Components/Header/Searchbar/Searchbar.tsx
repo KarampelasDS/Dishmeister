@@ -2,16 +2,18 @@ import styles from "./Searchbar.module.css";
 import { Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { useAuth } from "../../../Context/AuthProvider";
 
 export default function Searchbar() {
   const navigate = useNavigate();
+  const { showError } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearchSubmit = () => {
     if (searchTerm.trim().length >= 3) {
       navigate(`/explore?q=${encodeURIComponent(searchTerm.trim())}`);
     } else if (searchTerm.trim().length < 3 && searchTerm.trim().length >= 1) {
-      alert("Please enter at least 3 characters.");
+      showError("Please enter at least 3 characters.");
     } else {
       navigate("/explore");
     }
