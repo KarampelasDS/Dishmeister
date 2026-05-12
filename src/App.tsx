@@ -19,19 +19,18 @@ import { Analytics } from "@vercel/analytics/react";
 import Loader from "./Components/Loader/Loader";
 import ErrorModal from "./Components/ErrorModal/ErrorModal";
 
-
 function App() {
   useScrollRestoration(["/explore"]);
-  const { 
-    session, 
-    profile, 
-    loading, 
-    needsOnboarding, 
-    isAuthOpen, 
+  const {
+    session,
+    profile,
+    loading,
+    needsOnboarding,
+    isAuthOpen,
     setIsAuthOpen,
     isErrorOpen,
     setIsErrorOpen,
-    errorMsg 
+    errorMsg,
   } = useAuth();
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
@@ -124,6 +123,7 @@ function App() {
           if (location.pathname === "/auth") {
             navigate("/");
           }
+          window.location.reload();
         }}
       />
 

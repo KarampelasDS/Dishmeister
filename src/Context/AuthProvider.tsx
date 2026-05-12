@@ -109,7 +109,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await fetchProfile(session.user.id);
   };
 
-
   return (
     <AuthContext.Provider
       value={{

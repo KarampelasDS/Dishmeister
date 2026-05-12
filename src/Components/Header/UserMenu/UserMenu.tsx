@@ -38,6 +38,7 @@ export default function UserMenu({
   const logout = async () => {
     await supabase.auth.signOut();
     navigate("/");
+    window.location.reload();
   };
 
   // Close on outside click
@@ -62,7 +63,11 @@ export default function UserMenu({
         <span>{username || "Guest"}</span>
 
         <img
-          src={username && avatarUrl ? `${profileURL}${avatarUrl}` : "/defaultAvatar.png"}
+          src={
+            username && avatarUrl
+              ? `${profileURL}${avatarUrl}`
+              : "/defaultAvatar.png"
+          }
           onError={(e) => {
             const target = e.target as HTMLImageElement;
             target.onerror = null;
