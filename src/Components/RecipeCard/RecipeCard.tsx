@@ -106,16 +106,12 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const [reportModalOpen, setReportModalOpen] = useState(false);
 
   const title = r?.title ?? "Creamy Carbonara";
-  const cover = r?.image_url ?? "/assets/pasta.jpg";
   const difficulty = r?.difficulty ?? "Medium";
   const [likes, setLikes] = useState<number>(r?.like_count ?? 0);
   const [dislikes, setDislikes] = useState<number>(r?.dislike_count ?? 0);
   const authorName =
     r?.profiles?.display_name ?? r?.profiles?.username ?? "chef_marco";
   const authorUsername = r?.profiles?.username;
-  const authorAvatar = r?.profiles?.avatar_url
-    ? r.profiles.avatar_url
-    : "defaultAvatar.png";
   const description = r?.description ?? "";
   const [rating, setRating] = useState<number>(0);
   const [isSaved, setIsSaved] = useState<boolean>(r?.is_saved ?? false);
@@ -309,7 +305,11 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
       <article className={styles.container}>
         <header className={styles.header}>
           <img
-            src={r?.image_url ? `${supabaseUrl}${r.image_url}` : "/assets/pasta.jpg"}
+            src={
+              r?.image_url
+                ? `${supabaseUrl}${r.image_url}`
+                : "/assets/pasta.jpg"
+            }
             alt={title}
             className={styles.cover}
             onClick={() => navigate(`/recipes/${r.id}`)}
@@ -400,7 +400,11 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           <div className={styles.authorRow}>
             <img
               className={styles.avatar}
-              src={r?.profiles?.avatar_url ? `${supabaseAvatarUrl}${r.profiles.avatar_url}` : "/defaultAvatar.png"}
+              src={
+                r?.profiles?.avatar_url
+                  ? `${supabaseAvatarUrl}${r.profiles.avatar_url}`
+                  : "/defaultAvatar.png"
+              }
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.onerror = null;

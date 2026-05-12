@@ -11,8 +11,6 @@ import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
 import { useAuth } from "../../Context/AuthProvider";
 
-
-
 import {
   Heart,
   Clock,
@@ -106,10 +104,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const menuRef = useClickOutside(() => setMenuOpen(false));
   const [reportModalOpen, setReportModalOpen] = useState(false);
 
-
-
   const title = r?.title ?? "Creamy Carbonara";
-  const cover = r?.image_url ?? r?.image_url ?? "/assets/pasta.jpg";
   const difficulty = r?.difficulty ?? "Medium";
   const [likes] = useState<number>(r?.like_count ?? 0);
   const [dislikes] = useState<number>(r?.dislike_count ?? 0);
@@ -118,9 +113,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const authorUsername = r?.profiles?.username;
   const followerCount = r?.profiles?.follower_count ?? 0;
 
-  const authorAvatar = r?.profiles?.avatar_url
-    ? r.profiles.avatar_url
-    : "/assets/avatar.jpg";
   const description = r?.description ?? "";
   const [rating, setRating] = useState<number>(100);
   const [isSaved, setIsSaved] = useState<boolean>(r?.is_saved ?? false);
@@ -230,153 +222,157 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
       )}
 
       <article
-
-      onClick={() => navigate(`/recipes/${recipe?.id}`)}
-      className={styles.container}
-    >
-      <header className={styles.header}>
-        <img
-          src={r?.image_url ? `${supabaseUrl}${r.image_url}` : "/assets/pasta.jpg"}
-          alt={title}
-          className={styles.cover}
-        />
-        <div className={styles.topRightMenu} ref={menuRef}>
-
-          <button
-            className={styles.menuButton}
-            aria-label="More options"
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen((o) => !o);
-            }}
-          >
-            <EllipsisVertical color="white" size={24} />
-          </button>
-          {menuOpen && (
-            <div className={styles.menuDropdown}>
-              <button
-                className={styles.menuItem}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSave();
-                  setMenuOpen(false);
-                }}
-                disabled={isSaving}
-              >
-                {isSaved ? <BookmarkCheck color="#f59e0b" /> : <Bookmark />}
-                {isSaved ? "Unsave" : "Save"}
-              </button>
-              <button
-                className={styles.menuItem}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  console.log("share");
-                  setMenuOpen(false);
-                }}
-              >
-                <Forward />
-                Share
-              </button>
-              <button
-                className={styles.menuItem}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setReportModalOpen(true);
-                  setMenuOpen(false);
-                }}
-              >
-                <MessageSquareWarning color="#cd3131" />
-                Report
-              </button>
-
-            </div>
-          )}
-        </div>
-        <div className={styles.headerOverlay}>
-          <h3 className={styles.title}>{title}</h3>
-          <div className={styles.badges}>
-            <span className={styles.badge}>
-              <Clock size={20} /> {timeLabel}
-            </span>
-            <span
-              className={`${styles.badge} ${
-                difficulty === "Easy"
-                  ? styles.easy
-                  : difficulty === "Medium"
-                    ? styles.medium
-                    : styles.hard
-              }`}
-            >
-              <ChefHat size={20} /> {difficulty}
-            </span>
-            <span className={styles.badge}>
-              <Heart size={20} /> {rating}%
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <section className={styles.content}>
-        <div className={styles.description}>{description}</div>
-        <div className={styles.authorRow}>
+        onClick={() => navigate(`/recipes/${recipe?.id}`)}
+        className={styles.container}
+      >
+        <header className={styles.header}>
           <img
-            className={styles.avatar}
-            src={r?.profiles?.avatar_url ? `${supabaseAvatarUrl}${r.profiles.avatar_url}` : "/defaultAvatar.png"}
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.onerror = null;
-              target.src = "/defaultAvatar.png";
-            }}
-            alt={authorName}
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/profiles/${authorUsername}`);
-            }}
-            style={{ cursor: "pointer" }}
+            src={
+              r?.image_url
+                ? `${supabaseUrl}${r.image_url}`
+                : "/assets/pasta.jpg"
+            }
+            alt={title}
+            className={styles.cover}
           />
-          <div className={styles.authorInfo}>
-            <div className={styles.authorName}>
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/profiles/${authorUsername}`);
-                }}
-                style={{ cursor: "pointer" }}
-              >
-                {authorName}
+          <div className={styles.topRightMenu} ref={menuRef}>
+            <button
+              className={styles.menuButton}
+              aria-label="More options"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen((o) => !o);
+              }}
+            >
+              <EllipsisVertical color="white" size={24} />
+            </button>
+            {menuOpen && (
+              <div className={styles.menuDropdown}>
+                <button
+                  className={styles.menuItem}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSave();
+                    setMenuOpen(false);
+                  }}
+                  disabled={isSaving}
+                >
+                  {isSaved ? <BookmarkCheck color="#f59e0b" /> : <Bookmark />}
+                  {isSaved ? "Unsave" : "Save"}
+                </button>
+                <button
+                  className={styles.menuItem}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log("share");
+                    setMenuOpen(false);
+                  }}
+                >
+                  <Forward />
+                  Share
+                </button>
+                <button
+                  className={styles.menuItem}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setReportModalOpen(true);
+                    setMenuOpen(false);
+                  }}
+                >
+                  <MessageSquareWarning color="#cd3131" />
+                  Report
+                </button>
+              </div>
+            )}
+          </div>
+          <div className={styles.headerOverlay}>
+            <h3 className={styles.title}>{title}</h3>
+            <div className={styles.badges}>
+              <span className={styles.badge}>
+                <Clock size={20} /> {timeLabel}
               </span>
-            </div>
-            <div className={styles.authorMeta}>
               <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`/profiles/${authorUsername}`);
-                }}
-                style={{ cursor: "pointer" }}
+                className={`${styles.badge} ${
+                  difficulty === "Easy"
+                    ? styles.easy
+                    : difficulty === "Medium"
+                      ? styles.medium
+                      : styles.hard
+                }`}
               >
-                {followerCount === 1
-                  ? "1 follower"
-                  : `${followerCount} followers`}
+                <ChefHat size={20} /> {difficulty}
+              </span>
+              <span className={styles.badge}>
+                <Heart size={20} /> {rating}%
               </span>
             </div>
           </div>
-          <div className={styles.metaCounts}>
-            <div>
-              <MessageCircle size={20} /> {comment_count}
+        </header>
+
+        <section className={styles.content}>
+          <div className={styles.description}>{description}</div>
+          <div className={styles.authorRow}>
+            <img
+              className={styles.avatar}
+              src={
+                r?.profiles?.avatar_url
+                  ? `${supabaseAvatarUrl}${r.profiles.avatar_url}`
+                  : "/defaultAvatar.png"
+              }
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.src = "/defaultAvatar.png";
+              }}
+              alt={authorName}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/profiles/${authorUsername}`);
+              }}
+              style={{ cursor: "pointer" }}
+            />
+            <div className={styles.authorInfo}>
+              <div className={styles.authorName}>
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/profiles/${authorUsername}`);
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  {authorName}
+                </span>
+              </div>
+              <div className={styles.authorMeta}>
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/profiles/${authorUsername}`);
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  {followerCount === 1
+                    ? "1 follower"
+                    : `${followerCount} followers`}
+                </span>
+              </div>
             </div>
-            <div>
-              {isSaved ? (
-                <BookmarkCheck size={20} color="#f59e0b" />
-              ) : (
-                <Bookmark size={20} />
-              )}{" "}
-              {saveCount}
+            <div className={styles.metaCounts}>
+              <div>
+                <MessageCircle size={20} /> {comment_count}
+              </div>
+              <div>
+                {isSaved ? (
+                  <BookmarkCheck size={20} color="#f59e0b" />
+                ) : (
+                  <Bookmark size={20} />
+                )}{" "}
+                {saveCount}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-    </article>
+        </section>
+      </article>
     </>
   );
 }
-
