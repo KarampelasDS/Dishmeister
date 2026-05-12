@@ -115,7 +115,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const authorUsername = r?.profiles?.username;
   const authorAvatar = r?.profiles?.avatar_url
     ? r.profiles.avatar_url
-    : "/assets/avatar.jpg";
+    : "defaultAvatar.png";
   const description = r?.description ?? "";
   const [rating, setRating] = useState<number>(0);
   const [isSaved, setIsSaved] = useState<boolean>(r?.is_saved ?? false);
@@ -309,7 +309,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
       <article className={styles.container}>
         <header className={styles.header}>
           <img
-            src={`${supabaseUrl}${cover}`}
+            src={r?.image_url ? `${supabaseUrl}${r.image_url}` : "/assets/pasta.jpg"}
             alt={title}
             className={styles.cover}
             onClick={() => navigate(`/recipes/${r.id}`)}
@@ -400,7 +400,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
           <div className={styles.authorRow}>
             <img
               className={styles.avatar}
-              src={`${supabaseAvatarUrl}${authorAvatar}`}
+              src={r?.profiles?.avatar_url ? `${supabaseAvatarUrl}${r.profiles.avatar_url}` : "/defaultAvatar.png"}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.onerror = null;

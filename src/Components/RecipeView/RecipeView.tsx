@@ -421,7 +421,7 @@ export default function RecipeView({
         {/* HERO */}
         <div className={styles.hero}>
           <img
-            src={`${supabaseUrl}${recipe.image_url}`}
+            src={recipe.image_url ? `${supabaseUrl}${recipe.image_url}` : "/assets/pasta.jpg"}
             alt={recipe.title}
             className={styles.heroImage}
           />
@@ -540,7 +540,7 @@ export default function RecipeView({
               onClick={() => onUserClick(recipe.profiles.username || "")}
             >
               <img
-                src={`${supabaseAvatarUrl}${recipe.profiles.avatar_url}`}
+                src={recipe.profiles.avatar_url ? `${supabaseAvatarUrl}${recipe.profiles.avatar_url}` : "/defaultAvatar.png"}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.onerror = null;

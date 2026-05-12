@@ -99,7 +99,7 @@ export default function ProfileCard({
 
             <img
               className={styles.profilePic}
-              src={`${supabaseAvatarUrl}/${profile?.avatar_url}`}
+              src={profile?.avatar_url ? `${supabaseAvatarUrl}${profile.avatar_url}` : "/defaultAvatar.png"}
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.onerror = null;

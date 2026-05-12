@@ -38,7 +38,6 @@ export default function UserMenu({
   const logout = async () => {
     await supabase.auth.signOut();
     navigate("/");
-    window.location.reload();
   };
 
   // Close on outside click

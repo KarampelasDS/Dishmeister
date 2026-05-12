@@ -236,7 +236,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
     >
       <header className={styles.header}>
         <img
-          src={`${supabaseUrl}${cover}`}
+          src={r?.image_url ? `${supabaseUrl}${r.image_url}` : "/assets/pasta.jpg"}
           alt={title}
           className={styles.cover}
         />
@@ -321,7 +321,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         <div className={styles.authorRow}>
           <img
             className={styles.avatar}
-            src={`${supabaseAvatarUrl}${authorAvatar}`}
+            src={r?.profiles?.avatar_url ? `${supabaseAvatarUrl}${r.profiles.avatar_url}` : "/defaultAvatar.png"}
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.onerror = null;

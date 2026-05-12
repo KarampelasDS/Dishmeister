@@ -295,7 +295,7 @@ export default function EditProfilePage() {
 
   const avatarDisplayUrl =
     avatarPreviewUrl ??
-    (currentAvatarPath ? `${SUPABASE_AVATAR_URL}/${currentAvatarPath}` : null);
+    (currentAvatarPath ? `${SUPABASE_AVATAR_URL}${currentAvatarPath}` : null);
 
   if (fetching) return <Loader fullPage />;
 

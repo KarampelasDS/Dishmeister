@@ -73,6 +73,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /* ---------------- AUTH INIT ---------------- */
 
   useEffect(() => {
+    let firstRun = true;
+
     supabase.auth.getSession().then(({ data }) => {
       const currentSession = data.session;
       setSession(currentSession);
@@ -86,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
 
       if (newSession) {
@@ -95,6 +97,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         setNeedsOnboarding(false);
       }
+
+      // Handle refresh and cache clearing
+      if (!firstRun) {
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+          // If we had a FeedCache invalidateAll, we would call it here
+          // but since we are reloading the page, the in-memory cache
+          // will be cleared anyway.
+          window.location.reload();
+        }
+      }
+      firstRun = false;
     });
 
     return () => subscription.unsubscribe();
