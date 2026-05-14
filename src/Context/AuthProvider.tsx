@@ -73,22 +73,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /* ---------------- AUTH INIT ---------------- */
 
   useEffect(() => {
-    let firstRun = true;
+    let lastUserId = "";
+    let isInitialized = false;
 
     supabase.auth.getSession().then(({ data }) => {
       const currentSession = data.session;
       setSession(currentSession);
+      lastUserId = currentSession?.user?.id || "";
 
       if (currentSession) {
         fetchProfile(currentSession.user.id);
       }
 
       setLoading(false);
+      // We don't set isInitialized = true here because onAuthStateChange 
+      // will also fire its initial event, and we want to capture that first.
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, newSession) => {
+      const newUserId = newSession?.user?.id || "";
       setSession(newSession);
 
       if (newSession) {
@@ -99,15 +104,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Handle refresh and cache clearing
-      if (!firstRun) {
-        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
-          // If we had a FeedCache invalidateAll, we would call it here
-          // but since we are reloading the page, the in-memory cache
-          // will be cleared anyway.
-          window.location.reload();
+      // We only reload if the user ID has actually changed (e.g. login/logout)
+      // and only after the initial session has been established/processed.
+      if (isInitialized && (event === "SIGNED_IN" || event === "SIGNED_OUT")) {
+        if (newUserId !== lastUserId) {
+          // If we are reloading and there's an auth token in the hash, 
+          // we should redirect to the clean URL to prevent an infinite loop.
+          if (window.location.hash.includes("access_token") || window.location.hash.includes("error")) {
+            window.location.href = window.location.origin + window.location.pathname;
+          } else {
+            window.location.reload();
+          }
         }
       }
-      firstRun = false;
+
+      lastUserId = newUserId;
+      isInitialized = true;
     });
 
     return () => subscription.unsubscribe();

@@ -123,9 +123,6 @@ function App() {
           if (location.pathname === "/auth") {
             navigate("/");
           }
-          if (session) {
-            window.location.reload();
-          }
         }}
       />
 
