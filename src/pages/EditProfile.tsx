@@ -333,6 +333,16 @@ export default function EditProfilePage() {
     avatarPreviewUrl ??
     (currentAvatarPath ? `${SUPABASE_AVATAR_URL}${currentAvatarPath}` : null);
 
+  const timeSinceChange = fields.username_changed_at
+    ? new Date().getTime() - new Date(fields.username_changed_at).getTime()
+    : null;
+  const isUsernameLocked =
+    timeSinceChange !== null && timeSinceChange < 14 * 24 * 60 * 60 * 1000;
+  const daysUntilUnlock =
+    timeSinceChange !== null
+      ? Math.ceil((14 * 24 * 60 * 60 * 1000 - timeSinceChange) / (24 * 60 * 60 * 1000))
+      : 0;
+
   if (fetching) return <Loader fullPage />;
 
   return (
@@ -418,6 +428,8 @@ export default function EditProfilePage() {
                   type="text"
                   className={styles.input}
                   value={fields.username}
+                  disabled={isUsernameLocked}
+                  style={isUsernameLocked ? { opacity: 0.7, cursor: "not-allowed" } : {}}
                   onChange={(e) =>
                     setFields((p) => ({
                       ...p,
@@ -425,6 +437,11 @@ export default function EditProfilePage() {
                     }))
                   }
                 />
+                {isUsernameLocked && (
+                  <small style={{ color: "#ef4444", marginTop: "4px", display: "block" }}>
+                    You can change your username again in {daysUntilUnlock} day{daysUntilUnlock !== 1 ? 's' : ''}.
+                  </small>
+                )}
               </div>
             </div>
 
@@ -655,6 +672,9 @@ export default function EditProfilePage() {
                   <Button
                     text="Cancel"
                     onButtonClick={() => setShowDeleteConfirm(false)}
+                    backgroundColor="transparent"
+                    textColor="var(--text)"
+                    outline="1px solid var(--border)"
                   />
                 </div>
               </div>
