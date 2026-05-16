@@ -7,6 +7,7 @@ import styles from "./HomePage.module.css";
 import { Sparkles, Users } from "lucide-react";
 import { useFeedCache } from "../Context/FeedCacheContext";
 import TopRecipes from "../Components/TopRecipes/TopRecipes";
+import TopChefs from "../Components/TopChefs/TopChefs";
 
 type Recipe = {
   id: string;
@@ -36,6 +37,22 @@ type Recipe = {
     id: string;
     name: string;
   };
+};
+
+type TopRecipe = {
+  id: string;
+  title: string;
+  image_url: string;
+  like_count: number;
+};
+
+type TopChef = {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar_url: string | null;
+  follower_count: number;
+  recipe_count: number;
 };
 
 type FeedTab = "for-you" | "following";
@@ -79,7 +96,8 @@ function HomePage() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(state.forYou.hasMore);
   const [notFollowingAnyone, setNotFollowingAnyone] = useState(false);
-  const [topRecipes, setTopRecipes] = useState<Recipe[]>([]);
+  const [topRecipes, setTopRecipes] = useState<TopRecipe[]>([]);
+  const [topChefs, setTopChefs] = useState<TopChef[]>([]);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
@@ -264,21 +282,30 @@ function HomePage() {
   }, [activeTab]);
 
   useEffect(() => {
-    const fetchTopRecipes = async () => {
-      const { data, error } = await supabase
-        .from("recipes")
-        .select(SHARED_SELECT)
-        .order("like_count", { ascending: false })
-        .limit(4);
+    if (window.innerWidth <= 1400) return;
 
-      if (error) {
-        console.error("Error fetching top recipes:", error);
-        return;
-      }
-      setTopRecipes(data ? transformRecipes(data) : []);
+    const fetchSidebar = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      const [{ data: chefs }, { data: recipes }] = await Promise.all([
+        supabase.rpc("get_suggested_chefs", {
+          p_user_id: user?.id ?? null,
+          p_limit: 4,
+        }),
+        supabase
+          .from("recipes")
+          .select("id, title, image_url, like_count")
+          .order("like_count", { ascending: false })
+          .limit(4),
+      ]);
+
+      if (chefs) setTopChefs(chefs);
+      if (recipes) setTopRecipes(recipes);
     };
 
-    fetchTopRecipes();
+    fetchSidebar();
   }, []);
 
   // INFINITE SCROLL
@@ -366,8 +393,9 @@ function HomePage() {
             <p style={{ textAlign: "center" }}>You're all caught up</p>
           )}
         </div>
-        <div className={styles.topRecipes}>
+        <div className={styles.sidebar}>
           <TopRecipes recipes={topRecipes} />
+          <TopChefs chefs={topChefs} />
         </div>
       </div>
     </>

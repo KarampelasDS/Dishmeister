@@ -1,38 +1,15 @@
 import styles from "./TopRecipeItem.module.css";
 import { useNavigate } from "react-router";
 
-type Recipe = {
+type TopRecipe = {
   id: string;
   title: string;
-  description: string | null;
-  preparation_time: number;
-  cooking_time: number;
-  servings: number;
-  country_of_origin: string | null;
   image_url: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  preparation_unit: "Min" | "Hrs" | "Sec";
-  cooking_unit: "Min" | "Hrs" | "Sec";
   like_count: number;
-  dislike_count: number;
-  current_user_reaction: "like" | "dislike" | null;
-  is_saved: boolean;
-  save_count: number;
-  comment_count: number;
-  profiles: {
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    username: string | null;
-  };
-  categories: {
-    id: string;
-    name: string;
-  };
 };
 
 type TopRecipeItemProps = {
-  recipe: Recipe;
+  recipe: TopRecipe;
 };
 
 export default function TopRecipeItem({ recipe }: TopRecipeItemProps) {
@@ -42,6 +19,8 @@ export default function TopRecipeItem({ recipe }: TopRecipeItemProps) {
   const handleClick = () => {
     navigate(`/recipes/${recipe.id}`);
   };
+
+  if (!recipe) return;
 
   return (
     <div className={styles.container} onClick={handleClick}>

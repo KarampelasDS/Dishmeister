@@ -42,20 +42,23 @@
   box-shadow: 0 4px 10px rgba(255, 61, 61, 0.3);
 }
 
-.topRecipes {
+.sidebar {
   margin: 2rem 0;
   padding: 0 1rem;
   position: sticky;
   z-index: 50;
   top: 80px;
   right: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 @media only screen and (max-width: 1400px) {
   .feedToggle {
     top: 100px;
   }
-  .topRecipes {
+  .sidebar {
     display: none;
   }
 }
@@ -63,6 +66,9 @@
 @media only screen and (max-width: 768px) {
   .feedToggle {
     top: 100px;
+  }
+  .sidebar {
+    display: none;
   }
 }
 
@@ -79,5 +85,8 @@
     font-size: 1rem;
     width: 100%;
     min-width: 0;
+  }
+  .sidebar {
+    display: none;
   }
 }
