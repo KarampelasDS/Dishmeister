@@ -10,6 +10,7 @@ import type { ReactNode } from "react";
 import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
 import { useAuth } from "../../Context/AuthProvider";
+import { useToast } from "../../Context/ToastContext";
 
 import {
   Heart,
@@ -64,6 +65,16 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
   const navigate = useNavigate();
   const { invalidate, patchRecipe } = useFeedCache();
   const { setIsAuthOpen, showError } = useAuth();
+  const { showToast } = useToast();
+
+  const handleShare = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/recipes/${recipe?.id}`;
+    navigator.clipboard.writeText(url);
+    showToast("Recipe link copied to clipboard!");
+    setMenuOpen(false);
+  };
+
   const convertTimeToMinutes = (
     preparationTime: number,
     cookingTime: number,
@@ -262,11 +273,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
                 </button>
                 <button
                   className={styles.menuItem}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    console.log("share");
-                    setMenuOpen(false);
-                  }}
+                  onClick={handleShare}
                 >
                   <Forward />
                   Share
