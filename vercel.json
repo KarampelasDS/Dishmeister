@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/recipes/:id", "destination": "/api/render?id=:id" },
+    { "source": "/((?!api/|recipes/).*)", "destination": "/index.html" }
   ]
 }
