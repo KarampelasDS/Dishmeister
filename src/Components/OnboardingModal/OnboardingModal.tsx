@@ -5,6 +5,8 @@ import Button from "../Button/Button";
 import { useAuth } from "../../Context/AuthProvider";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
 import { compressImage } from "../../utils/compressImage";
+import { getFriendlyErrorMessage } from "../../utils/errorUtils";
+
 
 const AVATAR_BUCKET = "avatars";
 const MAX_FILE_MB = 2;
@@ -159,7 +161,7 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
       await refreshProfile();
       onClose();
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -270,6 +272,7 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
                 )
               }
               className={styles.usernameInput}
+              maxLength={20}
               required
             />
           </div>
@@ -286,6 +289,7 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
             value={displayName}
             placeholder="Your Full Name"
             onChange={(e) => setDisplayName(e.target.value)}
+            maxLength={30}
             required
           />
           <small>

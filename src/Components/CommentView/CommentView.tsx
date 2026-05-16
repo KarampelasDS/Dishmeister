@@ -16,6 +16,8 @@ import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
 import ErrorModal from "../ErrorModal/ErrorModal";
 import { formatRelativeTime } from "../../utils/formatDate";
+import { getFriendlyErrorMessage } from "../../utils/errorUtils";
+
 
 const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
@@ -131,7 +133,7 @@ export default function CommentView({
       setLikes(prevLikes);
       setDislikes(prevDislikes);
       setCurrentReaction(prevReaction);
-      setErrorModal({ open: true, message: error.message });
+      setErrorModal({ open: true, message: getFriendlyErrorMessage(error) });
     }
 
     setReacting(false);

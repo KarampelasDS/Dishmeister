@@ -10,6 +10,8 @@ import { useLocalDraft } from "../../Hooks/useLocalDraft";
 import { compressImage } from "../../utils/compressImage";
 import SuccessModal from "../SuccessModal/SuccessModal";
 import ErrorModal from "../ErrorModal/ErrorModal";
+import { getFriendlyErrorMessage } from "../../utils/errorUtils";
+
 
 type Category = {
   id: string;
@@ -271,7 +273,7 @@ function CreateRecipe() {
       });
 
     if (uploadError) {
-      setErrorModal({ open: true, message: uploadError.message });
+      setErrorModal({ open: true, message: getFriendlyErrorMessage(uploadError) });
       setLoading(false);
       return;
     }
@@ -304,7 +306,7 @@ function CreateRecipe() {
     if (error) {
       await supabase.storage.from("recipe-images").remove([filePath]);
       await supabase.from("storage_objects").delete().eq("path", filePath);
-      setErrorModal({ open: true, message: error.message });
+      setErrorModal({ open: true, message: getFriendlyErrorMessage(error) });
       setLoading(false);
       return;
     }

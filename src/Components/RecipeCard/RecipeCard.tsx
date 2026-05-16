@@ -26,6 +26,8 @@ import type { ReactNode } from "react";
 import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
 import { useToast } from "../../Context/ToastContext";
+import { getFriendlyErrorMessage } from "../../utils/errorUtils";
+
 
 type Recipe = {
   id: string;
@@ -219,7 +221,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         dislike_count: prevDislikes,
         current_user_reaction: prevReaction,
       });
-      showError(error.message);
+      showError(getFriendlyErrorMessage(error));
     }
 
     setIsReacting(false);
@@ -258,7 +260,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
         patchRecipe(r.id, { is_saved: prevSaved, save_count: prevSaveCount });
-        showError(error.message);
+        showError(getFriendlyErrorMessage(error));
         setIsSaving(false);
         return;
       }
@@ -277,7 +279,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         setSaveCount(prevSaveCount);
         setIsSaved(prevSaved);
         patchRecipe(r.id, { is_saved: prevSaved, save_count: prevSaveCount });
-        showError(error.message);
+        showError(getFriendlyErrorMessage(error));
         setIsSaving(false);
         return;
       }

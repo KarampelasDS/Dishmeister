@@ -8,6 +8,8 @@ import countries from "i18n-iso-countries";
 import en from "i18n-iso-countries/langs/en.json";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
 import { compressImage } from "../../utils/compressImage";
+import { getFriendlyErrorMessage } from "../../utils/errorUtils";
+
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 
@@ -247,7 +249,7 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
         });
 
       if (uploadError) {
-        showError(uploadError.message);
+        showError(getFriendlyErrorMessage(uploadError));
         setLoading(false);
         return;
       }
@@ -291,7 +293,7 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
           .delete()
           .eq("path", newImagePath);
       }
-      showError(error.message);
+      showError(getFriendlyErrorMessage(error));
       setLoading(false);
       return;
     }

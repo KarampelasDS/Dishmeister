@@ -5,6 +5,8 @@ import { supabase } from "../../supabase";
 import styles from "./AuthModal.module.css";
 import Button from "../Button/Button";
 import { useFeedCache } from "../../Context/FeedCacheContext";
+import { getFriendlyErrorMessage } from "../../utils/errorUtils";
+
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -54,7 +56,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       if (error) throw error;
       setSuccess("Check your email for the password reset link!");
     } catch (err: any) {
-      setError(err.message || "Failed to send reset email");
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -95,7 +97,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         }
       }
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }

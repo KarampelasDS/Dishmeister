@@ -12,6 +12,7 @@ import ReportModal from "../ReportModal/ReportModal";
 import { useAuth } from "../../Context/AuthProvider";
 import { useToast } from "../../Context/ToastContext";
 
+import { getFriendlyErrorMessage } from "../../utils/errorUtils";
 import {
   Heart,
   Clock,
@@ -179,7 +180,7 @@ export default function RecipeCompactCard({ recipe }: RecipeCardProps) {
           is_saved: prevSaved,
           save_count: prevSaveCount,
         });
-        showError(error.message);
+        showError(getFriendlyErrorMessage(error));
         setIsSaving(false);
         return;
       }
@@ -200,7 +201,7 @@ export default function RecipeCompactCard({ recipe }: RecipeCardProps) {
           is_saved: prevSaved,
           save_count: prevSaveCount,
         });
-        showError(error.message);
+        showError(getFriendlyErrorMessage(error));
         setIsSaving(false);
         return;
       }

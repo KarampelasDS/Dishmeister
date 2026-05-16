@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../supabase";
+import { getFriendlyErrorMessage } from "../utils/errorUtils";
+
 
 interface Profile {
   display_name: string | null;
@@ -51,7 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .maybeSingle();
 
     if (error) {
-      console.error(error.message);
+      console.error(getFriendlyErrorMessage(error));
       return;
     }
 

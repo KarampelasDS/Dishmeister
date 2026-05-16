@@ -7,6 +7,8 @@ import Loader from "../Components/Loader/Loader";
 import styles from "./Explore.module.css";
 import { useFeedCache } from "../Context/FeedCacheContext";
 import { ArrowLeft } from "lucide-react";
+import { getFriendlyErrorMessage } from "../utils/errorUtils";
+
 
 type Recipe = {
   id: string;
@@ -162,7 +164,7 @@ function SavedRecipes() {
     setLoading(false);
 
     if (error) {
-      console.error(error.message);
+      console.error(getFriendlyErrorMessage(error));
       return;
     }
 

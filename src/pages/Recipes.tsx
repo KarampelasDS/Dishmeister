@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "../supabase";
 import RecipeCard from "../Components/RecipeCard/RecipeCard";
 import Loader from "../Components/Loader/Loader";
+import { getFriendlyErrorMessage } from "../utils/errorUtils";
+
 
 
 type Recipe = {
@@ -95,7 +97,7 @@ function Recipes() {
     setLoading(false);
 
     if (error) {
-      console.error(error.message);
+      console.error(getFriendlyErrorMessage(error));
       return;
     }
 

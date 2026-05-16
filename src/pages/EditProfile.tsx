@@ -7,6 +7,7 @@ import Button from "../Components/Button/Button";
 import Loader from "../Components/Loader/Loader";
 import ErrorModal from "../Components/ErrorModal/ErrorModal";
 import { useToast } from "../Context/ToastContext";
+import { getFriendlyErrorMessage } from "../utils/errorUtils";
 
 import styles from "./EditProfilePage.module.css";
 import {
@@ -147,9 +148,7 @@ export default function EditProfilePage() {
     } catch (err: any) {
       setError({
         title: "Account deletion failed.",
-        detail:
-          err.message ||
-          "Make sure you've run the SQL script in your dashboard.",
+        detail: getFriendlyErrorMessage(err, "Make sure you've run the SQL script in your dashboard."),
       });
       setLoading(false);
     }
@@ -278,7 +277,7 @@ export default function EditProfilePage() {
     } catch (err: any) {
       setError({
         title: "Save failed.",
-        detail: err.message || "Try again later.",
+        detail: getFriendlyErrorMessage(err, "Try again later."),
       });
     } finally {
       setLoading(false);
@@ -417,6 +416,7 @@ export default function EditProfilePage() {
                   type="text"
                   className={styles.input}
                   value={fields.display_name}
+                  maxLength={30}
                   onChange={(e) =>
                     setFields((p) => ({ ...p, display_name: e.target.value }))
                   }
@@ -429,6 +429,7 @@ export default function EditProfilePage() {
                   className={styles.input}
                   value={fields.username}
                   disabled={isUsernameLocked}
+                  maxLength={20}
                   style={isUsernameLocked ? { opacity: 0.7, cursor: "not-allowed" } : {}}
                   onChange={(e) =>
                     setFields((p) => ({

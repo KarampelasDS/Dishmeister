@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { CSSProperties } from "react";
 import { supabase } from "../supabase";
 import ErrorModal from "./ErrorModal/ErrorModal";
+import { getFriendlyErrorMessage } from "../utils/errorUtils";
+
 
 
 type Props = {
@@ -43,7 +45,7 @@ function UsernameModal({ userId, onSuccess }: Props) {
       .upload(filePath, avatarFile, { upsert: true });
 
     if (uploadError) {
-      setErrorModal({ open: true, message: uploadError.message });
+      setErrorModal({ open: true, message: getFriendlyErrorMessage(uploadError) });
       return null;
     }
 
@@ -78,7 +80,7 @@ function UsernameModal({ userId, onSuccess }: Props) {
     setLoading(false);
 
     if (error) {
-      setErrorModal({ open: true, message: error.message });
+      setErrorModal({ open: true, message: getFriendlyErrorMessage(error) });
       return;
     }
 

@@ -3,6 +3,8 @@ import { Send } from "lucide-react";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../Context/AuthProvider";
 import styles from "./AddComment.module.css";
+import { getFriendlyErrorMessage } from "../../utils/errorUtils";
+
 
 const supabaseAvatarUrl = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
@@ -60,7 +62,7 @@ export default function AddComment({
     setSubmitting(false);
 
     if (error) {
-      showError(error.message);
+      showError(getFriendlyErrorMessage(error));
       return;
     }
 

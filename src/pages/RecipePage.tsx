@@ -4,6 +4,8 @@ import RecipeView from "../Components/RecipeView/RecipeView";
 import { supabase } from "../supabase";
 import Loader from "../Components/Loader/Loader";
 import { useAuth } from "../Context/AuthProvider";
+import { getFriendlyErrorMessage } from "../utils/errorUtils";
+
 
 type Recipe = {
   id: string;
@@ -110,7 +112,7 @@ export default function RecipePage() {
         .single();
 
       if (error) {
-        console.error("Error fetching recipe:", error);
+        showError(getFriendlyErrorMessage(error));
         setLoading(false);
         return;
       }
@@ -167,7 +169,7 @@ export default function RecipePage() {
         .order("created_at", { ascending: false });
 
       if (error) {
-        console.error("Error fetching comments:", error);
+        showError(getFriendlyErrorMessage(error));
         return;
       }
 
@@ -206,7 +208,7 @@ export default function RecipePage() {
       .match({ id: commentId });
     if (error) {
       await fetchComments();
-      showError(error.message);
+      showError(getFriendlyErrorMessage(error));
     }
   };
 

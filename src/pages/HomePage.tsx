@@ -11,6 +11,8 @@ import TopRecipes from "../Components/TopRecipes/TopRecipes";
 import TopChefs from "../Components/TopChefs/TopChefs";
 import { useAuth } from "../Context/AuthProvider";
 import { STALE_MS } from "../Context/FeedCacheContext";
+import { getFriendlyErrorMessage } from "../utils/errorUtils";
+
 
 type Recipe = {
   id: string;
@@ -203,7 +205,7 @@ function HomePage() {
     setLoading(false);
 
     if (error) {
-      console.error(error.message);
+      console.error(getFriendlyErrorMessage(error));
       return;
     }
 

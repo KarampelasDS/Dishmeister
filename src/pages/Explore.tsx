@@ -25,6 +25,8 @@ import {
 } from "../Context/FeedCacheContext";
 import { useAuth } from "../Context/AuthProvider";
 import type { ExploreTabKey } from "../Context/FeedCacheContext";
+import { getFriendlyErrorMessage } from "../utils/errorUtils";
+
 
 countries.registerLocale(en);
 
@@ -450,7 +452,7 @@ function Explore() {
       setLoading(false);
 
       if (error) {
-        console.error(error.message);
+        console.error(getFriendlyErrorMessage(error));
         return;
       }
 
@@ -687,7 +689,7 @@ function Explore() {
       setLoading(false);
 
       if (error) {
-        console.error(error.message);
+        console.error(getFriendlyErrorMessage(error));
         return;
       }
 
@@ -860,7 +862,7 @@ function Explore() {
       setPeopleLoading(false);
 
       if (error) {
-        console.error(error.message);
+        console.error(getFriendlyErrorMessage(error));
         return;
       }
 

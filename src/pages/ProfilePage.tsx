@@ -8,6 +8,8 @@ import Loader from "../Components/Loader/Loader";
 import styles from "./ProfilePage.module.css";
 import { useFeedCache } from "../Context/FeedCacheContext";
 import { useAuth } from "../Context/AuthProvider";
+import { getFriendlyErrorMessage } from "../utils/errorUtils";
+
 
 type SocialLink = {
   platform: string;
@@ -143,7 +145,7 @@ export default function Profile() {
     setLoading(false);
 
     if (error) {
-      console.error(error.message);
+      console.error(getFriendlyErrorMessage(error));
       return;
     }
 
@@ -237,7 +239,7 @@ export default function Profile() {
         .single();
 
       if (error) {
-        console.error("Error fetching profile:", error);
+        showError(getFriendlyErrorMessage(error));
         setLoading(false);
         return;
       }

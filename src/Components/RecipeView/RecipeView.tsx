@@ -32,6 +32,8 @@ import ReportModal from "../ReportModal/ReportModal";
 import ErrorModal from "../ErrorModal/ErrorModal";
 import { useAuth } from "../../Context/AuthProvider";
 import { useToast } from "../../Context/ToastContext";
+import { getFriendlyErrorMessage } from "../../utils/errorUtils";
+
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
@@ -270,7 +272,7 @@ export default function RecipeView({
         dislike_count: prevDislikes,
         current_user_reaction: prevReaction,
       });
-      showError(error.message);
+      showError(getFriendlyErrorMessage(error));
     }
 
     setReacting(false);
@@ -312,7 +314,7 @@ export default function RecipeView({
           is_saved: prevSaved,
           save_count: prevSaveCount,
         });
-        showError(error.message);
+        showError(getFriendlyErrorMessage(error));
         setSaving(false);
         return;
       }
@@ -334,7 +336,7 @@ export default function RecipeView({
           is_saved: prevSaved,
           save_count: prevSaveCount,
         });
-        showError(error.message);
+        showError(getFriendlyErrorMessage(error));
         setSaving(false);
         return;
       }
@@ -368,7 +370,7 @@ export default function RecipeView({
       .match({ id: recipe.id });
     error = res.error;
     if (error) {
-      showError(error.message);
+      showError(getFriendlyErrorMessage(error));
       setDeleteConfirmOpen(false);
       return;
     }
