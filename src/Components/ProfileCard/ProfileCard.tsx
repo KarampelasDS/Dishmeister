@@ -9,7 +9,6 @@ import {
   Forward,
   MessageSquareWarning,
 } from "lucide-react";
-import { useFeedCache } from "../../Context/FeedCacheContext";
 import { useToast } from "../../Context/ToastContext";
 import { useNavigate } from "react-router";
 import { useState } from "react";
@@ -84,10 +83,7 @@ export default function ProfileCard({
             </button>
             {menuOpen && (
               <div className={styles.menuDropdown}>
-                <button
-                  className={styles.menuItem}
-                  onClick={handleShare}
-                >
+                <button className={styles.menuItem} onClick={handleShare}>
                   <Forward />
                   Share
                 </button>

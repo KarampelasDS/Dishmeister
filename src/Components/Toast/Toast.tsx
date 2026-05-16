@@ -1,4 +1,3 @@
-import React from "react";
 import styles from "./Toast.module.css";
 import { CheckCircle, XCircle, Info, X } from "lucide-react";
 
@@ -21,7 +20,11 @@ export default function Toast({ message, type, onClose }: ToastProps) {
         <Icon size={20} />
       </div>
       <p className={styles.message}>{message}</p>
-      <button className={styles.closeBtn} onClick={onClose} aria-label="Close toast">
+      <button
+        className={styles.closeBtn}
+        onClick={onClose}
+        aria-label="Close toast"
+      >
         <X size={16} />
       </button>
       <div className={styles.progressBar} />

@@ -64,7 +64,7 @@ interface RecipeCardProps {
 
 export default function RecipeCard({ recipe }: RecipeCardProps) {
   const navigate = useNavigate();
-  const { invalidate, patchRecipe } = useFeedCache();
+  const { patchRecipe } = useFeedCache();
   const { setIsAuthOpen, showError } = useAuth();
   const { showToast } = useToast();
 
@@ -343,10 +343,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
                   {isSaved ? <BookmarkCheck color="#f59e0b" /> : <Bookmark />}
                   {isSaved ? "Unsave" : "Save"}
                 </button>
-                <button
-                  className={styles.menuItem}
-                  onClick={handleShare}
-                >
+                <button className={styles.menuItem} onClick={handleShare}>
                   <Forward />
                   Share
                 </button>
