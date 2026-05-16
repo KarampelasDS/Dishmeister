@@ -5,8 +5,6 @@ import styles from "./ReportModal.module.css";
 import { useAuth } from "../../Context/AuthProvider";
 import SuccessModal from "../SuccessModal/SuccessModal";
 
-
-
 interface ReportModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -34,16 +32,17 @@ export default function ReportModal({
   const [success, setSuccess] = useState(false);
   const { setIsAuthOpen, showError } = useAuth();
 
-
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
     if (!selectedReason) return;
-    
+
     setIsSubmitting(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         setIsAuthOpen(true);
         setIsSubmitting(false);
@@ -52,16 +51,17 @@ export default function ReportModal({
 
       const reportData: any = {
         reporter_id: user.id,
-        reason: selectedReason === "Other" ? `Other: ${otherDetails}` : selectedReason,
+        reason:
+          selectedReason === "Other"
+            ? `Other: ${otherDetails}`
+            : selectedReason,
       };
 
       if (targetType === "recipe") reportData.recipe_id = targetId;
       if (targetType === "comment") reportData.comment_id = targetId;
       if (targetType === "user") reportData.reported_user_id = targetId;
 
-      const { error } = await supabase
-        .from("reports")
-        .insert(reportData);
+      const { error } = await supabase.from("reports").insert(reportData);
 
       if (error) throw error;
 
@@ -69,10 +69,9 @@ export default function ReportModal({
       setSelectedReason("");
       setOtherDetails("");
     } catch (error: any) {
-
       console.error("Error submitting report:", error);
       let msg = error.message || "Failed to submit report. Please try again.";
-      
+
       // Handle unique constraint violations gracefully
       if (msg.includes("reports_reporter_id_recipe_id_idx")) {
         msg = "You have already reported this recipe.";
@@ -84,11 +83,9 @@ export default function ReportModal({
 
       showError(msg);
     } finally {
-
       setIsSubmitting(false);
     }
   };
-
 
   return (
     <div className={styles.wrapper} onClick={onClose}>
@@ -113,13 +110,12 @@ export default function ReportModal({
           </div>
 
           <p className={styles.subtitle}>
-            Why are you reporting this {targetType}? Your report is anonymous, 
-            except if you're reporting an intellectual property infringement.
+            Why are you reporting this {targetType}?
           </p>
 
           <div className={styles.optionsGrid}>
             {REPORT_REASONS.map((reason) => (
-              <div 
+              <div
                 key={reason}
                 className={`${styles.option} ${selectedReason === reason ? styles.selected : ""}`}
                 onClick={() => setSelectedReason(reason)}
@@ -141,17 +137,21 @@ export default function ReportModal({
         </div>
 
         <div className={styles.actions}>
-          <button 
-            className={styles.cancelBtn} 
+          <button
+            className={styles.cancelBtn}
             onClick={onClose}
             disabled={isSubmitting}
           >
             Cancel
           </button>
-          <button 
+          <button
             className={styles.submitBtn}
             onClick={handleSubmit}
-            disabled={!selectedReason || isSubmitting || (selectedReason === "Other" && !otherDetails.trim())}
+            disabled={
+              !selectedReason ||
+              isSubmitting ||
+              (selectedReason === "Other" && !otherDetails.trim())
+            }
           >
             {isSubmitting ? (
               <Loader2 className={styles.spin} size={20} />
@@ -162,6 +162,5 @@ export default function ReportModal({
         </div>
       </div>
     </div>
-
   );
 }

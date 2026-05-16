@@ -688,16 +688,23 @@ export default function EditProfilePage() {
           onClose={() => setAvatarEditorOpen(false)}
           onSave={async (canvas) => {
             if (!canvas) return;
-            const blob = await new Promise<Blob | null>((r) =>
-              canvas.toBlob(r, "image/png", 0.9),
-            );
-            if (!blob) return;
-            const compressed = await compressImage(
-              new File([blob], "avatar.png"),
-              "profile",
-            );
-            setAvatarFile(compressed);
-            setAvatarEditorOpen(false);
+            try {
+              const blob = await new Promise<Blob | null>((r) =>
+                canvas.toBlob(r, "image/png", 0.9),
+              );
+              if (!blob) return;
+              const compressed = await compressImage(
+                new File([blob], "avatar.png", { type: "image/png" }),
+                "profile",
+              );
+              setAvatarFile(compressed);
+              setAvatarEditorOpen(false);
+            } catch (err: any) {
+              setError({
+                title: "Image processing failed.",
+                detail: err.message || "Try a different image.",
+              });
+            }
           }}
           imageFile={avatarFile}
         />
