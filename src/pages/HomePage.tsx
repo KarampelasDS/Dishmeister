@@ -147,14 +147,27 @@ function HomePage() {
         .eq("recipe_saves.saved_by", userId)
         .order("created_at", { ascending: false })
         .range(from, to));
+
+      if (!error) {
+        data = transformRecipes(data ?? []);
+      }
     } else {
-      ({ data, error } = await supabase
-        .from("recipes")
-        .select(SHARED_SELECT)
-        .eq("recipe_reactions.user_id", userId)
-        .eq("recipe_saves.saved_by", userId)
-        .order("save_count", { ascending: false })
-        .range(from, to));
+      // For You tab: using algorithm feed RPC
+      const { data: rpcData, error: rpcError } = await supabase.rpc(
+        "get_algorithm_feed",
+        {
+          p_user_id: user?.id ?? null,
+          p_limit: PAGE_SIZE,
+          p_offset: from,
+        },
+      );
+
+      error = rpcError;
+      data = rpcData?.map((recipe: any) => ({
+        ...recipe,
+        current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
+        is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
+      }));
     }
 
     loadingRef.current = false;
@@ -167,8 +180,8 @@ function HomePage() {
 
     if (activeTabRef.current !== tab) return;
 
-    const transformed = transformRecipes(data ?? []);
-    const newHasMore = (data ?? []).length === PAGE_SIZE;
+    const transformed = (data ?? []) as Recipe[];
+    const newHasMore = transformed.length === PAGE_SIZE;
 
     hasMoreRef.current = newHasMore;
     setHasMore(newHasMore);
