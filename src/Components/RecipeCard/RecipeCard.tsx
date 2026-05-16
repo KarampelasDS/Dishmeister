@@ -63,7 +63,7 @@ interface RecipeCardProps {
 
 export default function RecipeCard({ recipe }: RecipeCardProps) {
   const navigate = useNavigate();
-  const { invalidate, patchRecipe } = useFeedCache();
+  const { patchRecipe } = useFeedCache();
   const { setIsAuthOpen, showError } = useAuth();
 
   const convertTimeToMinutes = (
