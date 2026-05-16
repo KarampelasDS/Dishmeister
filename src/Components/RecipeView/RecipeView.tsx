@@ -428,7 +428,11 @@ export default function RecipeView({
         {/* HERO */}
         <div className={styles.hero}>
           <img
-            src={recipe.image_url ? `${supabaseUrl}${recipe.image_url}` : "/assets/pasta.jpg"}
+            src={
+              recipe.image_url
+                ? `${supabaseUrl}${recipe.image_url}`
+                : "/assets/pasta.jpg"
+            }
             alt={recipe.title}
             className={styles.heroImage}
           />
@@ -464,10 +468,7 @@ export default function RecipeView({
                   {isSaved ? <BookmarkCheck /> : <Bookmark />}
                   {isSaved ? "Unsave" : "Save"}
                 </button>
-                <button
-                  className={styles.menuItem}
-                  onClick={handleShare}
-                >
+                <button className={styles.menuItem} onClick={handleShare}>
                   <Forward />
                   Share
                 </button>
@@ -546,7 +547,11 @@ export default function RecipeView({
               onClick={() => onUserClick(recipe.profiles.username || "")}
             >
               <img
-                src={recipe.profiles.avatar_url ? `${supabaseAvatarUrl}${recipe.profiles.avatar_url}` : "/defaultAvatar.png"}
+                src={
+                  recipe.profiles.avatar_url
+                    ? `${supabaseAvatarUrl}${recipe.profiles.avatar_url}`
+                    : "/defaultAvatar.png"
+                }
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;
                   target.onerror = null;
@@ -596,7 +601,7 @@ export default function RecipeView({
               </button>
 
               <button className={styles.iconBtn}>
-                <Share2 size={18} />
+                <Share2 size={18} onClick={handleShare} />
               </button>
             </div>
           </div>

@@ -59,6 +59,7 @@ function App() {
     <div>
       <Analytics />
       <Header
+        userId={session?.user?.id ?? null}
         username={profile?.username ?? null}
         displayName={profile?.display_name ?? null}
         avatarUrl={profile?.avatar_url ?? null}

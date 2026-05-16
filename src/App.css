@@ -143,3 +143,10 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(255, 105, 0, 0.4);
 }
+
+@media screen and (max-width: 960px) {
+  body {
+    padding-bottom: 80px;
+  }
+}
+
