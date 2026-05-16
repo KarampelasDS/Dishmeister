@@ -18,6 +18,7 @@ import EditProfilePage from "./pages/EditProfile";
 import { Analytics } from "@vercel/analytics/react";
 import Loader from "./Components/Loader/Loader";
 import ErrorModal from "./Components/ErrorModal/ErrorModal";
+import TermsOfService from "./pages/TermsOfService";
 
 function App() {
   useScrollRestoration(["/explore"]);
@@ -114,6 +115,7 @@ function App() {
             )
           }
         />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
       </Routes>
 
       <AuthModal

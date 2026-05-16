@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router";
 import { supabase } from "../supabase";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
 import Loader from "../Components/Loader/Loader";
 
 import styles from "./Explore.module.css";
 import { useFeedCache } from "../Context/FeedCacheContext";
+import { ArrowLeft } from "lucide-react";
 
 type Recipe = {
   id: string;
@@ -67,6 +69,7 @@ type Tab = "saved" | "liked";
 
 function SavedRecipes() {
   const { state, setFeed, isStale } = useFeedCache();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("saved");
 
   const cached = activeTab === "saved" ? state.savedRecipes : state.likedRecipes;
@@ -281,7 +284,13 @@ function SavedRecipes() {
   }, []);
 
   return (
-    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0rem 1rem" }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "1rem 1rem" }}>
+      <div className={styles.backRow}>
+        <span onClick={() => navigate(-1)}>
+          <ArrowLeft size={18} />
+          <span>Back</span>
+        </span>
+      </div>
       <h1 style={{ fontSize: "2rem", fontWeight: 700, marginBottom: "0.5rem" }}>
         Library
       </h1>

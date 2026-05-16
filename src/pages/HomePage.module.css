@@ -90,3 +90,43 @@
     display: none;
   }
 }
+
+.sidebarFooter {
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.footerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--text-muted);
+  font-size: 13px;
+  align-items: center;
+}
+
+.footerLinks a, .footerLinks span {
+  color: var(--text-muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.footerLinks a:hover, .footerLinks span:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+
+.footerDot {
+  font-size: 10px;
+  opacity: 0.5;
+}
+
+.copyright {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 4px;
+}

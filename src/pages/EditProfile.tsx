@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate, Link } from "react-router";
 import { supabase } from "../supabase";
 import { useAuth } from "../Context/AuthProvider";
 import PhotoEditor from "../Components/PhotoEditor/PhotoEditor";
@@ -8,22 +9,23 @@ import ErrorModal from "../Components/ErrorModal/ErrorModal";
 import { useToast } from "../Context/ToastContext";
 
 import styles from "./EditProfilePage.module.css";
-import { 
-  Settings, 
-  Camera, 
-  User, 
-  FileText, 
-  Lock, 
-  ShieldAlert, 
-  Share2, 
-  Plus, 
-  Trash2, 
+import {
+  Settings,
+  Camera,
+  User,
+  FileText,
+  Lock,
+  ShieldAlert,
+  Share2,
+  Plus,
+  Trash2,
   Instagram,
   Twitter,
   Youtube,
   Globe,
   Link as LinkIcon,
-  Facebook
+  Facebook,
+  ArrowLeft,
 } from "lucide-react";
 import { compressImage } from "../utils/compressImage";
 
@@ -46,8 +48,6 @@ type ProfileFields = {
   social_links: SocialLink[];
 };
 
-const USERNAME_PATTERN = /^[a-z0-9_]+$/;
-
 const PLATFORMS = [
   { id: "Instagram", icon: Instagram },
   { id: "Twitter", icon: Twitter },
@@ -66,6 +66,7 @@ type AppError = {
 export default function EditProfilePage() {
   const { session, refreshProfile } = useAuth();
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,7 +78,6 @@ export default function EditProfilePage() {
     username_changed_at: null,
     social_links: [],
   });
-  const [originalUsername, setOriginalUsername] = useState("");
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
@@ -85,13 +85,10 @@ export default function EditProfilePage() {
     null,
   );
   const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
-  const [fileKey, setFileKey] = useState(0);
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState<AppError | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [compressing, setCompressing] = useState(false);
 
   // Security states
   const [newPassword, setNewPassword] = useState("");
@@ -150,7 +147,9 @@ export default function EditProfilePage() {
     } catch (err: any) {
       setError({
         title: "Account deletion failed.",
-        detail: err.message || "Make sure you've run the SQL script in your dashboard.",
+        detail:
+          err.message ||
+          "Make sure you've run the SQL script in your dashboard.",
       });
       setLoading(false);
     }
@@ -162,7 +161,9 @@ export default function EditProfilePage() {
     const fetchProfile = async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("username, display_name, bio, avatar_url, username_changed_at, social_links")
+        .select(
+          "username, display_name, bio, avatar_url, username_changed_at, social_links",
+        )
         .eq("id", session.user.id)
         .single();
 
@@ -183,7 +184,6 @@ export default function EditProfilePage() {
         username_changed_at: data.username_changed_at ?? null,
         social_links: (data.social_links as SocialLink[]) || [],
       });
-      setOriginalUsername(data.username ?? "");
       setCurrentAvatarPath(data.avatar_url ?? null);
       setFetching(false);
     };
@@ -219,7 +219,6 @@ export default function EditProfilePage() {
     }
 
     if (fileInputRef.current) fileInputRef.current.value = "";
-    setFileKey((k) => k + 1);
     setAvatarFile(file);
     setAvatarEditorOpen(true);
   };
@@ -247,7 +246,6 @@ export default function EditProfilePage() {
 
   const handleSave = async () => {
     setError(null);
-    setSuccess(false);
 
     if (!fields.username.trim() || !fields.display_name.trim()) {
       setError({
@@ -275,7 +273,6 @@ export default function EditProfilePage() {
       if (error) throw error;
 
       await refreshProfile();
-      setSuccess(true);
       showToast("Profile updated successfully!", "success");
       location.href = `/profiles/${fields.username}`;
     } catch (err: any) {
@@ -294,14 +291,15 @@ export default function EditProfilePage() {
       setLinkError("Please enter a URL.");
       return;
     }
-    
+
     let formattedUrl = newLinkUrl.trim();
     if (!formattedUrl.startsWith("http")) {
       formattedUrl = `https://${formattedUrl}`;
     }
 
     // Basic URL validation
-    const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+    const urlPattern =
+      /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
     if (!urlPattern.test(formattedUrl)) {
       setLinkError("Please enter a valid URL (e.g., instagram.com/chef)");
       return;
@@ -319,15 +317,15 @@ export default function EditProfilePage() {
     }
 
     const newLink = { platform: newLinkPlatform, url: formattedUrl };
-    setFields(p => ({ ...p, social_links: [...p.social_links, newLink] }));
+    setFields((p) => ({ ...p, social_links: [...p.social_links, newLink] }));
     setNewLinkUrl("");
     setIsAddingLink(false);
   };
 
   const removeSocialLink = (index: number) => {
-    setFields(p => ({
+    setFields((p) => ({
       ...p,
-      social_links: p.social_links.filter((_, i) => i !== index)
+      social_links: p.social_links.filter((_, i) => i !== index),
     }));
   };
 
@@ -339,6 +337,13 @@ export default function EditProfilePage() {
 
   return (
     <div className={styles.page}>
+      <div className={styles.backRow}>
+        <span onClick={() => navigate(-1)}>
+          <ArrowLeft size={18} />
+          <span>Back</span>
+        </span>
+      </div>
+
       {/* Page Header */}
       <div className={styles.pageHeader}>
         <div className={styles.pageHeaderIcon}>
@@ -389,7 +394,9 @@ export default function EditProfilePage() {
               </button>
             </div>
             <p className={styles.avatarName}>{fields.display_name || "Chef"}</p>
-            <p className={styles.avatarHandle}>@{fields.username || "username"}</p>
+            <p className={styles.avatarHandle}>
+              @{fields.username || "username"}
+            </p>
           </div>
 
           <div className={styles.formColumn}>
@@ -400,7 +407,9 @@ export default function EditProfilePage() {
                   type="text"
                   className={styles.input}
                   value={fields.display_name}
-                  onChange={(e) => setFields(p => ({ ...p, display_name: e.target.value }))}
+                  onChange={(e) =>
+                    setFields((p) => ({ ...p, display_name: e.target.value }))
+                  }
                 />
               </div>
               <div className={styles.field}>
@@ -409,7 +418,12 @@ export default function EditProfilePage() {
                   type="text"
                   className={styles.input}
                   value={fields.username}
-                  onChange={(e) => setFields(p => ({ ...p, username: e.target.value.toLowerCase() }))}
+                  onChange={(e) =>
+                    setFields((p) => ({
+                      ...p,
+                      username: e.target.value.toLowerCase(),
+                    }))
+                  }
                 />
               </div>
             </div>
@@ -422,10 +436,14 @@ export default function EditProfilePage() {
                 className={styles.textarea}
                 maxLength={150}
                 value={fields.bio}
-                onChange={(e) => setFields(p => ({ ...p, bio: e.target.value }))}
+                onChange={(e) =>
+                  setFields((p) => ({ ...p, bio: e.target.value }))
+                }
                 placeholder="Tell the world about your cooking style..."
               />
-              <small className={styles.charCount}>{fields.bio.length}/150</small>
+              <small className={styles.charCount}>
+                {fields.bio.length}/150
+              </small>
             </div>
           </div>
         </div>
@@ -444,18 +462,25 @@ export default function EditProfilePage() {
             {fields.social_links.length > 0 ? (
               <div className={styles.linksList}>
                 {fields.social_links.map((link, idx) => {
-                  const PlatformIcon = PLATFORMS.find(p => p.id === link.platform)?.icon || LinkIcon;
+                  const PlatformIcon =
+                    PLATFORMS.find((p) => p.id === link.platform)?.icon ||
+                    LinkIcon;
                   return (
                     <div key={idx} className={styles.linkItem}>
                       <div className={styles.linkInfo}>
-                        <PlatformIcon size={18} className={styles.platformIcon} />
+                        <PlatformIcon
+                          size={18}
+                          className={styles.platformIcon}
+                        />
                         <div className={styles.linkDetails}>
-                          <span className={styles.platformName}>{link.platform}</span>
+                          <span className={styles.platformName}>
+                            {link.platform}
+                          </span>
                           <span className={styles.platformUrl}>{link.url}</span>
                         </div>
                       </div>
-                      <button 
-                        className={styles.removeLink} 
+                      <button
+                        className={styles.removeLink}
                         onClick={() => removeSocialLink(idx)}
                         title="Remove link"
                       >
@@ -467,12 +492,18 @@ export default function EditProfilePage() {
               </div>
             ) : (
               <div className={styles.emptySocials}>
-                <p>No contact links added yet. Add your socials to help people connect with you!</p>
+                <p>
+                  No contact links added yet. Add your socials to help people
+                  connect with you!
+                </p>
               </div>
             )}
 
             {!isAddingLink ? (
-              <button className={styles.addLinkBtn} onClick={() => setIsAddingLink(true)}>
+              <button
+                className={styles.addLinkBtn}
+                onClick={() => setIsAddingLink(true)}
+              >
                 <Plus size={16} /> Add Social Link
               </button>
             ) : (
@@ -480,21 +511,23 @@ export default function EditProfilePage() {
                 <div className={styles.fieldRow}>
                   <div className={styles.field}>
                     <label className={styles.label}>Platform</label>
-                    <select 
+                    <select
                       className={styles.input}
                       value={newLinkPlatform}
                       onChange={(e) => setNewLinkPlatform(e.target.value)}
                     >
-                      {PLATFORMS.map(p => (
-                        <option key={p.id} value={p.id}>{p.id}</option>
+                      {PLATFORMS.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.id}
+                        </option>
                       ))}
                     </select>
                   </div>
                   <div className={styles.field}>
                     <label className={styles.label}>URL</label>
-                    <input 
-                      type="text" 
-                      className={styles.input} 
+                    <input
+                      type="text"
+                      className={styles.input}
                       placeholder="instagram.com/chef"
                       value={newLinkUrl}
                       onChange={(e) => setNewLinkUrl(e.target.value)}
@@ -503,8 +536,8 @@ export default function EditProfilePage() {
                 </div>
                 {linkError && <p className={styles.socialError}>{linkError}</p>}
                 <div className={styles.formActions}>
-                  <Button 
-                    text="Cancel" 
+                  <Button
+                    text="Cancel"
                     onButtonClick={() => {
                       setIsAddingLink(false);
                       setLinkError(null);
@@ -513,12 +546,12 @@ export default function EditProfilePage() {
                     textColor="var(--text)"
                     outline="1px solid var(--border)"
                   />
-                  <Button 
-                    text="Add Link" 
+                  <Button
+                    text="Add Link"
                     onButtonClick={addSocialLink}
                     backgroundColor="var(--primary)"
                     textColor="#fff"
-                    outline="1px solid var(--border)" 
+                    outline="1px solid var(--border)"
                   />
                 </div>
               </div>
@@ -548,15 +581,26 @@ export default function EditProfilePage() {
                 onChange={(e) => setNewPassword(e.target.value)}
               />
             </div>
-            {passwordSuccess && <p className={styles.success}>Password updated!</p>}
+            {passwordSuccess && (
+              <p className={styles.success}>Password updated!</p>
+            )}
+            {passwordError && (
+              <p className={styles.socialError}>{passwordError}</p>
+            )}
             <div className={styles.actions}>
               <Button
                 text={passwordLoading ? "Updating..." : "Update Password"}
                 onButtonClick={handlePasswordUpdate}
                 isActive={newPassword.length >= 6}
-                backgroundColor={newPassword.length >= 6 ? "linear-gradient(135deg, #ff6a00, #ff2e2e)" : "var(--header-bg)"}
+                backgroundColor={
+                  newPassword.length >= 6
+                    ? "linear-gradient(135deg, #ff6a00, #ff2e2e)"
+                    : "var(--header-bg)"
+                }
                 textColor={newPassword.length >= 6 ? "#fff" : "var(--text)"}
-                outline={newPassword.length >= 6 ? "0px" : "1px solid var(--border)"}
+                outline={
+                  newPassword.length >= 6 ? "0px" : "1px solid var(--border)"
+                }
               />
             </div>
           </div>
@@ -564,12 +608,26 @@ export default function EditProfilePage() {
       </div>
 
       {/* Danger Zone */}
-      <div className={styles.card} style={{ border: "1px solid rgba(239, 68, 68, 0.3)", background: "rgba(239, 68, 68, 0.02)" }}>
-        <div className={styles.cardHeader} style={{ background: "rgba(239, 68, 68, 0.05)", borderBottom: "1px solid rgba(239, 68, 68, 0.1)" }}>
+      <div
+        className={styles.card}
+        style={{
+          border: "1px solid rgba(239, 68, 68, 0.3)",
+          background: "rgba(239, 68, 68, 0.02)",
+        }}
+      >
+        <div
+          className={styles.cardHeader}
+          style={{
+            background: "rgba(239, 68, 68, 0.05)",
+            borderBottom: "1px solid rgba(239, 68, 68, 0.1)",
+          }}
+        >
           <span className={styles.cardHeaderIcon}>
             <ShieldAlert size={18} style={{ color: "#ef4444" }} />
           </span>
-          <h2 className={styles.cardTitle} style={{ color: "#ef4444" }}>Danger Zone</h2>
+          <h2 className={styles.cardTitle} style={{ color: "#ef4444" }}>
+            Danger Zone
+          </h2>
         </div>
         <div className={styles.cardBody}>
           <div className={styles.formColumn}>
@@ -583,10 +641,21 @@ export default function EditProfilePage() {
               />
             ) : (
               <div className={styles.deleteConfirm}>
-                <p>This is permanent. Your recipes and profile will be gone forever.</p>
+                <p>
+                  This is permanent. Your recipes and profile will be gone
+                  forever.
+                </p>
                 <div className={styles.confirmButtons}>
-                  <Button text="Confirm Delete" onButtonClick={handleDeleteAccount} backgroundColor="#ef4444" textColor="#fff" />
-                  <Button text="Cancel" onButtonClick={() => setShowDeleteConfirm(false)} />
+                  <Button
+                    text="Confirm Delete"
+                    onButtonClick={handleDeleteAccount}
+                    backgroundColor="#ef4444"
+                    textColor="#fff"
+                  />
+                  <Button
+                    text="Cancel"
+                    onButtonClick={() => setShowDeleteConfirm(false)}
+                  />
                 </div>
               </div>
             )}
@@ -605,7 +674,13 @@ export default function EditProfilePage() {
         />
       </div>
 
-      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={handleAvatarChange}
+      />
 
       {avatarEditorOpen && avatarFile && (
         <PhotoEditor
@@ -613,19 +688,46 @@ export default function EditProfilePage() {
           onClose={() => setAvatarEditorOpen(false)}
           onSave={async (canvas) => {
             if (!canvas) return;
-            const blob = await new Promise<Blob | null>(r => canvas.toBlob(r, "image/png", 0.9));
+            const blob = await new Promise<Blob | null>((r) =>
+              canvas.toBlob(r, "image/png", 0.9),
+            );
             if (!blob) return;
-            setCompressing(true);
-            const compressed = await compressImage(new File([blob], "avatar.png"), "profile");
+            const compressed = await compressImage(
+              new File([blob], "avatar.png"),
+              "profile",
+            );
             setAvatarFile(compressed);
             setAvatarEditorOpen(false);
-            setCompressing(false);
           }}
           imageFile={avatarFile}
         />
       )}
 
-      {error && <ErrorModal isOpen={!!error} onClose={() => setError(null)} title={error.title} message={error.detail || ""} />}
+      {error && (
+        <ErrorModal
+          isOpen={!!error}
+          onClose={() => setError(null)}
+          title={error.title}
+          message={error.detail || ""}
+        />
+      )}
+
+      <div className={styles.footer}>
+        <div className={styles.footerLinks}>
+          <a
+            href="https://app.termly.io/policy-viewer/policy.html?policyUUID=360c148b-116d-45e4-9614-0464a4ccc0ff"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Privacy
+          </a>
+          <span className={styles.footerDot}>•</span>
+          <Link to="/terms-of-service">Terms</Link>
+        </div>
+        <div className={styles.copyright}>
+          © {new Date().getFullYear()} Dishmeister
+        </div>
+      </div>
     </div>
   );
 }

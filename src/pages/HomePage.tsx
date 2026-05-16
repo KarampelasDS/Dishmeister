@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { Link } from "react-router";
 import { supabase } from "../supabase";
 import RecipeCard from "../Components/RecipeCard/RecipeCard";
 import Loader from "../Components/Loader/Loader";
@@ -92,7 +93,8 @@ const SHARED_SELECT = `
 `;
 
 function HomePage() {
-  const { state, setFeed, isStale, invalidate, setSidebarData } = useFeedCache();
+  const { state, setFeed, isStale, invalidate, setSidebarData } =
+    useFeedCache();
   const { setIsAuthOpen } = useAuth();
 
   const [activeTab, setActiveTab] = useState<FeedTab>("for-you");
@@ -102,7 +104,9 @@ function HomePage() {
   const [notFollowingAnyone, setNotFollowingAnyone] = useState(false);
   const [topRecipes, setTopRecipes] = useState<TopRecipe[]>([]);
   const [topChefs, setTopChefs] = useState<TopChef[]>([]);
-  const [followLoadingIds, setFollowLoadingIds] = useState<Set<string>>(new Set());
+  const [followLoadingIds, setFollowLoadingIds] = useState<Set<string>>(
+    new Set(),
+  );
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
@@ -236,7 +240,7 @@ function HomePage() {
       });
     }
   };
- 
+
   const handleFollow = async (chefId: string) => {
     const {
       data: { user },
@@ -254,52 +258,60 @@ function HomePage() {
       const chef = topChefs.find((c) => c.id === chefId);
       if (!chef) return;
 
-    const isFollowing = chef.is_following;
+      const isFollowing = chef.is_following;
 
-    if (isFollowing) {
-      const { error } = await supabase
-        .from("follows")
-        .delete()
-        .eq("follower_id", user.id)
-        .eq("following_id", chefId);
+      if (isFollowing) {
+        const { error } = await supabase
+          .from("follows")
+          .delete()
+          .eq("follower_id", user.id)
+          .eq("following_id", chefId);
 
-      if (error) {
-        console.error(error);
-        return;
+        if (error) {
+          console.error(error);
+          return;
+        }
+
+        invalidate("following");
+        setTopChefs((prev) => {
+          const updated = prev.map((c) =>
+            c.id === chefId
+              ? {
+                  ...c,
+                  is_following: false,
+                  follower_count: c.follower_count - 1,
+                }
+              : c,
+          );
+          setSidebarData(updated, topRecipes);
+          return updated;
+        });
+      } else {
+        const { error } = await supabase
+          .from("follows")
+          .insert({ follower_id: user.id, following_id: chefId });
+
+        if (error) {
+          console.error(error);
+          return;
+        }
+
+        invalidate("following");
+        setTopChefs((prev) => {
+          const updated = prev.map((c) =>
+            c.id === chefId
+              ? {
+                  ...c,
+                  is_following: true,
+                  follower_count: c.follower_count + 1,
+                }
+              : c,
+          );
+          setSidebarData(updated, topRecipes);
+          return updated;
+        });
       }
-
-      invalidate("following");
-      setTopChefs((prev) => {
-        const updated = prev.map((c) =>
-          c.id === chefId
-            ? { ...c, is_following: false, follower_count: c.follower_count - 1 }
-            : c,
-        );
-        setSidebarData(updated, topRecipes);
-        return updated;
-      });
-    } else {
-      const { error } = await supabase
-        .from("follows")
-        .insert({ follower_id: user.id, following_id: chefId });
-
-      if (error) {
-        console.error(error);
-        return;
-      }
-
-      invalidate("following");
-      setTopChefs((prev) => {
-        const updated = prev.map((c) =>
-          c.id === chefId
-            ? { ...c, is_following: true, follower_count: c.follower_count + 1 }
-            : c,
-        );
-        setSidebarData(updated, topRecipes);
-        return updated;
-      });
-    }
-  } finally {
+    } finally {
       setFollowLoadingIds((prev) => {
         const next = new Set(prev);
         next.delete(chefId);
@@ -398,7 +410,9 @@ function HomePage() {
               chefs.map((c: any) => c.id),
             );
 
-          const followedIds = new Set(follows?.map((f) => f.following_id) || []);
+          const followedIds = new Set(
+            follows?.map((f) => f.following_id) || [],
+          );
           transformedChefs = chefs.map((c: any) => ({
             ...c,
             is_following: followedIds.has(c.id),
@@ -514,6 +528,22 @@ function HomePage() {
             onFollow={handleFollow}
             followLoadingIds={followLoadingIds}
           />
+
+          <div className={styles.sidebarFooter}>
+            <div className={styles.footerLinks}>
+              <a
+                href="https://app.termly.io/policy-viewer/policy.html?policyUUID=360c148b-116d-45e4-9614-0464a4ccc0ff"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Privacy
+              </a>
+              <span className={styles.footerDot}>•</span>
+              <Link to="/terms-of-service">Terms</Link>
+              <span className={styles.footerDot}>•</span>
+              <span>© {new Date().getFullYear()} Dishmeister</span>
+            </div>
+          </div>
         </div>
       </div>
     </>

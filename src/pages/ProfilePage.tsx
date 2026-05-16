@@ -9,6 +9,11 @@ import styles from "./ProfilePage.module.css";
 import { useFeedCache } from "../Context/FeedCacheContext";
 import { useAuth } from "../Context/AuthProvider";
 
+type SocialLink = {
+  platform: string;
+  url: string;
+};
+
 type profileType = {
   id: string;
   username: string;
@@ -19,6 +24,7 @@ type profileType = {
   follower_count: number;
   following_count: number;
   total_likes: number;
+  social_links: SocialLink[];
 };
 
 type Recipe = {
