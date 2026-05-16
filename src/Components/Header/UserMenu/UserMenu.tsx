@@ -106,7 +106,7 @@ export default function UserMenu({
               }
             }}
           >
-            Saved Recipes
+            Library
           </MenuItem>
 
           <MenuItem
