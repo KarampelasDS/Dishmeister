@@ -15,6 +15,13 @@ import { useState } from "react";
 import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
 
+import ContactModal from "../ContactModal/ContactModal";
+
+type SocialLink = {
+  platform: string;
+  url: string;
+};
+
 type profileType = {
   id: string;
   username: string;
@@ -25,6 +32,7 @@ type profileType = {
   follower_count: number;
   following_count: number;
   total_likes: number;
+  social_links: SocialLink[];
 };
 
 export default function ProfileCard({
@@ -40,6 +48,8 @@ export default function ProfileCard({
   followActive: boolean;
   isOwnProfile: boolean;
 }) {
+  const [contactModalOpen, setContactModalOpen] = useState(false);
+
   const supabaseAvatarUrl = import.meta.env
     .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 
@@ -206,6 +216,7 @@ export default function ProfileCard({
                 textColor="#374151"
                 outline="0px "
                 isActive={true}
+                onButtonClick={() => setContactModalOpen(true)}
               >
                 <Mail size={18} /> Contact
               </Button>
@@ -213,6 +224,14 @@ export default function ProfileCard({
           </div>
         </div>
       </div>
+
+      <ContactModal
+        isOpen={contactModalOpen}
+        onClose={() => setContactModalOpen(false)}
+        socialLinks={profile?.social_links || []}
+        isOwnProfile={isOwnProfile}
+        displayName={profile?.display_name || "Chef"}
+      />
     </>
   );
 }

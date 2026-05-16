@@ -5,17 +5,37 @@ import PhotoEditor from "../Components/PhotoEditor/PhotoEditor";
 import Button from "../Components/Button/Button";
 import Loader from "../Components/Loader/Loader";
 import ErrorModal from "../Components/ErrorModal/ErrorModal";
+import { useToast } from "../Context/ToastContext";
 
 import styles from "./EditProfilePage.module.css";
-import { Settings, Camera } from "lucide-react";
+import { 
+  Settings, 
+  Camera, 
+  User, 
+  FileText, 
+  Lock, 
+  ShieldAlert, 
+  Share2, 
+  Plus, 
+  Trash2, 
+  Instagram,
+  Twitter,
+  Youtube,
+  Globe,
+  Link as LinkIcon,
+  Facebook
+} from "lucide-react";
 import { compressImage } from "../utils/compressImage";
-
-import { useToast } from "../Context/ToastContext";
 
 const AVATAR_BUCKET = "avatars";
 const MAX_FILE_MB = 20;
 const SUPABASE_AVATAR_URL = import.meta.env
   .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
+
+type SocialLink = {
+  platform: string;
+  url: string;
+};
 
 type ProfileFields = {
   username: string;
@@ -23,9 +43,20 @@ type ProfileFields = {
   bio: string;
   email: string;
   username_changed_at: string | null;
+  social_links: SocialLink[];
 };
 
 const USERNAME_PATTERN = /^[a-z0-9_]+$/;
+
+const PLATFORMS = [
+  { id: "Instagram", icon: Instagram },
+  { id: "Twitter", icon: Twitter },
+  { id: "TikTok", icon: Share2 },
+  { id: "YouTube", icon: Youtube },
+  { id: "Facebook", icon: Facebook },
+  { id: "Website", icon: Globe },
+  { id: "Other", icon: LinkIcon },
+];
 
 type AppError = {
   title: string;
@@ -44,6 +75,7 @@ export default function EditProfilePage() {
     bio: "",
     email: "",
     username_changed_at: null,
+    social_links: [],
   });
   const [originalUsername, setOriginalUsername] = useState("");
 
@@ -68,8 +100,13 @@ export default function EditProfilePage() {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Social Links state
+  const [isAddingLink, setIsAddingLink] = useState(false);
+  const [newLinkPlatform, setNewLinkPlatform] = useState(PLATFORMS[0].id);
+  const [newLinkUrl, setNewLinkUrl] = useState("");
+  const [linkError, setLinkError] = useState<string | null>(null);
+
   useEffect(() => {
-    // Check if user is here to reset password
     const params = new URLSearchParams(window.location.search);
     if (params.get("reset") === "true") {
       showToast("Ready to update your password!", "info");
@@ -104,11 +141,9 @@ export default function EditProfilePage() {
     if (!session?.user.id) return;
     setLoading(true);
     try {
-      // 1. Call the custom delete_user() function in Supabase
       const { error: rpcError } = await supabase.rpc("delete_user");
       if (rpcError) throw rpcError;
 
-      // 2. Local cleanup
       await supabase.auth.signOut();
       showToast("Account deleted successfully.", "info");
       window.location.href = "/";
@@ -121,23 +156,13 @@ export default function EditProfilePage() {
     }
   };
 
-  const usernameChangedAt = fields.username_changed_at
-    ? new Date(fields.username_changed_at)
-    : null;
-  const usernameUnlockDate = usernameChangedAt
-    ? new Date(usernameChangedAt.getTime() + 14 * 24 * 60 * 60 * 1000)
-    : null;
-  const usernameIsLocked = usernameUnlockDate
-    ? usernameUnlockDate > new Date()
-    : false;
-
   useEffect(() => {
     if (!session?.user.id) return;
 
     const fetchProfile = async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("username, display_name, bio, avatar_url, username_changed_at")
+        .select("username, display_name, bio, avatar_url, username_changed_at, social_links")
         .eq("id", session.user.id)
         .single();
 
@@ -156,6 +181,7 @@ export default function EditProfilePage() {
         bio: data.bio ?? "",
         email: session.user.email ?? "",
         username_changed_at: data.username_changed_at ?? null,
+        social_links: (data.social_links as SocialLink[]) || [],
       });
       setOriginalUsername(data.username ?? "");
       setCurrentAvatarPath(data.avatar_url ?? null);
@@ -219,142 +245,90 @@ export default function EditProfilePage() {
     return path;
   };
 
-  const getSaveError = (err: any): AppError => {
-    const message = String(err?.message ?? "").toLowerCase();
-    const details = String(err?.details ?? "").toLowerCase();
-    const code = String(err?.code ?? "");
-
-    if (
-      code === "23505" ||
-      message.includes("duplicate") ||
-      details.includes("already exists")
-    ) {
-      return {
-        title: "That username is already taken.",
-        detail: "Try adding a word, number, or underscore to make it yours.",
-      };
-    }
-
-    if (message.includes("storage") || message.includes("upload")) {
-      return {
-        title: "The avatar upload failed.",
-        detail: "Try a smaller image or upload it again in a moment.",
-      };
-    }
-
-    return {
-      title: "We couldn't save your profile.",
-      detail: "Check your connection and try again.",
-    };
-  };
-
-  const validateProfile = () => {
-    const username = fields.username.trim();
-
-    if (!username) {
-      setError({
-        title: "Choose a username.",
-        detail: "Your username is how people find your profile.",
-      });
-      return null;
-    }
-
-    if (!USERNAME_PATTERN.test(username)) {
-      setError({
-        title: "Use only lowercase letters, numbers, and underscores.",
-        detail: "For example: chef_maria or baker42.",
-      });
-      return null;
-    }
-
-    if (!fields.display_name.trim()) {
-      setError({
-        title: "Add a display name.",
-        detail: "This is the name people see on your recipes and profile.",
-      });
-      return null;
-    }
-
-    return {
-      username,
-      displayName: fields.display_name.trim(),
-      bio: fields.bio.trim(),
-    };
-  };
-
-  const usernameIsTaken = async (username: string) => {
-    if (!session?.user.id || username === originalUsername) return false;
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", username)
-      .neq("id", session.user.id)
-      .maybeSingle();
-
-    if (error) throw error;
-    return Boolean(data);
-  };
-
   const handleSave = async () => {
     setError(null);
     setSuccess(false);
 
-    const profile = validateProfile();
-    if (!profile) return;
+    if (!fields.username.trim() || !fields.display_name.trim()) {
+      setError({
+        title: "Missing required fields.",
+        detail: "Username and Display Name are required.",
+      });
+      return;
+    }
 
     try {
       setLoading(true);
-      const taken = await usernameIsTaken(profile.username);
-
-      if (taken) {
-        setError({
-          title: "That username is already taken.",
-          detail: "Try adding a word, number, or underscore to make it yours.",
-        });
-        return;
-      }
-
       const uploadedPath = await uploadAvatar();
 
       const { error } = await supabase
         .from("profiles")
         .update({
-          username: profile.username,
-          display_name: profile.displayName,
-          bio: profile.bio,
+          username: fields.username.toLowerCase(),
+          display_name: fields.display_name,
+          bio: fields.bio,
           avatar_url: uploadedPath,
+          social_links: fields.social_links,
         })
         .eq("id", session!.user.id);
 
       if (error) throw error;
 
-      // mark new avatar as referenced, old one as unreferenced
-      if (avatarFile && uploadedPath) {
-        await supabase
-          .from("storage_objects")
-          .update({ referenced: true })
-          .eq("bucket", AVATAR_BUCKET)
-          .eq("path", uploadedPath);
-
-        if (currentAvatarPath) {
-          await supabase
-            .from("storage_objects")
-            .update({ referenced: false })
-            .eq("bucket", AVATAR_BUCKET)
-            .eq("path", currentAvatarPath);
-        }
-      }
-
       await refreshProfile();
-      setOriginalUsername(profile.username);
       setSuccess(true);
-      location.href = `/profiles/${profile.username}`;
+      showToast("Profile updated successfully!", "success");
+      location.href = `/profiles/${fields.username}`;
     } catch (err: any) {
-      setError(getSaveError(err));
+      setError({
+        title: "Save failed.",
+        detail: err.message || "Try again later.",
+      });
     } finally {
       setLoading(false);
     }
+  };
+
+  const addSocialLink = () => {
+    setLinkError(null);
+    if (!newLinkUrl.trim()) {
+      setLinkError("Please enter a URL.");
+      return;
+    }
+    
+    let formattedUrl = newLinkUrl.trim();
+    if (!formattedUrl.startsWith("http")) {
+      formattedUrl = `https://${formattedUrl}`;
+    }
+
+    // Basic URL validation
+    const urlPattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
+    if (!urlPattern.test(formattedUrl)) {
+      setLinkError("Please enter a valid URL (e.g., instagram.com/chef)");
+      return;
+    }
+
+    // Platform-specific validation (Soft warnings)
+    const platformLower = newLinkPlatform.toLowerCase();
+    if (platformLower !== "other" && platformLower !== "website") {
+      const pId = platformLower === "twitter" ? "twitter|x.com" : platformLower;
+      const platformRegex = new RegExp(pId, "i");
+      if (!platformRegex.test(formattedUrl)) {
+        setLinkError(`This doesn't look like a ${newLinkPlatform} link.`);
+        return;
+      }
+    }
+
+    const newLink = { platform: newLinkPlatform, url: formattedUrl };
+    setFields(p => ({ ...p, social_links: [...p.social_links, newLink] }));
+    setNewLinkUrl("");
+    setIsAddingLink(false);
+  };
+
+  const removeSocialLink = (index: number) => {
+    setFields(p => ({
+      ...p,
+      social_links: p.social_links.filter((_, i) => i !== index)
+    }));
   };
 
   const avatarDisplayUrl =
@@ -373,20 +347,21 @@ export default function EditProfilePage() {
         <div>
           <h1 className={styles.pageTitle}>Account Settings</h1>
           <p className={styles.pageSubtitle}>
-            Manage your account preferences and settings
+            Manage your profile, security, and social links
           </p>
         </div>
       </div>
 
-      {/* Profile Information Card */}
+      {/* Profile Section */}
       <div className={styles.card}>
         <div className={styles.cardHeader}>
-          <span className={styles.cardHeaderIcon}>👤</span>
-          <h2 className={styles.cardTitle}>Profile Information</h2>
+          <span className={styles.cardHeaderIcon}>
+            <User size={18} />
+          </span>
+          <h2 className={styles.cardTitle}>Basic Profile</h2>
         </div>
 
         <div className={styles.cardBody}>
-          {/* Avatar column */}
           <div className={styles.avatarColumn}>
             <div className={styles.avatarWrap}>
               {avatarDisplayUrl ? (
@@ -409,26 +384,14 @@ export default function EditProfilePage() {
                 className={styles.avatarEditBtn}
                 onClick={() => fileInputRef.current?.click()}
                 type="button"
-                aria-label="Change avatar"
               >
-                <Camera size={12} />
+                <Camera size={14} />
               </button>
             </div>
-
-            <input
-              ref={fileInputRef}
-              key={fileKey}
-              type="file"
-              accept="image/*"
-              className={styles.hiddenInput}
-              onChange={handleAvatarChange}
-            />
-
-            <p className={styles.avatarName}>{fields.display_name || "—"}</p>
-            <p className={styles.avatarHandle}>@{fields.username || "—"}</p>
+            <p className={styles.avatarName}>{fields.display_name || "Chef"}</p>
+            <p className={styles.avatarHandle}>@{fields.username || "username"}</p>
           </div>
 
-          {/* Form column */}
           <div className={styles.formColumn}>
             <div className={styles.fieldRow}>
               <div className={styles.field}>
@@ -437,124 +400,163 @@ export default function EditProfilePage() {
                   type="text"
                   className={styles.input}
                   value={fields.display_name}
-                  onChange={(e) =>
-                    setFields((p) => ({ ...p, display_name: e.target.value }))
-                  }
+                  onChange={(e) => setFields(p => ({ ...p, display_name: e.target.value }))}
                 />
               </div>
-
               <div className={styles.field}>
-                <label className={styles.label}>
-                  Username
-                  {usernameIsLocked && (
-                    <span className={styles.lockedBadge}>
-                      Locked until {usernameUnlockDate!.toLocaleDateString()}
-                    </span>
-                  )}
-                </label>
+                <label className={styles.label}>Username</label>
                 <input
                   type="text"
                   className={styles.input}
                   value={fields.username}
-                  disabled={usernameIsLocked}
-                  onChange={(e) =>
-                    setFields((p) => ({
-                      ...p,
-                      username: e.target.value
-                        .toLowerCase()
-                        .replace(/\s|@/g, ""),
-                    }))
-                  }
+                  onChange={(e) => setFields(p => ({ ...p, username: e.target.value.toLowerCase() }))}
                 />
-                {!usernameIsLocked && originalUsername !== fields.username && (
-                  <small className={styles.hint}>
-                    You won't be able to change this again for 14 days.
-                  </small>
-                )}
               </div>
             </div>
 
             <div className={styles.field}>
-              <label className={styles.label}>Email</label>
-              <input
-                type="email"
-                className={styles.input}
-                value={fields.email}
-                disabled
-              />
-            </div>
-
-            <div className={styles.field}>
-              <label className={styles.label}>Bio</label>
+              <label className={styles.label}>
+                <FileText size={14} style={{ marginRight: 6 }} /> Bio
+              </label>
               <textarea
                 className={styles.textarea}
                 maxLength={150}
                 value={fields.bio}
-                onChange={(e) =>
-                  setFields((p) => ({ ...p, bio: e.target.value }))
-                }
+                onChange={(e) => setFields(p => ({ ...p, bio: e.target.value }))}
+                placeholder="Tell the world about your cooking style..."
               />
-              <small className={styles.charCount}>
-                {fields.bio.length}/150
-              </small>
-            </div>
-
-            {success && <p className={styles.success}>Profile updated!</p>}
-            {error && (
-              <ErrorModal
-                isOpen={!!error}
-                onClose={() => setError(null)}
-                title={error.title}
-                message={error.detail || ""}
-              />
-            )}
-
-            <div className={styles.actions}>
-              <Button
-                text={loading ? "Saving..." : "Save Changes"}
-                backgroundColor="linear-gradient(135deg, #ff6a00, #ff2e2e)"
-                textColor="#fff"
-                outline="0px"
-                isActive={!loading}
-                onButtonClick={handleSave}
-              />
+              <small className={styles.charCount}>{fields.bio.length}/150</small>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Security Card */}
+      {/* Social Presence Section */}
       <div className={styles.card}>
         <div className={styles.cardHeader}>
-          <span className={styles.cardHeaderIcon}>🔒</span>
-          <h2 className={styles.cardTitle}>Security & Password</h2>
+          <span className={styles.cardHeaderIcon}>
+            <Share2 size={18} />
+          </span>
+          <h2 className={styles.cardTitle}>Social Presence</h2>
+        </div>
+        <div className={styles.cardBody}>
+          <div className={styles.socialManager}>
+            {fields.social_links.length > 0 ? (
+              <div className={styles.linksList}>
+                {fields.social_links.map((link, idx) => {
+                  const PlatformIcon = PLATFORMS.find(p => p.id === link.platform)?.icon || LinkIcon;
+                  return (
+                    <div key={idx} className={styles.linkItem}>
+                      <div className={styles.linkInfo}>
+                        <PlatformIcon size={18} className={styles.platformIcon} />
+                        <div className={styles.linkDetails}>
+                          <span className={styles.platformName}>{link.platform}</span>
+                          <span className={styles.platformUrl}>{link.url}</span>
+                        </div>
+                      </div>
+                      <button 
+                        className={styles.removeLink} 
+                        onClick={() => removeSocialLink(idx)}
+                        title="Remove link"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className={styles.emptySocials}>
+                <p>No contact links added yet. Add your socials to help people connect with you!</p>
+              </div>
+            )}
+
+            {!isAddingLink ? (
+              <button className={styles.addLinkBtn} onClick={() => setIsAddingLink(true)}>
+                <Plus size={16} /> Add Social Link
+              </button>
+            ) : (
+              <div className={styles.linkForm}>
+                <div className={styles.fieldRow}>
+                  <div className={styles.field}>
+                    <label className={styles.label}>Platform</label>
+                    <select 
+                      className={styles.input}
+                      value={newLinkPlatform}
+                      onChange={(e) => setNewLinkPlatform(e.target.value)}
+                    >
+                      {PLATFORMS.map(p => (
+                        <option key={p.id} value={p.id}>{p.id}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className={styles.field}>
+                    <label className={styles.label}>URL</label>
+                    <input 
+                      type="text" 
+                      className={styles.input} 
+                      placeholder="instagram.com/chef"
+                      value={newLinkUrl}
+                      onChange={(e) => setNewLinkUrl(e.target.value)}
+                    />
+                  </div>
+                </div>
+                {linkError && <p className={styles.socialError}>{linkError}</p>}
+                <div className={styles.formActions}>
+                  <Button 
+                    text="Cancel" 
+                    onButtonClick={() => {
+                      setIsAddingLink(false);
+                      setLinkError(null);
+                    }}
+                    backgroundColor="var(--header-bg)"
+                    textColor="var(--text)"
+                    outline="1px solid var(--border)"
+                  />
+                  <Button 
+                    text="Add Link" 
+                    onButtonClick={addSocialLink}
+                    backgroundColor="var(--primary)"
+                    textColor="#fff"
+                    outline="1px solid var(--border)" 
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Security Section */}
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <span className={styles.cardHeaderIcon}>
+            <Lock size={18} />
+          </span>
+          <h2 className={styles.cardTitle}>Security</h2>
         </div>
         <div className={styles.cardBody}>
           <div className={styles.formColumn}>
-            <p className={styles.sectionHint}>
-              To update your password, enter a new one below. We'll send a confirmation email if required.
-            </p>
             <div className={styles.field}>
-              <label className={styles.label}>New Password</label>
+              <label className={styles.label}>Update Password</label>
               <input
                 ref={passwordInputRef}
                 type="password"
                 className={styles.input}
-                placeholder="••••••••"
+                placeholder="New password (min 6 chars)"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
               />
             </div>
-            {passwordSuccess && <p className={styles.success}>Password updated successfully!</p>}
-            {passwordError && <p className={styles.error}>{passwordError}</p>}
+            {passwordSuccess && <p className={styles.success}>Password updated!</p>}
             <div className={styles.actions}>
               <Button
                 text={passwordLoading ? "Updating..." : "Update Password"}
-                backgroundColor="var(--header-bg)"
-                textColor="var(--text)"
-                outline="1px solid var(--border)"
-                isActive={!passwordLoading && newPassword.length >= 6}
                 onButtonClick={handlePasswordUpdate}
+                isActive={newPassword.length >= 6}
+                backgroundColor={newPassword.length >= 6 ? "linear-gradient(135deg, #ff6a00, #ff2e2e)" : "var(--header-bg)"}
+                textColor={newPassword.length >= 6 ? "#fff" : "var(--text)"}
+                outline={newPassword.length >= 6 ? "0px" : "1px solid var(--border)"}
               />
             </div>
           </div>
@@ -562,79 +564,68 @@ export default function EditProfilePage() {
       </div>
 
       {/* Danger Zone */}
-      <div className={styles.card} style={{ border: "1px solid rgba(239, 68, 68, 0.2)" }}>
-        <div className={styles.cardHeader}>
-          <span className={styles.cardHeaderIcon}>⚠️</span>
+      <div className={styles.card} style={{ border: "1px solid rgba(239, 68, 68, 0.3)", background: "rgba(239, 68, 68, 0.02)" }}>
+        <div className={styles.cardHeader} style={{ background: "rgba(239, 68, 68, 0.05)", borderBottom: "1px solid rgba(239, 68, 68, 0.1)" }}>
+          <span className={styles.cardHeaderIcon}>
+            <ShieldAlert size={18} style={{ color: "#ef4444" }} />
+          </span>
           <h2 className={styles.cardTitle} style={{ color: "#ef4444" }}>Danger Zone</h2>
         </div>
         <div className={styles.cardBody}>
           <div className={styles.formColumn}>
-            <p className={styles.sectionHint}>
-              Deleting your account is permanent and cannot be undone. All your recipes, likes, and followers will be lost.
-            </p>
-            <div className={styles.actions}>
-              {!showDeleteConfirm ? (
-                <Button
-                  text="Delete Account"
-                  backgroundColor="rgba(239, 68, 68, 0.1)"
-                  textColor="#ef4444"
-                  outline="1px solid #ef4444"
-                  onButtonClick={() => setShowDeleteConfirm(true)}
-                />
-              ) : (
-                <div className={styles.confirmRow}>
-                  <p>Are you absolutely sure?</p>
-                  <div className={styles.confirmButtons}>
-                    <Button
-                      text={loading ? "Deleting..." : "Yes, Delete Permanently"}
-                      backgroundColor="#ef4444"
-                      textColor="#fff"
-                      onButtonClick={handleDeleteAccount}
-                      isActive={!loading}
-                    />
-                    <Button
-                      text="Cancel"
-                      backgroundColor="var(--header-bg)"
-                      textColor="var(--text)"
-                      onButtonClick={() => setShowDeleteConfirm(false)}
-                    />
-                  </div>
+            {!showDeleteConfirm ? (
+              <Button
+                text="Delete Account"
+                backgroundColor="rgba(239, 68, 68, 0.08)"
+                textColor="#ef4444"
+                outline="1px solid rgba(239, 68, 68, 0.2)"
+                onButtonClick={() => setShowDeleteConfirm(true)}
+              />
+            ) : (
+              <div className={styles.deleteConfirm}>
+                <p>This is permanent. Your recipes and profile will be gone forever.</p>
+                <div className={styles.confirmButtons}>
+                  <Button text="Confirm Delete" onButtonClick={handleDeleteAccount} backgroundColor="#ef4444" textColor="#fff" />
+                  <Button text="Cancel" onButtonClick={() => setShowDeleteConfirm(false)} />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {avatarEditorOpen && avatarFile && (
-        <div className={styles.photoEditor}>
-          <PhotoEditor
-            key={fileKey}
-            mode="profile"
-            onClose={() => {
-              if (!compressing) setAvatarEditorOpen(false);
-            }}
-            onSave={async (canvas) => {
-              if (!canvas) return;
-              const blob = await new Promise<Blob | null>((r) =>
-                canvas.toBlob(r, "image/png", 0.9),
-              );
-              if (!blob) return;
+      <div className={styles.finalActions}>
+        <Button
+          text={loading ? "Saving Profile..." : "Save All Changes"}
+          backgroundColor="linear-gradient(135deg, #ff6a00, #ff2e2e)"
+          textColor="#fff"
+          onButtonClick={handleSave}
+          isActive={!loading}
+          outline="0px"
+        />
+      </div>
 
-              setCompressing(true);
-              const raw = new File([blob], "avatar.png", { type: "image/png" });
-              const compressed = await compressImage(raw, "profile");
-              setCompressing(false);
-              setAvatarFile(compressed);
-              setAvatarEditorOpen(false);
-            }}
-            onChangePhoto={() => {
-              if (!compressing) fileInputRef.current?.click();
-            }}
-            imageFile={avatarFile}
-          />
-        </div>
+      <input ref={fileInputRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
+
+      {avatarEditorOpen && avatarFile && (
+        <PhotoEditor
+          mode="profile"
+          onClose={() => setAvatarEditorOpen(false)}
+          onSave={async (canvas) => {
+            if (!canvas) return;
+            const blob = await new Promise<Blob | null>(r => canvas.toBlob(r, "image/png", 0.9));
+            if (!blob) return;
+            setCompressing(true);
+            const compressed = await compressImage(new File([blob], "avatar.png"), "profile");
+            setAvatarFile(compressed);
+            setAvatarEditorOpen(false);
+            setCompressing(false);
+          }}
+          imageFile={avatarFile}
+        />
       )}
+
+      {error && <ErrorModal isOpen={!!error} onClose={() => setError(null)} title={error.title} message={error.detail || ""} />}
     </div>
   );
 }
