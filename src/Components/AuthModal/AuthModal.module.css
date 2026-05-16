@@ -151,8 +151,78 @@
 
 .error {
   margin-top: 10px;
-  color: #d32f2f;
+  color: #ef4444;
   font-size: 13px;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  line-height: 1.4;
+}
+
+.success {
+  margin-top: 10px;
+  color: #10b981;
+  font-size: 13px;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 10px;
+  border-radius: 8px;
+  line-height: 1.4;
+}
+
+.labelRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  margin-bottom: 6px;
+}
+
+.labelRow label {
+  margin: 0 !important;
+}
+
+.forgotLink {
+  background: none;
+  border: none;
+  color: #ff6a00;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+}
+
+.forgotLink:hover {
+  text-decoration: underline;
+}
+
+.backLink {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.forgotHeader {
+  text-align: center;
+  margin-bottom: 20px;
+  margin-top: 10px;
+}
+
+.forgotHeader h2 {
+  font-size: 20px;
+  margin: 0 0 8px 0;
+}
+
+.forgotHeader p {
+  font-size: 14px;
+  color: var(--text-light);
+  line-height: 1.5;
+  margin: 0;
 }
 
 .close {
@@ -164,6 +234,7 @@
   background: none;
   cursor: pointer;
   color: white;
+  z-index: 10;
 }
 
 /* ========================= */

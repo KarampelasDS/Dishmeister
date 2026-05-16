@@ -326,6 +326,32 @@
   z-index: 10000000;
 }
 
+.sectionHint {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0 0 4px 0;
+}
+
+.confirmRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.confirmRow p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.confirmButtons {
+  display: flex;
+  gap: 12px;
+}
+
 /* ── Responsive ── */
 
 @media only screen and (max-width: 640px) {

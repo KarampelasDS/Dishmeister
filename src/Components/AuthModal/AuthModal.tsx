@@ -20,22 +20,49 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setSuccess(null);
+      setError(null);
+      setIsForgotPassword(false);
+      return;
+    }
     invalidateAll();
 
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "auto";
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/settings?reset=true`,
+      });
+      if (error) throw error;
+      setSuccess("Check your email for the password reset link!");
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
 
     try {
       setLoading(true);
@@ -62,9 +89,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         if (data.session) {
           onClose();
         } else {
-          setError(
-            "Account created. Check your email to confirm before logging in.",
-          );
+          setSuccess("Welcome to Dishmeister! Please check your email to confirm your account.");
           setIsLogin(true);
         }
       }
@@ -120,7 +145,14 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         </div>
 
         {/* FORM */}
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit} className={styles.form}>
+          {isForgotPassword && (
+            <div className={styles.forgotHeader}>
+              <h2>Reset Password</h2>
+              <p>Enter your email address and we'll send you a link to reset your password.</p>
+            </div>
+          )}
+
           <label>Email Address</label>
           <div className={styles.inputWrapper}>
             <Mail size={18} />
@@ -133,26 +165,42 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             />
           </div>
 
-          <label>Password</label>
-          <div className={styles.inputWrapper}>
-            <Lock size={18} />
-            <input
-              type={showPassword ? "text" : "password"}
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className={styles.eye}
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
+          {!isForgotPassword && (
+            <>
+              <div className={styles.labelRow}>
+                <label>Password</label>
+                {isLogin && (
+                  <button
+                    type="button"
+                    className={styles.forgotLink}
+                    onClick={() => setIsForgotPassword(true)}
+                  >
+                    Forgot Password?
+                  </button>
+                )}
+              </div>
+              <div className={styles.inputWrapper}>
+                <Lock size={18} />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={styles.eye}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </>
+          )}
 
           {error && <div className={styles.error}>{error}</div>}
+          {success && <div className={styles.success}>{success}</div>}
 
           <div className={styles.submit}>
             <Button
@@ -164,10 +212,21 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             >
               {loading
                 ? "Please wait..."
-                : isLogin
-                  ? "Login"
-                  : "Create Account"}
+                : isForgotPassword
+                  ? "Send Reset Link"
+                  : isLogin
+                    ? "Login"
+                    : "Create Account"}
             </Button>
+            {isForgotPassword && (
+              <button
+                type="button"
+                className={styles.backLink}
+                onClick={() => setIsForgotPassword(false)}
+              >
+                Back to Login
+              </button>
+            )}
           </div>
         </form>
 

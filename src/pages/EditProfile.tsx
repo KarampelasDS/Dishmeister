@@ -10,6 +10,8 @@ import styles from "./EditProfilePage.module.css";
 import { Settings, Camera } from "lucide-react";
 import { compressImage } from "../utils/compressImage";
 
+import { useToast } from "../Context/ToastContext";
+
 const AVATAR_BUCKET = "avatars";
 const MAX_FILE_MB = 20;
 const SUPABASE_AVATAR_URL = import.meta.env
@@ -32,7 +34,9 @@ type AppError = {
 
 export default function EditProfilePage() {
   const { session, refreshProfile } = useAuth();
+  const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
 
   const [fields, setFields] = useState<ProfileFields>({
     username: "",
@@ -56,6 +60,66 @@ export default function EditProfilePage() {
   const [error, setError] = useState<AppError | null>(null);
   const [success, setSuccess] = useState(false);
   const [compressing, setCompressing] = useState(false);
+
+  // Security states
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    // Check if user is here to reset password
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("reset") === "true") {
+      showToast("Ready to update your password!", "info");
+      passwordInputRef.current?.focus();
+    }
+  }, []);
+
+  const handlePasswordUpdate = async () => {
+    if (newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters.");
+      return;
+    }
+    setPasswordLoading(true);
+    setPasswordError(null);
+    setPasswordSuccess(false);
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      setPasswordError(error.message);
+    } else {
+      setPasswordSuccess(true);
+      setNewPassword("");
+      showToast("Password updated successfully!", "success");
+    }
+    setPasswordLoading(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!session?.user.id) return;
+    setLoading(true);
+    try {
+      // 1. Call the custom delete_user() function in Supabase
+      const { error: rpcError } = await supabase.rpc("delete_user");
+      if (rpcError) throw rpcError;
+
+      // 2. Local cleanup
+      await supabase.auth.signOut();
+      showToast("Account deleted successfully.", "info");
+      window.location.href = "/";
+    } catch (err: any) {
+      setError({
+        title: "Account deletion failed.",
+        detail: err.message || "Make sure you've run the SQL script in your dashboard.",
+      });
+      setLoading(false);
+    }
+  };
 
   const usernameChangedAt = fields.username_changed_at
     ? new Date(fields.username_changed_at)
@@ -454,6 +518,89 @@ export default function EditProfilePage() {
                 isActive={!loading}
                 onButtonClick={handleSave}
               />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Security Card */}
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <span className={styles.cardHeaderIcon}>🔒</span>
+          <h2 className={styles.cardTitle}>Security & Password</h2>
+        </div>
+        <div className={styles.cardBody}>
+          <div className={styles.formColumn}>
+            <p className={styles.sectionHint}>
+              To update your password, enter a new one below. We'll send a confirmation email if required.
+            </p>
+            <div className={styles.field}>
+              <label className={styles.label}>New Password</label>
+              <input
+                ref={passwordInputRef}
+                type="password"
+                className={styles.input}
+                placeholder="••••••••"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            {passwordSuccess && <p className={styles.success}>Password updated successfully!</p>}
+            {passwordError && <p className={styles.error}>{passwordError}</p>}
+            <div className={styles.actions}>
+              <Button
+                text={passwordLoading ? "Updating..." : "Update Password"}
+                backgroundColor="var(--header-bg)"
+                textColor="var(--text)"
+                outline="1px solid var(--border)"
+                isActive={!passwordLoading && newPassword.length >= 6}
+                onButtonClick={handlePasswordUpdate}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Danger Zone */}
+      <div className={styles.card} style={{ border: "1px solid rgba(239, 68, 68, 0.2)" }}>
+        <div className={styles.cardHeader}>
+          <span className={styles.cardHeaderIcon}>⚠️</span>
+          <h2 className={styles.cardTitle} style={{ color: "#ef4444" }}>Danger Zone</h2>
+        </div>
+        <div className={styles.cardBody}>
+          <div className={styles.formColumn}>
+            <p className={styles.sectionHint}>
+              Deleting your account is permanent and cannot be undone. All your recipes, likes, and followers will be lost.
+            </p>
+            <div className={styles.actions}>
+              {!showDeleteConfirm ? (
+                <Button
+                  text="Delete Account"
+                  backgroundColor="rgba(239, 68, 68, 0.1)"
+                  textColor="#ef4444"
+                  outline="1px solid #ef4444"
+                  onButtonClick={() => setShowDeleteConfirm(true)}
+                />
+              ) : (
+                <div className={styles.confirmRow}>
+                  <p>Are you absolutely sure?</p>
+                  <div className={styles.confirmButtons}>
+                    <Button
+                      text={loading ? "Deleting..." : "Yes, Delete Permanently"}
+                      backgroundColor="#ef4444"
+                      textColor="#fff"
+                      onButtonClick={handleDeleteAccount}
+                      isActive={!loading}
+                    />
+                    <Button
+                      text="Cancel"
+                      backgroundColor="var(--header-bg)"
+                      textColor="var(--text)"
+                      onButtonClick={() => setShowDeleteConfirm(false)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
