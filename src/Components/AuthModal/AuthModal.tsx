@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 import { Mail, Lock, Eye, EyeOff, ChefHat, X } from "lucide-react";
 import { supabase } from "../../supabase";
 import styles from "./AuthModal.module.css";
@@ -227,6 +228,21 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 Back to Login
               </button>
             )}
+          </div>
+
+          <div className={styles.legalLinks}>
+            By continuing, you agree to our{" "}
+            <Link to="/terms-of-service" onClick={onClose}>
+              Terms
+            </Link>{" "}
+            and{" "}
+            <a
+              href="https://app.termly.io/policy-viewer/policy.html?policyUUID=360c148b-116d-45e4-9614-0464a4ccc0ff"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Privacy Policy
+            </a>
           </div>
         </form>
 
