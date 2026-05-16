@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 
 import {
   ArrowLeft,
@@ -106,6 +106,7 @@ export default function RecipeView({
   onCommentAdded,
   onCommentDeleted,
 }: RecipeViewProps) {
+  const navigate = useNavigate();
   const { invalidate, patchRecipe } = useFeedCache();
   const { profile, setIsAuthOpen, showError } = useAuth();
   const { showToast } = useToast();
@@ -631,6 +632,7 @@ export default function RecipeView({
               border="2px solid var(--stat3-border)"
               background="var(--stat3-bg)"
               iconColor="var(--stat3-icon)"
+              onClick={() => navigate(`/explore?category=${recipe.categories.id}`)}
             />
             <ProfileStat
               stat="Comments"

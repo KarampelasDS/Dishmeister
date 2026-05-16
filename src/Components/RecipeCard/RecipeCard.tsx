@@ -469,6 +469,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
               border="2px solid var(--stat3-border)"
               background="var(--stat3-bg)"
               iconColor="var(--stat3-icon)"
+              onClick={() => navigate(`/explore?category=${recipe?.categories.id}`)}
             />
           </div>
 

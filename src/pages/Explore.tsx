@@ -159,14 +159,25 @@ function Explore() {
   const [searchFiltersOpen, setSearchFiltersOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(
     !!(
+      searchParams.get("category") ||
       cachedFilters.category ||
       cachedFilters.difficulty ||
       cachedFilters.country
     ),
   );
   const [selectedCategory, setSelectedCategory] = useState<string>(
-    cachedFilters.category,
+    searchParams.get("category") || cachedFilters.category,
   );
+
+  useEffect(() => {
+    const urlCategory = searchParams.get("category");
+    if (urlCategory) {
+      setSelectedCategory(urlCategory);
+      setFiltersOpen(true);
+      setTopFilter("all"); // Ensure it drops to "all" to show all recipes in that category
+    }
+  }, [searchParams]);
+
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | "">(
     cachedFilters.difficulty as Difficulty | "",
   );
