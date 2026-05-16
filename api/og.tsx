@@ -45,7 +45,7 @@ export default async function handler(req: Request) {
     title = title || "Discover Delicious Recipes";
     author = author || "Dishmeister";
     difficulty = difficulty || "Medium";
-    imageUrl = imageUrl || "https://dishmeister.vercel.app/assets/pasta.jpg";
+    imageUrl = imageUrl || "";
 
     return new ImageResponse(
       (
@@ -58,8 +58,7 @@ export default async function handler(req: Request) {
             alignItems: "center",
             justifyContent: "center",
             backgroundColor: "#fff",
-            backgroundImage: "linear-gradient(to bottom right, #f8fafc, #f1f5f9)",
-            fontFamily: "sans-serif",
+            backgroundImage: "linear-gradient(to bottom right, #f8fafc, #e2e8f0)",
           }}
         >
           {/* Background Decorative Element */}
@@ -70,7 +69,7 @@ export default async function handler(req: Request) {
               right: -100,
               width: 400,
               height: 400,
-              borderRadius: "50%",
+              borderRadius: 200,
               background: "linear-gradient(135deg, #ff7a18, #af002d)",
               opacity: 0.1,
             }}
@@ -80,23 +79,21 @@ export default async function handler(req: Request) {
             style={{
               display: "flex",
               flexDirection: "row",
-              width: "90%",
-              height: "80%",
-              backgroundColor: "rgba(255, 255, 255, 0.8)",
-              borderRadius: 32,
+              width: "1000px",
+              height: "500px",
+              backgroundColor: "white",
+              borderRadius: "24px",
               overflow: "hidden",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
-              border: "1px solid rgba(0, 0, 0, 0.05)",
+              border: "1px solid #e2e8f0",
             }}
           >
             {/* Left side: Image */}
-            <div style={{ display: "flex", width: "45%", height: "100%" }}>
+            <div style={{ display: "flex", width: "450px", height: "100%", overflow: "hidden" }}>
               <img
                 src={imageUrl}
                 style={{
                   width: "100%",
                   height: "100%",
-                  objectFit: "cover",
                 }}
               />
             </div>
@@ -106,60 +103,60 @@ export default async function handler(req: Request) {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                width: "55%",
-                padding: "48px",
+                width: "550px",
+                padding: "40px",
                 justifyContent: "space-between",
               }}
             >
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 <div
                   style={{
                     display: "flex",
-                    padding: "8px 16px",
-                    borderRadius: "99px",
+                    padding: "6px 14px",
+                    borderRadius: "20px",
                     backgroundColor: difficulty === "Easy" ? "#dcfce7" : difficulty === "Hard" ? "#fee2e2" : "#ffedd5",
                     color: difficulty === "Easy" ? "#166534" : difficulty === "Hard" ? "#991b1b" : "#9a3412",
-                    fontSize: "18px",
+                    fontSize: "16px",
                     fontWeight: "bold",
-                    width: "fit-content",
+                    marginBottom: "16px",
                   }}
                 >
                   {difficulty}
                 </div>
                 <h1
                   style={{
-                    fontSize: "48px",
+                    fontSize: "42px",
                     fontWeight: "900",
                     color: "#0f172a",
-                    lineHeight: 1.1,
+                    lineHeight: 1.2,
                     margin: 0,
-                    letterSpacing: "-0.04em",
                   }}
                 >
                   {title}
                 </h1>
-                <p style={{ fontSize: "24px", color: "#64748b", margin: 0 }}>
-                  by <span style={{ color: "#ef4444", fontWeight: "bold" }}>{author}</span>
-                </p>
+                <div style={{ display: "flex", fontSize: "22px", color: "#64748b", marginTop: "12px" }}>
+                  by <span style={{ color: "#ef4444", fontWeight: "bold", marginLeft: "6px" }}>{author}</span>
+                </div>
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center" }}>
                 <div
                   style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: "50%",
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
                     background: "linear-gradient(135deg, #ff7a18, #af002d)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
+                    marginRight: "12px",
                   }}
                 >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
                     <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
                   </svg>
                 </div>
-                <span style={{ fontSize: "24px", fontWeight: "bold", color: "#0f172a" }}>Dishmeister</span>
+                <span style={{ fontSize: "22px", fontWeight: "bold", color: "#0f172a" }}>Dishmeister</span>
               </div>
             </div>
           </div>
@@ -171,6 +168,6 @@ export default async function handler(req: Request) {
       }
     );
   } catch (e: any) {
-    return new Response(`Failed to generate image`, { status: 500 });
+    return new Response(`Failed to generate image: ${e.message}`, { status: 500 });
   }
 }
