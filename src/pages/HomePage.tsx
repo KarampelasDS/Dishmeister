@@ -6,6 +6,7 @@ import Loader from "../Components/Loader/Loader";
 import styles from "./HomePage.module.css";
 import { Sparkles, Users } from "lucide-react";
 import { useFeedCache } from "../Context/FeedCacheContext";
+import TopRecipes from "../Components/TopRecipes/TopRecipes";
 
 type Recipe = {
   id: string;
@@ -78,6 +79,7 @@ function HomePage() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(state.forYou.hasMore);
   const [notFollowingAnyone, setNotFollowingAnyone] = useState(false);
+  const [topRecipes, setTopRecipes] = useState<Recipe[]>([]);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
@@ -261,6 +263,24 @@ function HomePage() {
     fetchRecipes(0, activeTab);
   }, [activeTab]);
 
+  useEffect(() => {
+    const fetchTopRecipes = async () => {
+      const { data, error } = await supabase
+        .from("recipes")
+        .select(SHARED_SELECT)
+        .order("like_count", { ascending: false })
+        .limit(4);
+
+      if (error) {
+        console.error("Error fetching top recipes:", error);
+        return;
+      }
+      setTopRecipes(data ? transformRecipes(data) : []);
+    };
+
+    fetchTopRecipes();
+  }, []);
+
   // INFINITE SCROLL
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -286,51 +306,71 @@ function HomePage() {
   }, []);
 
   return (
-    <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 1rem 5rem" }}>
-      <div className={styles.feedToggle}>
-        {(["following", "for-you"] as FeedTab[]).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`${styles.feedToggleBtn} ${
-              activeTab === tab ? styles.active : ""
-            }`}
-          >
-            {tab === "for-you" ? (
-              <span>
-                <Sparkles /> For You
-              </span>
-            ) : (
-              <span>
-                <Users /> Following
-              </span>
-            )}
-          </button>
-        ))}
+    <>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          margin: "2rem 0",
+          alignItems: "flex-start",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 720,
+            margin: "0 auto",
+            padding: "0 1rem 5rem",
+          }}
+        >
+          <div className={styles.feedToggle}>
+            {(["following", "for-you"] as FeedTab[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`${styles.feedToggleBtn} ${
+                  activeTab === tab ? styles.active : ""
+                }`}
+              >
+                {tab === "for-you" ? (
+                  <span>
+                    <Sparkles /> For You
+                  </span>
+                ) : (
+                  <span>
+                    <Users /> Following
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {!loading && notFollowingAnyone && (
+            <p>You're not following anyone yet.</p>
+          )}
+
+          {!loading && !notFollowingAnyone && recipes.length === 0 && (
+            <p>No recipes yet.</p>
+          )}
+
+          <ul style={{ listStyle: "none", padding: 0 }}>
+            {recipes.map((recipe) => (
+              <RecipeCard key={recipe.id} recipe={recipe} />
+            ))}
+          </ul>
+
+          <div ref={sentinelRef} style={{ height: 1 }} />
+
+          {loading && <Loader />}
+
+          {!hasMore && recipes.length > 0 && (
+            <p style={{ textAlign: "center" }}>You're all caught up</p>
+          )}
+        </div>
+        <div className={styles.topRecipes}>
+          <TopRecipes recipes={topRecipes} />
+        </div>
       </div>
-
-      {!loading && notFollowingAnyone && (
-        <p>You're not following anyone yet.</p>
-      )}
-
-      {!loading && !notFollowingAnyone && recipes.length === 0 && (
-        <p>No recipes yet.</p>
-      )}
-
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {recipes.map((recipe) => (
-          <RecipeCard key={recipe.id} recipe={recipe} />
-        ))}
-      </ul>
-
-      <div ref={sentinelRef} style={{ height: 1 }} />
-
-      {loading && <Loader />}
-
-      {!hasMore && recipes.length > 0 && (
-        <p style={{ textAlign: "center" }}>You're all caught up</p>
-      )}
-    </div>
+    </>
   );
 }
 

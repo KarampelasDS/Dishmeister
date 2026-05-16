@@ -42,6 +42,24 @@
   box-shadow: 0 4px 10px rgba(255, 61, 61, 0.3);
 }
 
+.topRecipes {
+  margin: 2rem 0;
+  padding: 0 1rem;
+  position: sticky;
+  z-index: 50;
+  top: 80px;
+  right: 80px;
+}
+
+@media only screen and (max-width: 1400px) {
+  .feedToggle {
+    top: 100px;
+  }
+  .topRecipes {
+    display: none;
+  }
+}
+
 @media only screen and (max-width: 768px) {
   .feedToggle {
     top: 100px;
