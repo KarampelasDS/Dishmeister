@@ -87,7 +87,7 @@ const SHARED_SELECT = `
 
 export default function Profile() {
   const { invalidate, invalidateSidebar } = useFeedCache();
-  const { setIsAuthOpen } = useAuth();
+  const { setIsAuthOpen, showError } = useAuth();
   const { username } = useParams<{ username: string }>();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<profileType | null>(null);
