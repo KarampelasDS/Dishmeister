@@ -64,6 +64,7 @@ interface RecipeCardProps {
 
 export default function RecipeCard({ recipe }: RecipeCardProps) {
   const navigate = useNavigate();
+  const r = recipe as Recipe;
   const { patchRecipe } = useFeedCache();
   const { setIsAuthOpen, showError } = useAuth();
   const { showToast } = useToast();
@@ -109,8 +110,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
 
     return `${minutes} Min`;
   };
-
-  const r = recipe as Recipe;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
   const [reportModalOpen, setReportModalOpen] = useState(false);

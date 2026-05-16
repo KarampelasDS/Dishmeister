@@ -61,7 +61,7 @@ interface RecipeCardProps {
   children?: ReactNode;
 }
 
-export default function RecipeCard({ recipe }: RecipeCardProps) {
+export default function RecipeCompactCard({ recipe }: RecipeCardProps) {
   const navigate = useNavigate();
   const { invalidate, patchRecipe } = useFeedCache();
   const { setIsAuthOpen, showError } = useAuth();
