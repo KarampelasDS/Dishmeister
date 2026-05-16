@@ -15,7 +15,9 @@ export default function ProfileStat(props: any) {
       style={{
         background: props.background,
         border: props.border,
+        cursor: props.onClick ? "pointer" : "default",
       }}
+      onClick={props.onClick}
     >
       <div className={styles.header}>
         <div className={styles.icon}>

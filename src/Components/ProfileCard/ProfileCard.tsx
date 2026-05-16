@@ -14,8 +14,8 @@ import { useNavigate } from "react-router";
 import { useState } from "react";
 import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
-
 import ContactModal from "../ContactModal/ContactModal";
+import SocialModal from "../SocialModal/SocialModal";
 
 type SocialLink = {
   platform: string;
@@ -49,6 +49,8 @@ export default function ProfileCard({
   isOwnProfile: boolean;
 }) {
   const [contactModalOpen, setContactModalOpen] = useState(false);
+  const [socialModalOpen, setSocialModalOpen] = useState(false);
+  const [socialModalType, setSocialModalType] = useState<"followers" | "following">("followers");
 
   const supabaseAvatarUrl = import.meta.env
     .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
@@ -157,6 +159,7 @@ export default function ProfileCard({
               border="1px solid var(--stat1-border)"
               background="var(--stat1-bg)"
               iconColor="var(--stat1-icon)"
+              onClick={isOwnProfile ? () => { setSocialModalType("followers"); setSocialModalOpen(true); } : undefined}
             />
             <ProfileStat
               stat="Following"
@@ -164,6 +167,7 @@ export default function ProfileCard({
               border="1px solid var(--stat2-border)"
               background="var(--stat2-bg)"
               iconColor="var(--stat2-icon)"
+              onClick={isOwnProfile ? () => { setSocialModalType("following"); setSocialModalOpen(true); } : undefined}
             />
             <ProfileStat
               stat="Recipes"
@@ -232,6 +236,14 @@ export default function ProfileCard({
         isOwnProfile={isOwnProfile}
         displayName={profile?.display_name || "Chef"}
       />
+      {profile && (
+        <SocialModal
+          isOpen={socialModalOpen}
+          onClose={() => setSocialModalOpen(false)}
+          type={socialModalType}
+          profileId={profile.id}
+        />
+      )}
     </>
   );
 }
