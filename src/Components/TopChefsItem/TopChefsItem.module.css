@@ -1,8 +1,10 @@
 .container {
   display: flex;
   border-radius: 8px;
-  padding: 4px;
+  padding: 8px;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .container:hover {
@@ -11,20 +13,42 @@
 }
 
 .image {
-  width: 60px;
-  height: 60px;
+  width: 48px;
+  height: 48px;
   object-fit: cover;
-  border-radius: 32px;
-  margin-right: 12px;
+  border-radius: 50%;
 }
 
 .info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .likes {
   font-size: 0.8rem;
   color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.followButtonContainer {
+  min-width: 100px;
+}
+
+.followButtonContainer button {
+  font-size: 0.85rem !important;
+  padding: 6px 12px !important;
+  height: auto !important;
 }

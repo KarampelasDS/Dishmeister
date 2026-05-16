@@ -114,6 +114,11 @@ type FeedCacheState = {
 
   // Search
   searchCache: SearchCache;
+ 
+  // Sidebar
+  sidebarChefs: any[];
+  sidebarRecipes: any[];
+  sidebarLastFetched: number | null;
 };
 
 const initialState: FeedCacheState = {
@@ -127,6 +132,9 @@ const initialState: FeedCacheState = {
   exploreTabFilters: {},
   activeExploreTab: "all",
   searchCache: emptySearchCache(),
+  sidebarChefs: [],
+  sidebarRecipes: [],
+  sidebarLastFetched: null,
 };
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -177,7 +185,11 @@ type FeedCacheAction =
   | { type: "INVALIDATE_SEARCH"; query: string }
 
   // Cross-cutting recipe patch
-  | { type: "PATCH_RECIPE"; recipeId: string; patch: Record<string, any> };
+  | { type: "PATCH_RECIPE"; recipeId: string; patch: Record<string, any> }
+ 
+  // Sidebar
+  | { type: "SET_SIDEBAR_DATA"; chefs: any[]; recipes: any[] }
+  | { type: "INVALIDATE_SIDEBAR" };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -383,6 +395,22 @@ function feedCacheReducer(
       };
     }
 
+    case "SET_SIDEBAR_DATA":
+      return {
+        ...state,
+        sidebarChefs: action.chefs,
+        sidebarRecipes: action.recipes,
+        sidebarLastFetched: Date.now(),
+      };
+
+    case "INVALIDATE_SIDEBAR":
+      return {
+        ...state,
+        sidebarChefs: [],
+        sidebarRecipes: [],
+        sidebarLastFetched: null,
+      };
+
     default:
       return state;
   }
@@ -439,6 +467,10 @@ type FeedCacheContextType = {
 
   // Cross-cutting
   patchRecipe: (recipeId: string, patch: Record<string, any>) => void;
+ 
+  // Sidebar
+  setSidebarData: (chefs: any[], recipes: any[]) => void;
+  invalidateSidebar: () => void;
 };
 
 const FeedCacheContext = createContext<FeedCacheContextType | null>(null);
@@ -562,6 +594,9 @@ export function FeedCacheProvider({ children }: { children: ReactNode }) {
         isSearchStale,
         invalidateSearch,
         patchRecipe,
+        setSidebarData: (chefs: any[], recipes: any[]) =>
+          dispatch({ type: "SET_SIDEBAR_DATA", chefs, recipes }),
+        invalidateSidebar: () => dispatch({ type: "INVALIDATE_SIDEBAR" }),
       }}
     >
       {children}

@@ -78,7 +78,7 @@ const SHARED_SELECT = `
 `;
 
 export default function Profile() {
-  const { invalidate } = useFeedCache();
+  const { invalidate, invalidateSidebar } = useFeedCache();
   const { setIsAuthOpen } = useAuth();
   const { username } = useParams<{ username: string }>();
   const [loading, setLoading] = useState(true);
@@ -181,6 +181,7 @@ export default function Profile() {
         .eq("follower_id", user.id)
         .eq("following_id", profile.id);
       invalidate("following");
+      invalidateSidebar();
       setProfile((prevProfile) => {
         if (!prevProfile) return null;
         return {
@@ -200,6 +201,7 @@ export default function Profile() {
         .from("follows")
         .insert({ follower_id: user.id, following_id: profile.id });
       invalidate("following");
+      invalidateSidebar();
       setProfile((prevProfile) => {
         if (!prevProfile) return null;
         return {

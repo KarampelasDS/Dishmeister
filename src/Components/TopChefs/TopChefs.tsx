@@ -9,13 +9,20 @@ type TopChef = {
   avatar_url: string | null;
   follower_count: number;
   recipe_count: number;
+  is_following: boolean;
 };
 
 type TopChefsProps = {
   chefs: TopChef[];
+  onFollow: (id: string) => void;
+  followLoadingIds: Set<string>;
 };
 
-export default function TopChefs({ chefs }: TopChefsProps) {
+export default function TopChefs({
+  chefs,
+  onFollow,
+  followLoadingIds,
+}: TopChefsProps) {
   if (chefs.length == 0) return;
   return (
     <div className={styles.container}>
@@ -25,7 +32,12 @@ export default function TopChefs({ chefs }: TopChefsProps) {
       </div>
       <div className={styles.chefList}>
         {chefs.map((chef) => (
-          <TopChefsItem key={chef.id} chef={chef} />
+          <TopChefsItem
+            key={chef.id}
+            chef={chef}
+            onFollow={onFollow}
+            isFollowingLoading={followLoadingIds.has(chef.id)}
+          />
         ))}
       </div>
     </div>
