@@ -253,7 +253,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         setIsSaving(false);
         return;
       }
-      invalidate("savedRecipes");
     } else {
       const newSaveCount = saveCount + 1;
       setSaveCount(newSaveCount);
@@ -273,7 +272,6 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
         setIsSaving(false);
         return;
       }
-      invalidate("savedRecipes");
     }
 
     setIsSaving(false);

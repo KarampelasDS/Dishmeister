@@ -39,7 +39,7 @@ const dockItems = (userId: string | null) => [
     icon: Bookmark,
     glowColor: "#f59e0b",
     activeColor: "#f59e0b",
-    name: "Saved Recipes",
+    name: "Library",
   },
   {
     key: "profile",
@@ -73,7 +73,10 @@ export default function Dock({ currentUserId, currentUrl }: DockProps) {
               } as React.CSSProperties
             }
             onClick={() => {
-              if (!currentUserId && (key === "new" || key === "saved" || key === "profile")) {
+              if (
+                !currentUserId &&
+                (key === "new" || key === "saved" || key === "profile")
+              ) {
                 setIsAuthOpen(true);
               } else {
                 navigate(url);

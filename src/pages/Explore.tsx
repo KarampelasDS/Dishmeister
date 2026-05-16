@@ -385,19 +385,18 @@ function Explore() {
         error: any,
         count: number | null = null;
 
+      const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
+
       for (let attempt = 0; attempt < retries; attempt++) {
-        const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
 
         let query = supabase
           .from("recipes")
           .select(SHARED_SELECT, { count: "exact" })
-          .eq("recipe_reactions.user_id", userId)
-          .eq("recipe_saves.saved_by", userId)
           .range(from, to);
 
         if (search.trim().length >= 3) {
           query = query.or(
-            `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%,category_name.ilike.%${search.trim()}%,ingredients_text.ilike.%${search.trim()}%`,
+            `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%`,
           );
         }
 
@@ -437,8 +436,10 @@ function Explore() {
 
       const transformed: Recipe[] = (data ?? []).map((recipe: any) => ({
         ...recipe,
-        current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
-        is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
+        current_user_reaction:
+          recipe.recipe_reactions?.find((r: any) => r.user_id === userId)
+            ?.reaction ?? null,
+        is_saved: recipe.recipe_saves?.some((s: any) => s.saved_by === userId),
       }));
 
       const newHasMore = (data ?? []).length === PAGE_SIZE;
@@ -626,17 +627,16 @@ function Explore() {
         error: any,
         count: number | null = null;
 
+      const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
+
       for (let attempt = 0; attempt < retries; attempt++) {
-        const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
 
         let query = supabase
           .from("recipes")
           .select(SHARED_SELECT, { count: "exact" })
-          .eq("recipe_reactions.user_id", userId)
-          .eq("recipe_saves.saved_by", userId)
           .range(from, to)
           .or(
-            `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%,category_name.ilike.%${search.trim()}%,ingredients_text.ilike.%${search.trim()}%`,
+            `title.ilike.%${search.trim()}%,description.ilike.%${search.trim()}%`,
           );
 
         if (category) query = query.eq("category_id", category);
@@ -664,8 +664,10 @@ function Explore() {
 
       const transformed: Recipe[] = (data ?? []).map((recipe: any) => ({
         ...recipe,
-        current_user_reaction: recipe.recipe_reactions?.[0]?.reaction ?? null,
-        is_saved: recipe.recipe_saves?.[0]?.recipe_id !== undefined,
+        current_user_reaction:
+          recipe.recipe_reactions?.find((r: any) => r.user_id === userId)
+            ?.reaction ?? null,
+        is_saved: recipe.recipe_saves?.some((s: any) => s.saved_by === userId),
       }));
 
       const newHasMore = (data ?? []).length === PAGE_SIZE;

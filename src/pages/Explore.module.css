@@ -4,7 +4,7 @@
   gap: 1.5rem;
   max-width: 75rem;
   margin: 20px auto;
-  align-items: start;
+  align-items: stretch;
 }
 
 @media (max-width: 1024px) {

@@ -306,7 +306,6 @@ export default function RecipeView({
         setSaving(false);
         return;
       }
-      invalidate("savedRecipes");
     } else {
       const newSaveCount = saveCount + 1;
       setSaveCount(newSaveCount);
@@ -329,7 +328,6 @@ export default function RecipeView({
         setSaving(false);
         return;
       }
-      invalidate("savedRecipes");
     }
 
     setSaving(false);
@@ -467,16 +465,18 @@ export default function RecipeView({
                   <Forward />
                   Share
                 </button>
-                <button
-                  className={styles.menuItem}
-                  onClick={() => {
-                    setReportModalOpen(true);
-                    setMenuOpen(false);
-                  }}
-                >
-                  <MessageSquareWarning color="#cd3131" />
-                  Report
-                </button>
+                {currentUserId !== recipe.profiles.id && (
+                  <button
+                    className={styles.menuItem}
+                    onClick={() => {
+                      setReportModalOpen(true);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <MessageSquareWarning color="#cd3131" />
+                    Report
+                  </button>
+                )}
                 {profile?.username === recipe.profiles.username && (
                   <button
                     className={styles.menuItem}

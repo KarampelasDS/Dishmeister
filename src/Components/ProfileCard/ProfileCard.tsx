@@ -1,13 +1,18 @@
 import styles from "./ProfileCard.module.css";
 import ProfileStat from "../ProfileStat/ProfileStat";
 import Button from "../Button/Button";
-import { Mail, ArrowLeft, Pencil, EllipsisVertical, Forward, MessageSquareWarning } from "lucide-react";
+import {
+  Mail,
+  ArrowLeft,
+  Pencil,
+  EllipsisVertical,
+  Forward,
+  MessageSquareWarning,
+} from "lucide-react";
 import { useNavigate } from "react-router";
 import { useState } from "react";
 import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
-
-
 
 type profileType = {
   id: string;
@@ -42,8 +47,6 @@ export default function ProfileCard({
   const menuRef = useClickOutside(() => setMenuOpen(false));
   const [reportModalOpen, setReportModalOpen] = useState(false);
 
-
-
   return (
     <>
       <ReportModal
@@ -53,7 +56,6 @@ export default function ProfileCard({
         targetId={profile?.id || ""}
       />
       <div className={styles.backRow}>
-
         <span onClick={() => navigate(-1)}>
           <ArrowLeft size={18} />
           <span>Back</span>
@@ -81,25 +83,29 @@ export default function ProfileCard({
                   <Forward />
                   Share
                 </button>
-                <button
-                  className={styles.menuItem}
-                  onClick={() => {
-                    setReportModalOpen(true);
-                    setMenuOpen(false);
-                  }}
-                >
-                  <MessageSquareWarning color="#cd3131" />
-                  <span style={{ color: "#cd3131" }}>Report</span>
-                </button>
-
+                {!isOwnProfile && (
+                  <button
+                    className={styles.menuItem}
+                    onClick={() => {
+                      setReportModalOpen(true);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <MessageSquareWarning color="#cd3131" />
+                    <span style={{ color: "#cd3131" }}>Report</span>
+                  </button>
+                )}
               </div>
             )}
           </div>
           <div className={styles.profilePicContainer}>
-
             <img
               className={styles.profilePic}
-              src={profile?.avatar_url ? `${supabaseAvatarUrl}${profile.avatar_url}` : "/defaultAvatar.png"}
+              src={
+                profile?.avatar_url
+                  ? `${supabaseAvatarUrl}${profile.avatar_url}`
+                  : "/defaultAvatar.png"
+              }
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.onerror = null;
@@ -153,7 +159,7 @@ export default function ProfileCard({
               iconColor="var(--stat3-icon)"
             />
             <ProfileStat
-              stat="Likes"
+              stat="Total Likes"
               statAmount={profile?.total_likes.toString() || "0"}
               border="1px solid var(--stat4-border)"
               background="var(--stat4-bg)"

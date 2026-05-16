@@ -22,7 +22,7 @@ export default function ProfileStat(props: any) {
           {props.stat === "Followers" && <User color={props.iconColor} />}
           {props.stat === "Following" && <Users color={props.iconColor} />}
           {props.stat === "Recipes" && <Utensils color={props.iconColor} />}
-          {props.stat === "Likes" && <Heart color={props.iconColor} />}
+          {props.stat === "Total Likes" && <Heart color={props.iconColor} />}
           {props.stat === "Servings" && <Users color={props.iconColor} />}
           {props.stat === "Rating" && <ThumbsUp color={props.iconColor} />}
           {props.stat === "Category" && (

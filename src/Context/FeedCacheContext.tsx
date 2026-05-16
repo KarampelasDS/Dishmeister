@@ -92,13 +92,14 @@ export function makeSearchKey(query: string): string {
 
 // ─── Top-level state ─────────────────────────────────────────────────────────
 
-type HomeFeedKey = "forYou" | "following" | "savedRecipes" | "ownProfile";
+type HomeFeedKey = "forYou" | "following" | "savedRecipes" | "likedRecipes" | "ownProfile";
 
 type FeedCacheState = {
   // Home feeds (unchanged)
   forYou: CachedFeed;
   following: CachedFeed;
   savedRecipes: CachedFeed;
+  likedRecipes: CachedFeed;
   ownProfile: CachedFeed;
 
   // Explore tab feeds
@@ -125,6 +126,7 @@ const initialState: FeedCacheState = {
   forYou: emptyFeed(),
   following: emptyFeed(),
   savedRecipes: emptyFeed(),
+  likedRecipes: emptyFeed(),
   ownProfile: emptyFeed(),
   exploreAll: emptyExploreTab(),
   exploreTrending: emptyExploreTab(),
@@ -197,6 +199,7 @@ const HOME_FEED_KEYS: HomeFeedKey[] = [
   "forYou",
   "following",
   "savedRecipes",
+  "likedRecipes",
   "ownProfile",
 ];
 
@@ -351,14 +354,106 @@ function feedCacheReducer(
     case "PATCH_RECIPE": {
       const { recipeId, patch } = action;
 
-      // Home feeds
-      const homePatch: Partial<FeedCacheState> = {};
+      // 1. Find the full recipe object first (needed if we're adding it to a feed)
+      let fullRecipe: any = null;
       for (const key of HOME_FEED_KEYS) {
-        const patched = patchRecipeInFeed(state[key], recipeId, patch);
-        if (patched !== state[key]) homePatch[key] = patched;
+        const found = state[key].recipes.find((r) => r.id === recipeId);
+        if (found) {
+          fullRecipe = found;
+          break;
+        }
+      }
+      if (!fullRecipe) {
+        for (const tab of EXPLORE_TAB_KEYS) {
+          for (const feed of Object.values(state[tab])) {
+            const found = feed.recipes.find((r) => r.id === recipeId);
+            if (found) {
+              fullRecipe = found;
+              break;
+            }
+          }
+          if (fullRecipe) break;
+        }
+      }
+      if (!fullRecipe) {
+        const foundInSearch = state.searchCache.entries
+          .flatMap((e) => e.recipes)
+          .find((r) => r.id === recipeId);
+        if (foundInSearch) fullRecipe = foundInSearch;
       }
 
-      // Explore tabs
+      // 2. Prepare the home feeds patch
+      const homePatch: Partial<FeedCacheState> = {};
+      for (const key of HOME_FEED_KEYS) {
+        let feed = state[key];
+        let changed = false;
+
+        // Standard patch for existing recipes in this feed
+        const patchedFeed = patchRecipeInFeed(feed, recipeId, patch);
+        if (patchedFeed !== feed) {
+          feed = patchedFeed;
+          changed = true;
+        }
+
+        // Special handling for Library feeds (Adding/Removing)
+        if (fullRecipe) {
+          const updatedRecipe = { ...fullRecipe, ...patch };
+
+          if (key === "likedRecipes" && "current_user_reaction" in patch) {
+            const isLiked = patch.current_user_reaction === "like";
+            const exists = feed.recipes.some((r) => r.id === recipeId);
+
+            if (isLiked && !exists) {
+              // Add to Liked
+              feed = {
+                ...feed,
+                recipes: [updatedRecipe, ...feed.recipes],
+                totalCount:
+                  feed.totalCount !== null ? feed.totalCount + 1 : null,
+              };
+              changed = true;
+            } else if (!isLiked && exists) {
+              // Remove from Liked
+              feed = {
+                ...feed,
+                recipes: feed.recipes.filter((r) => r.id !== recipeId),
+                totalCount:
+                  feed.totalCount !== null ? Math.max(0, feed.totalCount - 1) : null,
+              };
+              changed = true;
+            }
+          }
+
+          if (key === "savedRecipes" && "is_saved" in patch) {
+            const isSaved = patch.is_saved;
+            const exists = feed.recipes.some((r) => r.id === recipeId);
+
+            if (isSaved && !exists) {
+              // Add to Saved
+              feed = {
+                ...feed,
+                recipes: [updatedRecipe, ...feed.recipes],
+                totalCount:
+                  feed.totalCount !== null ? feed.totalCount + 1 : null,
+              };
+              changed = true;
+            } else if (!isSaved && exists) {
+              // Remove from Saved
+              feed = {
+                ...feed,
+                recipes: feed.recipes.filter((r) => r.id !== recipeId),
+                totalCount:
+                  feed.totalCount !== null ? Math.max(0, feed.totalCount - 1) : null,
+              };
+              changed = true;
+            }
+          }
+        }
+
+        if (changed) homePatch[key] = feed;
+      }
+
+      // 3. Prepare Explore tabs patch
       const explorePatch: Partial<Pick<FeedCacheState, ExploreTabKey>> = {};
       for (const tab of EXPLORE_TAB_KEYS) {
         const tabCache = state[tab];
@@ -372,7 +467,7 @@ function feedCacheReducer(
         if (changed) explorePatch[tab] = newTab;
       }
 
-      // Search
+      // 4. Prepare Search cache patch
       let newSearchCache = state.searchCache;
       const patchedEntries = state.searchCache.entries.map((entry) => {
         if (!entry.recipes.some((r) => r.id === recipeId)) return entry;
