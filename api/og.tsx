@@ -1,6 +1,4 @@
 import { ImageResponse } from "@vercel/og";
-import { createClient } from "@supabase/supabase-js";
-
 export const config = {
   runtime: "edge",
 };
@@ -8,8 +6,6 @@ export const config = {
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || "";
 const recipeBucketUrl = process.env.VITE_SUPABASE_RECIPE_BUCKET_URL || "";
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req: Request) {
   try {
@@ -22,25 +18,27 @@ export default async function handler(req: Request) {
     const recipeId = searchParams.get("recipe");
 
     if (recipeId) {
-      const { data: recipe, error } = await supabase
-        .from("recipes")
-        .select(`
-          title,
-          difficulty,
-          image_url,
-          profiles (
-            display_name,
-            username
-          )
-        `)
-        .eq("id", recipeId)
-        .single();
+      // Use fetch instead of the heavy Supabase client for Edge compatibility
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/recipes?id=eq.${recipeId}&select=title,difficulty,image_url,profiles(display_name,username)`,
+        {
+          headers: {
+            apikey: supabaseKey,
+            Authorization: `Bearer ${supabaseKey}`,
+          },
+        }
+      );
+      
+      const data = await res.json();
+      const recipe = data?.[0];
 
-      if (!error && recipe) {
+      if (recipe) {
         title = recipe.title;
         difficulty = recipe.difficulty;
         imageUrl = `${recipeBucketUrl}${recipe.image_url}`;
-        author = recipe.profiles?.display_name || recipe.profiles?.username || "Chef";
+        
+        const profile = Array.isArray(recipe.profiles) ? recipe.profiles[0] : recipe.profiles;
+        author = profile?.display_name || profile?.username || "Chef";
       }
     }
 
