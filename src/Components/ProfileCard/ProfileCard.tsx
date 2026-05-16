@@ -9,6 +9,8 @@ import {
   Forward,
   MessageSquareWarning,
 } from "lucide-react";
+import { useFeedCache } from "../../Context/FeedCacheContext";
+import { useToast } from "../../Context/ToastContext";
 import { useNavigate } from "react-router";
 import { useState } from "react";
 import { useClickOutside } from "../../Hooks/useClickOutside";
@@ -41,6 +43,15 @@ export default function ProfileCard({
 }) {
   const supabaseAvatarUrl = import.meta.env
     .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
+
+  const { showToast } = useToast();
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/profiles/${profile?.username}`;
+    navigator.clipboard.writeText(url);
+    showToast("Profile link copied to clipboard!");
+    setMenuOpen(false);
+  };
 
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -75,10 +86,7 @@ export default function ProfileCard({
               <div className={styles.menuDropdown}>
                 <button
                   className={styles.menuItem}
-                  onClick={() => {
-                    console.log("Share");
-                    setMenuOpen(false);
-                  }}
+                  onClick={handleShare}
                 >
                   <Forward />
                   Share

@@ -31,6 +31,7 @@ import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
 import ErrorModal from "../ErrorModal/ErrorModal";
 import { useAuth } from "../../Context/AuthProvider";
+import { useToast } from "../../Context/ToastContext";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
 const supabaseAvatarUrl = import.meta.env
@@ -107,6 +108,14 @@ export default function RecipeView({
 }: RecipeViewProps) {
   const { invalidate, patchRecipe } = useFeedCache();
   const { profile, setIsAuthOpen, showError } = useAuth();
+  const { showToast } = useToast();
+
+  const handleShare = () => {
+    const url = `${window.location.origin}/recipes/${recipe.id}`;
+    navigator.clipboard.writeText(url);
+    showToast("Recipe link copied to clipboard!");
+    setMenuOpen(false);
+  };
 
   const convertTimeToMinutes = (
     preparationTime: number,
@@ -457,10 +466,7 @@ export default function RecipeView({
                 </button>
                 <button
                   className={styles.menuItem}
-                  onClick={() => {
-                    console.log("share");
-                    setMenuOpen(false);
-                  }}
+                  onClick={handleShare}
                 >
                   <Forward />
                   Share

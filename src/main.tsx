@@ -5,12 +5,15 @@ import "./index.css";
 import "./App.css";
 import { AuthProvider } from "./Context/AuthProvider";
 import { FeedCacheProvider } from "./Context/FeedCacheContext";
+import { ToastProvider } from "./Context/ToastContext";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <AuthProvider>
       <FeedCacheProvider>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </FeedCacheProvider>
     </AuthProvider>
   </BrowserRouter>,
