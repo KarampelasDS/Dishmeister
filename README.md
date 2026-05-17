@@ -31,6 +31,7 @@ The app is designed to feel more like a social food platform than a static recip
 ## Feature Highlights
 
 - **For You and Following feeds** with cached feed state, infinite scroll, scroll restoration, and an algorithmic For You feed powered by Supabase RPC.
+- **Notifications** with a bell dropdown tracking follows, likes, comments, and replies — powered by Postgres triggers that fire instantly on every interaction, delivered fresh on each visit.
 - **Smart sidebar discovery** with algorithm-backed chef suggestions and top recipe highlights.
 - **Explore page** with recipe and people search, category filtering, difficulty filtering, country-of-origin filtering, trending recipes, and top-rated sorting.
 - **Recipe publishing flow** with image upload, image editing, compression, local draft persistence, ingredient ordering, instruction ordering, servings, timing, category, difficulty, and origin metadata.
