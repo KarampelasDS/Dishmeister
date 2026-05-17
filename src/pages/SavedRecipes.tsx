@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, type ReactHTMLElement } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../supabase";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
@@ -6,9 +6,8 @@ import Loader from "../Components/Loader/Loader";
 
 import styles from "./Explore.module.css";
 import { useFeedCache } from "../Context/FeedCacheContext";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Heart, Bookmark, LucideIcon } from "lucide-react";
 import { getFriendlyErrorMessage } from "../utils/errorUtils";
-
 
 type Recipe = {
   id: string;
@@ -74,7 +73,8 @@ function SavedRecipes() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>("saved");
 
-  const cached = activeTab === "saved" ? state.savedRecipes : state.likedRecipes;
+  const cached =
+    activeTab === "saved" ? state.savedRecipes : state.likedRecipes;
 
   const [recipes, setRecipes] = useState<Recipe[]>(cached?.recipes || []);
   const [page, setPage] = useState(cached?.page || 0);
@@ -176,9 +176,9 @@ function SavedRecipes() {
           current_user_reaction:
             tab === "liked"
               ? "like"
-              : row.recipes.recipe_reactions?.find(
+              : (row.recipes.recipe_reactions?.find(
                   (r: any) => r.user_id === user.id,
-                )?.reaction ?? null,
+                )?.reaction ?? null),
           is_saved:
             tab === "saved"
               ? true
@@ -313,32 +313,39 @@ function SavedRecipes() {
       >
         {(
           [
-            { id: "saved", label: "Saved" },
-            { id: "liked", label: "Liked" },
-          ] as { id: Tab; label: string }[]
-        ).map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: "0.8rem 1.5rem",
-              background: "none",
-              border: "none",
-              borderBottom:
-                activeTab === tab.id
-                  ? "3px solid #f97316"
-                  : "3px solid transparent",
-              cursor: "pointer",
-              fontWeight: activeTab === tab.id ? 700 : 500,
-              color: activeTab === tab.id ? "#f97316" : "var(--text-muted)",
-              fontSize: "1rem",
-              transition: "all 0.2s ease",
-              marginBottom: "-1px",
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+            { id: "saved", label: "Saved Recipes", Icon: Bookmark },
+            { id: "liked", label: "Liked Recipes", Icon: Heart },
+          ] as { id: Tab; label: string; Icon: LucideIcon }[]
+        ).map((tab) => {
+          const IconComponent = tab.Icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "0.8rem 1.5rem",
+                background: "none",
+                border: "none",
+                borderBottom:
+                  activeTab === tab.id
+                    ? "3px solid #f97316"
+                    : "3px solid transparent",
+                cursor: "pointer",
+                fontWeight: activeTab === tab.id ? 700 : 500,
+                color: activeTab === tab.id ? "#f97316" : "var(--text-muted)",
+                fontSize: "1rem",
+                transition: "all 0.2s ease",
+                marginBottom: "-1px",
+              }}
+            >
+              <IconComponent size={18} />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {totalCount !== null && !loading && (
