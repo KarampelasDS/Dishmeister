@@ -26,6 +26,7 @@ import {
 import { useAuth } from "../Context/AuthProvider";
 import type { ExploreTabKey } from "../Context/FeedCacheContext";
 import { getFriendlyErrorMessage } from "../utils/errorUtils";
+import { normalizeSearchQuery } from "../utils/searchUtils";
 
 
 countries.registerLocale(en);
@@ -130,14 +131,6 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-/** 
- * Prevents SQL wildcard injection by removing % and _ which cause 
- * "%%%" to return everything in ILIKE queries.
- */
-function sanitizeSearch(term: string): string {
-  return term.replace(/[%_]/g, "").trim();
-}
-
 function Explore() {
   const [searchParams, setSearchParams] = useSearchParams();
   const cache = useFeedCache();
@@ -234,7 +227,7 @@ function Explore() {
     searchDifficulty ||
     searchCountry
   );
-  const isSearching = sanitizeSearch(debouncedSearch).length >= 3;
+  const isSearching = normalizeSearchQuery(debouncedSearch).length >= 3;
 
   // Derived: which explore tab + filter key we're currently on
   const currentTabKey = topFilterToTabKey(topFilter);
@@ -415,7 +408,7 @@ function Explore() {
           .select(SHARED_SELECT, { count: "exact" })
           .range(from, to);
 
-        const cleanSearch = sanitizeSearch(search);
+        const cleanSearch = normalizeSearchQuery(search);
         if (cleanSearch.length >= 3) {
           query = query.or(
             `title.ilike.%${cleanSearch}%,description.ilike.%${cleanSearch}%`,
@@ -652,7 +645,7 @@ function Explore() {
       const userId = user?.id ?? "00000000-0000-0000-0000-000000000000";
 
       for (let attempt = 0; attempt < retries; attempt++) {
-        const cleanSearch = sanitizeSearch(search);
+        const cleanSearch = normalizeSearchQuery(search);
         
         // Final guard: if sanitized search is too short, don't query
         if (cleanSearch.length < 3) {
@@ -822,6 +815,15 @@ function Explore() {
   const fetchPeople = useCallback(
     async (pageToFetch: number, search: string, retries = 3) => {
       if (peopleLoadingRef.current) return;
+      const cleanSearch = normalizeSearchQuery(search);
+
+      if (cleanSearch.length < 3) {
+        setProfiles([]);
+        setPeopleLoading(false);
+        peopleLoadingRef.current = false;
+        return;
+      }
+
       peopleLoadingRef.current = true;
       setPeopleLoading(true);
 
@@ -841,11 +843,9 @@ function Explore() {
           )
           .range(from, to);
 
-        if (search.trim().length >= 3) {
-          query = query.or(
-            `username.ilike.%${search.trim()}%,display_name.ilike.%${search.trim()}%`,
-          );
-        }
+        query = query.or(
+          `username.ilike.%${cleanSearch}%,display_name.ilike.%${cleanSearch}%`,
+        );
 
         query = query.order("follower_count", { ascending: false });
 
@@ -995,9 +995,9 @@ function Explore() {
     e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
     if (e.key !== "Enter") return;
-    if (searchInput.trim().length >= 3) {
+    if (normalizeSearchQuery(searchInput).length >= 3) {
       setSearchParams({ q: searchInput.trim() });
-    } else if (searchInput.trim().length >= 1) {
+    } else if (normalizeSearchQuery(searchInput).length >= 1) {
       showError("Please enter at least 3 characters.");
     } else {
       setSearchParams({});

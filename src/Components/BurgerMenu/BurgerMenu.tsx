@@ -15,6 +15,7 @@ import { useTheme } from "../../Hooks/useTheme";
 import { useNavigate } from "react-router";
 import { supabase } from "../../supabase";
 import { useAuth } from "../../Context/AuthProvider";
+import { normalizeSearchQuery } from "../../utils/searchUtils";
 const profileURL = import.meta.env.VITE_SUPABASE_PROFILE_BUCKET_URL as string;
 
 type BurgerMenuProps = {
@@ -54,10 +55,11 @@ export default function BurgerMenu({
 
   const handleSearchSubmit = () => {
     const q = searchValue.trim();
+    const cleanSearch = normalizeSearchQuery(q);
     closeMenu();
-    if (q.length >= 3) {
+    if (cleanSearch.length >= 3) {
       navigate(`/explore?q=${encodeURIComponent(q)}`);
-    } else if (q.length >= 1) {
+    } else if (cleanSearch.length >= 1) {
       showError("Please enter at least 3 characters.");
     } else {
       navigate("/explore");

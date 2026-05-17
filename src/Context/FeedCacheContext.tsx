@@ -1,6 +1,7 @@
 // FeedCacheContext.tsx
 import { createContext, useContext, useReducer } from "react";
 import type { ReactNode } from "react";
+import { normalizeSearchQuery } from "../utils/searchUtils";
 
 // ─── Shared types ────────────────────────────────────────────────────────────
 
@@ -87,7 +88,7 @@ const emptySearchCache = (): SearchCache => ({ entries: [] });
 
 /** Canonical cache key for a search query. */
 export function makeSearchKey(query: string): string {
-  return query.trim().toLowerCase();
+  return normalizeSearchQuery(query).toLowerCase();
 }
 
 // ─── Top-level state ─────────────────────────────────────────────────────────

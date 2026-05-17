@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../../../Context/AuthProvider";
+import { normalizeSearchQuery } from "../../../utils/searchUtils";
 
 export default function Searchbar() {
   const navigate = useNavigate();
@@ -10,9 +11,11 @@ export default function Searchbar() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const handleSearchSubmit = () => {
-    if (searchTerm.trim().length >= 3) {
+    const cleanSearch = normalizeSearchQuery(searchTerm);
+
+    if (cleanSearch.length >= 3) {
       navigate(`/explore?q=${encodeURIComponent(searchTerm.trim())}`);
-    } else if (searchTerm.trim().length < 3 && searchTerm.trim().length >= 1) {
+    } else if (cleanSearch.length >= 1) {
       showError("Please enter at least 3 characters.");
     } else {
       navigate("/explore");
