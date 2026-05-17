@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://dishmeister.com/">dishmeister.com</a>
+  <a href="https://www.dishmeister.com/">www.dishmeister.com</a>
 </p>
 
 <p align="center">
@@ -91,9 +91,3 @@ src/
 Dishmeister is a personal project by **Dimitrios Spyridon Karampelas**.
 
 Third-party packages, services, icons, and platform tools remain the property of their respective owners and are used through their own licenses or terms.
-
-## License
-
-Copyright (c) 2026 Dimitrios Spyridon Karampelas. All rights reserved.
-
-This project is proprietary. No permission is granted to copy, modify, distribute, sublicense, or use the source code except with explicit written permission from the copyright holder.
