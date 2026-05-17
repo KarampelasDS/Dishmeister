@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Bell, X } from "lucide-react";
 import { supabase } from "../../supabase";
 import { useNavigate } from "react-router";
@@ -23,20 +23,55 @@ interface Notification {
   sender: Profile;
 }
 
+type NotificationRow = Omit<Notification, "sender"> & {
+  sender: Profile | Profile[] | null;
+};
+
 interface NotificationBellProps {
   userId: string;
 }
 
 const avatarBucketUrl = import.meta.env.VITE_SUPABASE_PROFILE_BUCKET_URL;
+const NOTIFICATIONS_PAGE_SIZE = 20;
+
+const normalizeNotification = (row: NotificationRow): Notification | null => {
+  const sender = Array.isArray(row.sender) ? row.sender[0] : row.sender;
+
+  if (!sender) return null;
+
+  return {
+    ...row,
+    sender,
+  };
+};
+
+const sortNotificationsNewestFirst = (notifications: Notification[]) =>
+  [...notifications].sort(
+    (a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+
+const dedupeNotifications = (notifications: Notification[]) => {
+  const seen = new Set<string>();
+
+  return notifications.filter((notification) => {
+    if (seen.has(notification.id)) return false;
+
+    seen.add(notification.id);
+    return true;
+  });
+};
 
 export default function NotificationBell({ userId }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [hasMoreNotifications, setHasMoreNotifications] = useState(false);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const dropdownRef = useClickOutside(() => setIsOpen(false));
   const navigate = useNavigate();
 
-  const fetchUnreadCount = async () => {
+  const fetchUnreadCount = useCallback(async () => {
     const { count, error } = await supabase
       .from("notifications")
       .select("id", { count: "exact", head: true })
@@ -46,9 +81,10 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
     if (!error && count !== null) {
       setUnreadCount(count);
     }
-  };
+  }, [userId]);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async (offset = 0) => {
+    setIsLoadingNotifications(true);
     const { data, error } = await supabase
       .from("notifications")
       .select(`
@@ -67,14 +103,35 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
       `)
       .eq("recipient_id", userId)
       .order("created_at", { ascending: false })
-      .limit(20);
+      .range(offset, offset + NOTIFICATIONS_PAGE_SIZE);
 
     if (!error && data) {
-      setNotifications(data as any);
+      const rows = data as unknown as NotificationRow[];
+      const nextNotifications = rows
+        .slice(0, NOTIFICATIONS_PAGE_SIZE)
+        .map(normalizeNotification)
+        .filter((notification): notification is Notification => notification !== null);
+
+      setNotifications((prev) =>
+        sortNotificationsNewestFirst(
+          dedupeNotifications(
+            offset === 0 ? nextNotifications : [...prev, ...nextNotifications]
+          )
+        )
+      );
+      setHasMoreNotifications(data.length > NOTIFICATIONS_PAGE_SIZE);
     }
+    setIsLoadingNotifications(false);
+  }, [userId]);
+
+  const loadMoreNotifications = () => {
+    if (isLoadingNotifications) return;
+
+    fetchNotifications(notifications.length);
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUnreadCount();
     fetchNotifications();
 
@@ -99,7 +156,7 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId]);
+  }, [fetchNotifications, fetchUnreadCount, userId]);
 
   const toggleDropdown = async () => {
     const nextState = !isOpen;
@@ -116,7 +173,9 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
       if (!error) {
         setUnreadCount(0);
         setNotifications((prev) =>
-          prev.map((n) => ({ ...n, is_read: true }))
+          sortNotificationsNewestFirst(
+            prev.map((n) => ({ ...n, is_read: true }))
+          )
         );
       }
     }
@@ -207,45 +266,56 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
             {notifications.length === 0 ? (
               <div className={styles.emptyState}>No notifications yet</div>
             ) : (
-              notifications.map((n) => (
-                <div
-                  key={n.id}
-                  className={`${styles.item} ${!n.is_read ? styles.unread : ""}`}
-                  onClick={() => handleNotificationClick(n)}
-                >
-                  <button
-                    className={styles.avatarButton}
-                    onClick={(e) => handleAvatarClick(e, n.sender)}
-                    aria-label={`View ${n.sender.display_name || n.sender.username || "user"}'s profile`}
-                    disabled={!n.sender.username}
+              <>
+                {notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className={`${styles.item} ${!n.is_read ? styles.unread : ""}`}
+                    onClick={() => handleNotificationClick(n)}
                   >
-                    <img
-                      src={
-                        n.sender.avatar_url
-                          ? avatarBucketUrl + n.sender.avatar_url
-                          : "/defaultAvatar.png"
-                      }
-                      alt={n.sender.username || "avatar"}
-                      className={styles.avatar}
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = "/defaultAvatar.png";
-                      }}
-                    />
-                  </button>
-                  <div className={styles.content}>
-                    <p className={styles.text}>{getNotificationText(n)}</p>
-                    <span className={styles.time}>{formatRelativeTime(n.created_at)}</span>
+                    <button
+                      className={styles.avatarButton}
+                      onClick={(e) => handleAvatarClick(e, n.sender)}
+                      aria-label={`View ${n.sender.display_name || n.sender.username || "user"}'s profile`}
+                      disabled={!n.sender.username}
+                    >
+                      <img
+                        src={
+                          n.sender.avatar_url
+                            ? avatarBucketUrl + n.sender.avatar_url
+                            : "/defaultAvatar.png"
+                        }
+                        alt={n.sender.username || "avatar"}
+                        className={styles.avatar}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/defaultAvatar.png";
+                        }}
+                      />
+                    </button>
+                    <div className={styles.content}>
+                      <p className={styles.text}>{getNotificationText(n)}</p>
+                      <span className={styles.time}>{formatRelativeTime(n.created_at)}</span>
+                    </div>
+                    <button
+                      className={styles.deleteButton}
+                      onClick={(e) => deleteNotification(e, n.id)}
+                      aria-label="Delete notification"
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
+                ))}
+                {hasMoreNotifications && (
                   <button
-                    className={styles.deleteButton}
-                    onClick={(e) => deleteNotification(e, n.id)}
-                    aria-label="Delete notification"
+                    className={styles.loadMore}
+                    onClick={loadMoreNotifications}
+                    disabled={isLoadingNotifications}
                   >
-                    <X size={16} />
+                    {isLoadingNotifications ? "Loading..." : "Load older notifications"}
                   </button>
-                </div>
-              ))
+                )}
+              </>
             )}
           </div>
         </div>
