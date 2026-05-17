@@ -562,7 +562,7 @@ export default function RecipeView({
                 }}
                 className={styles.avatar}
               />
-              <div>
+              <div className={styles.profileInfo}>
                 <div className={styles.username}>
                   {recipe.profiles.display_name}
                 </div>

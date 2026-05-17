@@ -464,19 +464,14 @@ function HomePage() {
 
   return (
     <>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          margin: "2rem 0",
-          alignItems: "flex-start",
-        }}
-      >
+      <div className={styles.mainContainer}>
         <div
           style={{
+            width: "100%",
             maxWidth: 720,
             margin: "0 auto",
             padding: "0 1rem 5rem",
+            boxSizing: "border-box",
           }}
         >
           <div className={styles.feedToggle}>

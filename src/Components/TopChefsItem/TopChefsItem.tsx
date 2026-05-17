@@ -16,12 +16,14 @@ type TopChefsItemProps = {
   chef: TopChef;
   onFollow: (id: string) => void;
   isFollowingLoading: boolean;
+  onClose?: () => void;
 };
 
 export default function TopChefsItem({
   chef,
   onFollow,
   isFollowingLoading,
+  onClose,
 }: TopChefsItemProps) {
   const supabaseUrl = import.meta.env
     .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
@@ -29,6 +31,7 @@ export default function TopChefsItem({
 
   const handleClick = () => {
     navigate(`/profiles/${chef.username}`);
+    if (onClose) onClose();
   };
 
   if (!chef) return;

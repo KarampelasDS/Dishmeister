@@ -97,6 +97,7 @@
   transition: background 0.15s;
   margin-bottom: 0;
   flex: 1;
+  min-width: 0;
 }
 
 .profileSection:hover {
@@ -123,6 +124,7 @@
 }
 
 .displayName {
+  display: block;
   font-weight: 600;
   font-size: 1rem;
   color: var(--text);
@@ -132,6 +134,7 @@
 }
 
 .username {
+  display: block;
   font-size: 0.825rem;
   color: var(--text-muted, #888);
   white-space: nowrap;

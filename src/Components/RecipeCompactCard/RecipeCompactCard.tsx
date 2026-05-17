@@ -105,6 +105,10 @@ export default function RecipeCompactCard({ recipe }: RecipeCardProps) {
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
 
+    if (hours >= 10) {
+      return `${hours} Hr`;
+    }
+
     if (hours > 0) {
       return `${hours} Hr${minutes > 0 ? ` ${minutes} Min` : ""}`;
     }

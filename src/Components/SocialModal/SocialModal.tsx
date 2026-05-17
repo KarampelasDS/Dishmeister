@@ -169,6 +169,7 @@ export default function SocialModal({ isOpen, onClose, type, profileId }: Social
                 chef={user}
                 onFollow={handleFollow}
                 isFollowingLoading={followLoadingIds.has(user.id)}
+                onClose={onClose}
               />
             ))
           )}

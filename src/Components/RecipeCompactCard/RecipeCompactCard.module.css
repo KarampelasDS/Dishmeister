@@ -132,6 +132,7 @@
   display: flex;
   gap: 0.6rem;
   align-items: end;
+  flex-wrap: wrap;
 }
 
 .badge {
@@ -209,6 +210,7 @@
 
 .authorInfo {
   flex: 1;
+  min-width: 0;
 }
 
 .authorName {
@@ -219,9 +221,26 @@
   text-overflow: ellipsis;
 }
 
+.authorName span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .authorMeta {
   font-size: 0.85rem;
   color: var(--text-muted, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.authorMeta span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .metaCounts {
