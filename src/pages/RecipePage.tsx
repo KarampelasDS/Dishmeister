@@ -173,9 +173,25 @@ export default function RecipePage() {
         return;
       }
 
+      let blockedIds = new Set<string>();
+      if (userId) {
+        const { data: blocks } = await supabase
+          .from("blocks")
+          .select("blocker_id, blocked_id")
+          .or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`);
+        blocks?.forEach((b: any) => {
+          if (b.blocker_id === userId) blockedIds.add(b.blocked_id);
+          if (b.blocked_id === userId) blockedIds.add(b.blocker_id);
+        });
+      }
+
+      const filteredData = (data ?? []).filter(
+        (c: any) => !blockedIds.has(c.profiles.id)
+      );
+
       let reactionsMap: Record<string, "like" | "dislike"> = {};
-      if (userId && data && data.length > 0) {
-        const commentIds = data.map((c: any) => c.id);
+      if (userId && filteredData.length > 0) {
+        const commentIds = filteredData.map((c: any) => c.id);
         const { data: reactions } = await supabase
           .from("comment_reactions")
           .select("comment_id, reaction")
@@ -188,7 +204,7 @@ export default function RecipePage() {
       }
 
       setComments(
-        (data ?? []).map((c: any) => ({
+        filteredData.map((c: any) => ({
           ...c,
           current_user_reaction: reactionsMap[c.id] ?? null,
         })),

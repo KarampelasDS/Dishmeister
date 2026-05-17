@@ -1,17 +1,20 @@
 import styles from "./ConfirmModal.module.css";
 
 type ModalProps = {
-  modalType?: "delete" | "report";
+  modalType?: "delete" | "report" | "block";
+  targetName?: string;
   onConfirm?: () => void;
   onCancel?: () => void;
 };
 
 export default function ConfirmModal({
   modalType,
+  targetName,
   onConfirm,
   onCancel,
 }: ModalProps) {
   const isDelete = modalType === "delete";
+  const isBlock = modalType === "block";
 
   return (
     <div className={styles.wrapper} onClick={onCancel}>
@@ -33,6 +36,20 @@ export default function ConfirmModal({
               <path d="M10 11v6M14 11v6" />
               <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
             </svg>
+          ) : isBlock ? (
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+            </svg>
           ) : (
             <svg
               width="22"
@@ -52,20 +69,30 @@ export default function ConfirmModal({
         </div>
 
         <h2 className={styles.heading}>
-          {isDelete ? "Delete recipe?" : "Report recipe?"}
+          {isDelete
+            ? "Delete recipe?"
+            : isBlock
+              ? `Block @${targetName}?`
+              : "Report recipe?"}
         </h2>
         <p className={styles.body}>
           {isDelete
             ? "This will permanently remove the recipe and all its data. This action cannot be undone."
-            : "Let us know you think this recipe violates our community guidelines. We'll review it shortly."}
+            : isBlock
+              ? "They won't be able to see your profile or recipes, and you won't see theirs. You can unblock them at any time."
+              : "Let us know you think this recipe violates our community guidelines. We'll review it shortly."}
         </p>
 
         <div className={styles.actions}>
           <button className={styles.confirmBtn} onClick={onConfirm}>
-            {isDelete ? "Yes, delete recipe" : "Yes, report recipe"}
+            {isDelete
+              ? "Yes, delete recipe"
+              : isBlock
+                ? "Block"
+                : "Yes, report recipe"}
           </button>
           <button className={styles.cancelBtn} onClick={onCancel}>
-            No, keep it
+            {isBlock ? "Cancel" : "No, keep it"}
           </button>
         </div>
       </div>

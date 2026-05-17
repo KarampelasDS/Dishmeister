@@ -8,6 +8,8 @@ import {
   EllipsisVertical,
   Forward,
   MessageSquareWarning,
+  Ban,
+  ShieldOff,
 } from "lucide-react";
 import { useToast } from "../../Context/ToastContext";
 import { useNavigate } from "react-router";
@@ -16,6 +18,7 @@ import { useClickOutside } from "../../Hooks/useClickOutside";
 import ReportModal from "../ReportModal/ReportModal";
 import ContactModal from "../ContactModal/ContactModal";
 import SocialModal from "../SocialModal/SocialModal";
+import ConfirmModal from "../ConfirmModal/ConfirmModal";
 
 type SocialLink = {
   platform: string;
@@ -41,16 +44,27 @@ export default function ProfileCard({
   followFunction,
   followActive,
   isOwnProfile,
+  isBlockedByThem,
+  hasBlockedThem,
+  onBlock,
+  onUnblock,
 }: {
   profile: profileType | null;
   isFollowing: boolean;
   followFunction: () => void;
   followActive: boolean;
   isOwnProfile: boolean;
+  isBlockedByThem: boolean;
+  hasBlockedThem: boolean;
+  onBlock: () => void;
+  onUnblock: () => void;
 }) {
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [socialModalOpen, setSocialModalOpen] = useState(false);
-  const [socialModalType, setSocialModalType] = useState<"followers" | "following">("followers");
+  const [socialModalType, setSocialModalType] = useState<
+    "followers" | "following"
+  >("followers");
+  const [blockConfirmOpen, setBlockConfirmOpen] = useState(false);
 
   const supabaseAvatarUrl = import.meta.env
     .VITE_SUPABASE_PROFILE_BUCKET_URL as string;
@@ -62,6 +76,17 @@ export default function ProfileCard({
     navigator.clipboard.writeText(url);
     showToast("Profile link copied to clipboard!");
     setMenuOpen(false);
+  };
+
+  const handleBlockConfirm = () => {
+    setBlockConfirmOpen(false);
+    setMenuOpen(false);
+    onBlock();
+  };
+
+  const handleUnblock = () => {
+    setMenuOpen(false);
+    onUnblock();
   };
 
   const navigate = useNavigate();
@@ -77,6 +102,16 @@ export default function ProfileCard({
         targetType="user"
         targetId={profile?.id || ""}
       />
+
+      {blockConfirmOpen && (
+        <ConfirmModal
+          modalType="block"
+          targetName={profile?.username}
+          onConfirm={handleBlockConfirm}
+          onCancel={() => setBlockConfirmOpen(false)}
+        />
+      )}
+
       <div className={styles.backRow}>
         <span onClick={() => navigate(-1)}>
           <ArrowLeft size={18} />
@@ -99,7 +134,7 @@ export default function ProfileCard({
                   <Forward />
                   Share
                 </button>
-                {!isOwnProfile && (
+                {!isOwnProfile && !hasBlockedThem && !isBlockedByThem && (
                   <button
                     className={styles.menuItem}
                     onClick={() => {
@@ -109,6 +144,24 @@ export default function ProfileCard({
                   >
                     <MessageSquareWarning color="#cd3131" />
                     <span style={{ color: "#cd3131" }}>Report</span>
+                  </button>
+                )}
+                {!isOwnProfile && !hasBlockedThem && (
+                  <button
+                    className={styles.menuItem}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setBlockConfirmOpen(true);
+                    }}
+                  >
+                    <Ban color="#cd3131" />
+                    <span style={{ color: "#cd3131" }}>Block</span>
+                  </button>
+                )}
+                {!isOwnProfile && hasBlockedThem && (
+                  <button className={styles.menuItem} onClick={handleUnblock}>
+                    <ShieldOff color="#cd3131" />
+                    <span style={{ color: "#cd3131" }}>Unblock</span>
                   </button>
                 )}
               </div>
@@ -149,84 +202,115 @@ export default function ProfileCard({
         <div className={styles.profileInfo}>
           <h1 className={styles.displayName}>{profile?.display_name}</h1>
           <p className={styles.username}>@{profile?.username}</p>
-          <p className={styles.bio}>{profile?.bio}</p>
-        </div>
-        <div className={styles.profileStats}>
-          <div className={styles.statsBox}>
-            <ProfileStat
-              stat="Followers"
-              statAmount={profile?.follower_count.toString() || "0"}
-              border="1px solid var(--stat1-border)"
-              background="var(--stat1-bg)"
-              iconColor="var(--stat1-icon)"
-              onClick={isOwnProfile ? () => { setSocialModalType("followers"); setSocialModalOpen(true); } : undefined}
-            />
-            <ProfileStat
-              stat="Following"
-              statAmount={profile?.following_count.toString() || "0"}
-              border="1px solid var(--stat2-border)"
-              background="var(--stat2-bg)"
-              iconColor="var(--stat2-icon)"
-              onClick={isOwnProfile ? () => { setSocialModalType("following"); setSocialModalOpen(true); } : undefined}
-            />
-            <ProfileStat
-              stat="Recipes"
-              statAmount={profile?.recipe_count.toString() || "0"}
-              border="1px solid var(--stat3-border)"
-              background="var(--stat3-bg)"
-              iconColor="var(--stat3-icon)"
-            />
-            <ProfileStat
-              stat="Total Likes"
-              statAmount={profile?.total_likes.toString() || "0"}
-              border="1px solid var(--stat4-border)"
-              background="var(--stat4-bg)"
-              iconColor="var(--stat4-icon)"
-            />
-          </div>
 
-          <div className={styles.buttonsContainer}>
-            <div className={styles.followButton}>
-              {isOwnProfile ? (
-                <Button
-                  backgroundColor="#f3f4f6"
-                  textColor="#374151"
-                  outline="0px"
-                  isActive={true}
-                  onButtonClick={() => navigate("/settings")}
-                >
-                  <Pencil size={18} />
-                  Edit Profile
-                </Button>
-              ) : (
-                <Button
-                  text={isFollowing ? "Following" : "Follow"}
-                  backgroundColor={
-                    isFollowing
-                      ? "#e5e7eb"
-                      : "linear-gradient(135deg, #ff6a00, #ff2e2e)"
+          {/* Blocked states */}
+          {isBlockedByThem && (
+            <p className={styles.blockedMessage}>This user has blocked you.</p>
+          )}
+          {hasBlockedThem && (
+            <p className={styles.blockedMessage}>You have blocked this user.</p>
+          )}
+
+          {!isBlockedByThem && !hasBlockedThem && (
+            <p className={styles.bio}>{profile?.bio}</p>
+          )}
+        </div>
+
+        {/* Only show stats and buttons if not blocked in either direction */}
+        {!isBlockedByThem && !hasBlockedThem && (
+          <>
+            <div className={styles.profileStats}>
+              <div className={styles.statsBox}>
+                <ProfileStat
+                  stat="Followers"
+                  statAmount={profile?.follower_count.toString() || "0"}
+                  border="1px solid var(--stat1-border)"
+                  background="var(--stat1-bg)"
+                  iconColor="var(--stat1-icon)"
+                  onClick={
+                    isOwnProfile
+                      ? () => {
+                          setSocialModalType("followers");
+                          setSocialModalOpen(true);
+                        }
+                      : undefined
                   }
-                  textColor={isFollowing ? "#374151" : "#fff"}
-                  outline="0px"
-                  isActive={followActive}
-                  onButtonClick={followFunction}
                 />
-              )}
-            </div>
+                <ProfileStat
+                  stat="Following"
+                  statAmount={profile?.following_count.toString() || "0"}
+                  border="1px solid var(--stat2-border)"
+                  background="var(--stat2-bg)"
+                  iconColor="var(--stat2-icon)"
+                  onClick={
+                    isOwnProfile
+                      ? () => {
+                          setSocialModalType("following");
+                          setSocialModalOpen(true);
+                        }
+                      : undefined
+                  }
+                />
+                <ProfileStat
+                  stat="Recipes"
+                  statAmount={profile?.recipe_count.toString() || "0"}
+                  border="1px solid var(--stat3-border)"
+                  background="var(--stat3-bg)"
+                  iconColor="var(--stat3-icon)"
+                />
+                <ProfileStat
+                  stat="Total Likes"
+                  statAmount={profile?.total_likes.toString() || "0"}
+                  border="1px solid var(--stat4-border)"
+                  background="var(--stat4-bg)"
+                  iconColor="var(--stat4-icon)"
+                />
+              </div>
 
-            <div className={styles.contactButton}>
-              <Button
-                backgroundColor="#f3f4f6"
-                textColor="#374151"
-                outline="0px "
-                isActive={true}
-                onButtonClick={() => setContactModalOpen(true)}
-              >
-                <Mail size={18} /> Contact
-              </Button>
+              <div className={styles.buttonsContainer}>
+                <div className={styles.followButton}>
+                  {isOwnProfile ? (
+                    <Button
+                      backgroundColor="#f3f4f6"
+                      textColor="#374151"
+                      outline="0px"
+                      isActive={true}
+                      onButtonClick={() => navigate("/settings")}
+                    >
+                      <Pencil size={18} />
+                      Edit Profile
+                    </Button>
+                  ) : (
+                    <Button
+                      text={isFollowing ? "Following" : "Follow"}
+                      backgroundColor={
+                        isFollowing
+                          ? "#e5e7eb"
+                          : "linear-gradient(135deg, #ff6a00, #ff2e2e)"
+                      }
+                      textColor={isFollowing ? "#374151" : "#fff"}
+                      outline="0px"
+                      isActive={followActive}
+                      onButtonClick={followFunction}
+                    />
+                  )}
+                </div>
+
+                <div className={styles.contactButton}>
+                  <Button
+                    backgroundColor="#f3f4f6"
+                    textColor="#374151"
+                    outline="0px"
+                    isActive={true}
+                    onButtonClick={() => setContactModalOpen(true)}
+                  >
+                    <Mail size={18} /> Contact
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
       <ContactModal

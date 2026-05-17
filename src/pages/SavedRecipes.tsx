@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, type ReactHTMLElement } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { supabase } from "../supabase";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
@@ -6,8 +6,9 @@ import Loader from "../Components/Loader/Loader";
 
 import styles from "./Explore.module.css";
 import { useFeedCache } from "../Context/FeedCacheContext";
-import { ArrowLeft, Heart, Bookmark, LucideIcon } from "lucide-react";
+import { ArrowLeft, Heart, Bookmark } from "lucide-react";
 import { getFriendlyErrorMessage } from "../utils/errorUtils";
+import type { LucideIcon } from "lucide-react";
 
 type Recipe = {
   id: string;

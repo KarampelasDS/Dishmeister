@@ -14,7 +14,6 @@ type TopRecipeProps = {
 };
 
 export default function TopRecipes({ recipes }: TopRecipeProps) {
-  console.log(recipes);
   if (recipes.length == 0) return;
   return (
     <div className={styles.container}>

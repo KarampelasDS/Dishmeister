@@ -138,7 +138,7 @@ export default function BurgerMenu({
                 onClick={() => {
                   if (username != null) {
                     closeMenu();
-                    navigate("/profile/" + username);
+                    navigate("/profiles/" + username);
                   } else {
                     closeMenu();
                     setIsAuthOpen(true);

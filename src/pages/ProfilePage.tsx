@@ -10,7 +10,6 @@ import { useFeedCache } from "../Context/FeedCacheContext";
 import { useAuth } from "../Context/AuthProvider";
 import { getFriendlyErrorMessage } from "../utils/errorUtils";
 
-
 type SocialLink = {
   platform: string;
   url: string;
@@ -94,6 +93,8 @@ export default function Profile() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [canFollow, setCanFollow] = useState(true);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [isBlockedByThem, setIsBlockedByThem] = useState(false);
+  const [hasBlockedThem, setHasBlockedThem] = useState(false);
 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [page, setPage] = useState(0);
@@ -102,7 +103,6 @@ export default function Profile() {
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   const hasMoreRef = useRef(true);
-  // pageRef is the source of truth for offset — always in sync before fetch fires
   const pageRef = useRef(0);
 
   const fetchRecipes = async (pageToFetch: number, retries = 3) => {
@@ -133,7 +133,6 @@ export default function Profile() {
 
       if (!error) break;
 
-      // Wait longer on each retry: 1s, 2s, 3s
       if (attempt < retries - 1) {
         await new Promise((resolve) =>
           setTimeout(resolve, 1000 * (attempt + 1)),
@@ -228,6 +227,52 @@ export default function Profile() {
     setCanFollow(true);
   };
 
+  const handleBlock = async () => {
+    if (!profile) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("blocks")
+      .insert({ blocker_id: user.id, blocked_id: profile.id });
+
+    if (error) {
+      showError(getFriendlyErrorMessage(error));
+      return;
+    }
+
+    setIsFollowing(false);
+    setHasBlockedThem(true);
+    setRecipes([]);
+    invalidate("following");
+    invalidateSidebar();
+  };
+
+  const handleUnblock = async () => {
+    if (!profile) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from("blocks")
+      .delete()
+      .eq("blocker_id", user.id)
+      .eq("blocked_id", profile.id);
+
+    if (error) {
+      showError(getFriendlyErrorMessage(error));
+      return;
+    }
+
+    setHasBlockedThem(false);
+  };
+
   useEffect(() => {
     if (!username) return;
 
@@ -250,6 +295,7 @@ export default function Profile() {
 
       if (user) {
         setIsOwnProfile(user.id === data.id);
+
         const { data: followRow } = await supabase
           .from("follows")
           .select("follower_id")
@@ -258,6 +304,19 @@ export default function Profile() {
           .maybeSingle();
 
         setIsFollowing(!!followRow);
+
+        // fetch all block rows between these two users
+        const { data: blockRows } = await supabase
+          .from("blocks")
+          .select("blocker_id, blocked_id")
+          .or(
+            `and(blocker_id.eq.${user.id},blocked_id.eq.${data.id}),and(blocker_id.eq.${data.id},blocked_id.eq.${user.id})`,
+          );
+
+        if (blockRows && blockRows.length > 0) {
+          setIsBlockedByThem(blockRows.some((b) => b.blocker_id === data.id));
+          setHasBlockedThem(blockRows.some((b) => b.blocker_id === user.id));
+        }
       }
 
       setProfile(data);
@@ -267,8 +326,9 @@ export default function Profile() {
     fetchProfile();
   }, [username]);
 
-  // When filter or search changes — full reset then fetch page 0
   useEffect(() => {
+    // don't fetch recipes if blocked in either direction
+    if (isBlockedByThem || hasBlockedThem) return;
     pageRef.current = 0;
     setPage(0);
     setRecipes([]);
@@ -279,13 +339,11 @@ export default function Profile() {
     fetchRecipes(0);
   }, [profile?.id]);
 
-  // When page increments (from sentinel) — append fetch
   useEffect(() => {
-    if (page === 0) return; // page 0 is handled by the reset effect above
+    if (page === 0) return;
     fetchRecipes(page);
   }, [page]);
 
-  // IntersectionObserver
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
@@ -319,24 +377,27 @@ export default function Profile() {
         followFunction={handleFollow}
         followActive={canFollow}
         isOwnProfile={isOwnProfile}
+        isBlockedByThem={isBlockedByThem}
+        hasBlockedThem={hasBlockedThem}
+        onBlock={handleBlock}
+        onUnblock={handleUnblock}
       />
-      {/* Recipe grid */}
-      <div className={styles.grid}>
-        {recipes.map((recipe) => (
-          <RecipeCompactCard key={recipe.id} recipe={recipe} />
-        ))}
-      </div>
-      {/* Sentinel — IntersectionObserver target */}
-      <div ref={sentinelRef} style={{ height: 1 }} />
 
-      {/* Loading indicator */}
-      {loading && <Loader />}
-
-      {/* End of results */}
-      {!hasMore && recipes.length > 0 && (
-        <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>
-          You've seen all the recipes
-        </p>
+      {!isBlockedByThem && !hasBlockedThem && (
+        <>
+          <div className={styles.grid}>
+            {recipes.map((recipe) => (
+              <RecipeCompactCard key={recipe.id} recipe={recipe} />
+            ))}
+          </div>
+          <div ref={sentinelRef} style={{ height: 1 }} />
+          {loading && <Loader />}
+          {!hasMore && recipes.length > 0 && (
+            <p style={{ textAlign: "center", padding: "1rem", color: "#aaa" }}>
+              You've seen all the recipes
+            </p>
+          )}
+        </>
       )}
     </>
   );

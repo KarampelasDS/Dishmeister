@@ -101,6 +101,15 @@
 @media (max-width: 480px) {
   .modal {
     padding: 2.25rem 1.25rem;
-    width: 90%;
+    width: 88%;
+    max-width: 340px;
+    border-radius: 24px;
+  }
+
+  .title {
+    font-size: 1.3rem;
+  }
+  .message {
+    font-size: 0.95rem;
   }
 }

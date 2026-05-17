@@ -148,7 +148,10 @@ export default function EditProfilePage() {
     } catch (err: any) {
       setError({
         title: "Account deletion failed.",
-        detail: getFriendlyErrorMessage(err, "Make sure you've run the SQL script in your dashboard."),
+        detail: getFriendlyErrorMessage(
+          err,
+          "Make sure you've run the SQL script in your dashboard.",
+        ),
       });
       setLoading(false);
     }
@@ -271,6 +274,14 @@ export default function EditProfilePage() {
 
       if (error) throw error;
 
+      if (uploadedPath) {
+        await supabase
+          .from("storage_objects")
+          .update({ referenced: true })
+          .eq("bucket", AVATAR_BUCKET)
+          .eq("path", uploadedPath);
+      }
+
       await refreshProfile();
       showToast("Profile updated successfully!", "success");
       location.href = `/profiles/${fields.username}`;
@@ -339,7 +350,9 @@ export default function EditProfilePage() {
     timeSinceChange !== null && timeSinceChange < 14 * 24 * 60 * 60 * 1000;
   const daysUntilUnlock =
     timeSinceChange !== null
-      ? Math.ceil((14 * 24 * 60 * 60 * 1000 - timeSinceChange) / (24 * 60 * 60 * 1000))
+      ? Math.ceil(
+          (14 * 24 * 60 * 60 * 1000 - timeSinceChange) / (24 * 60 * 60 * 1000),
+        )
       : 0;
 
   if (fetching) return <Loader fullPage />;
@@ -430,7 +443,11 @@ export default function EditProfilePage() {
                   value={fields.username}
                   disabled={isUsernameLocked}
                   maxLength={20}
-                  style={isUsernameLocked ? { opacity: 0.7, cursor: "not-allowed" } : {}}
+                  style={
+                    isUsernameLocked
+                      ? { opacity: 0.7, cursor: "not-allowed" }
+                      : {}
+                  }
                   onChange={(e) =>
                     setFields((p) => ({
                       ...p,
@@ -439,8 +456,15 @@ export default function EditProfilePage() {
                   }
                 />
                 {isUsernameLocked && (
-                  <small style={{ color: "#ef4444", marginTop: "4px", display: "block" }}>
-                    You can change your username again in {daysUntilUnlock} day{daysUntilUnlock !== 1 ? 's' : ''}.
+                  <small
+                    style={{
+                      color: "#ef4444",
+                      marginTop: "4px",
+                      display: "block",
+                    }}
+                  >
+                    You can change your username again in {daysUntilUnlock} day
+                    {daysUntilUnlock !== 1 ? "s" : ""}.
                   </small>
                 )}
               </div>
