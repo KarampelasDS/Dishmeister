@@ -36,6 +36,8 @@ type profileType = {
   following_count: number;
   total_likes: number;
   social_links: SocialLink[];
+  hide_followers_list: boolean;
+  hide_following_list: boolean;
 };
 
 export default function ProfileCard({
@@ -93,6 +95,8 @@ export default function ProfileCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside(() => setMenuOpen(false));
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const canViewFollowers = isOwnProfile || !profile?.hide_followers_list;
+  const canViewFollowing = isOwnProfile || !profile?.hide_following_list;
 
   return (
     <>
@@ -228,7 +232,7 @@ export default function ProfileCard({
                   background="var(--stat1-bg)"
                   iconColor="var(--stat1-icon)"
                   onClick={
-                    isOwnProfile
+                    canViewFollowers
                       ? () => {
                           setSocialModalType("followers");
                           setSocialModalOpen(true);
@@ -243,7 +247,7 @@ export default function ProfileCard({
                   background="var(--stat2-bg)"
                   iconColor="var(--stat2-icon)"
                   onClick={
-                    isOwnProfile
+                    canViewFollowing
                       ? () => {
                           setSocialModalType("following");
                           setSocialModalOpen(true);

@@ -17,6 +17,7 @@ import {
   FileText,
   Lock,
   ShieldAlert,
+  Shield,
   Share2,
   Plus,
   Trash2,
@@ -47,6 +48,8 @@ type ProfileFields = {
   email: string;
   username_changed_at: string | null;
   social_links: SocialLink[];
+  hide_followers_list: boolean;
+  hide_following_list: boolean;
 };
 
 const PLATFORMS = [
@@ -78,6 +81,8 @@ export default function EditProfilePage() {
     email: "",
     username_changed_at: null,
     social_links: [],
+    hide_followers_list: false,
+    hide_following_list: false,
   });
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -164,7 +169,7 @@ export default function EditProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "username, display_name, bio, avatar_url, username_changed_at, social_links",
+          "username, display_name, bio, avatar_url, username_changed_at, social_links, hide_followers_list, hide_following_list",
         )
         .eq("id", session.user.id)
         .single();
@@ -185,6 +190,8 @@ export default function EditProfilePage() {
         email: session.user.email ?? "",
         username_changed_at: data.username_changed_at ?? null,
         social_links: (data.social_links as SocialLink[]) || [],
+        hide_followers_list: data.hide_followers_list ?? false,
+        hide_following_list: data.hide_following_list ?? false,
       });
       setCurrentAvatarPath(data.avatar_url ?? null);
       setFetching(false);
@@ -269,6 +276,8 @@ export default function EditProfilePage() {
           bio: fields.bio,
           avatar_url: uploadedPath,
           social_links: fields.social_links,
+          hide_followers_list: fields.hide_followers_list,
+          hide_following_list: fields.hide_following_list,
         })
         .eq("id", session!.user.id);
 
@@ -598,6 +607,59 @@ export default function EditProfilePage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Privacy Section */}
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <span className={styles.cardHeaderIcon}>
+            <Shield size={18} />
+          </span>
+          <h2 className={styles.cardTitle}>Privacy Settings</h2>
+        </div>
+        <div className={styles.cardBody}>
+          <div className={styles.privacyList}>
+            <label className={styles.toggleRow}>
+              <div>
+                <span className={styles.toggleTitle}>Hide followers list</span>
+                <span className={styles.toggleDescription}>
+                  Other users can see your follower count, but not open the list.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={fields.hide_followers_list}
+                onChange={(e) =>
+                  setFields((p) => ({
+                    ...p,
+                    hide_followers_list: e.target.checked,
+                  }))
+                }
+              />
+              <span className={styles.toggleSwitch} aria-hidden="true" />
+            </label>
+
+            <label className={styles.toggleRow}>
+              <div>
+                <span className={styles.toggleTitle}>Hide following list</span>
+                <span className={styles.toggleDescription}>
+                  Other users can see your following count, but not open the list.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={fields.hide_following_list}
+                onChange={(e) =>
+                  setFields((p) => ({
+                    ...p,
+                    hide_following_list: e.target.checked,
+                  }))
+                }
+              />
+              <span className={styles.toggleSwitch} aria-hidden="true" />
+            </label>
           </div>
         </div>
       </div>

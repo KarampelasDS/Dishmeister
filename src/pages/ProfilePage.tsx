@@ -26,6 +26,8 @@ type profileType = {
   following_count: number;
   total_likes: number;
   social_links: SocialLink[];
+  hide_followers_list: boolean;
+  hide_following_list: boolean;
 };
 
 type Recipe = {
