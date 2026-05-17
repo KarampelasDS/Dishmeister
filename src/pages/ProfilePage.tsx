@@ -8,7 +8,10 @@ import Loader from "../Components/Loader/Loader";
 import styles from "./ProfilePage.module.css";
 import { useFeedCache } from "../Context/FeedCacheContext";
 import { useAuth } from "../Context/AuthProvider";
-import { getFriendlyErrorMessage } from "../utils/errorUtils";
+import {
+  getFriendlyBlockErrorMessage,
+  getFriendlyErrorMessage,
+} from "../utils/errorUtils";
 
 type SocialLink = {
   platform: string;
@@ -242,7 +245,10 @@ export default function Profile() {
       .insert({ blocker_id: user.id, blocked_id: profile.id });
 
     if (error) {
-      showError(getFriendlyErrorMessage(error));
+      showError(getFriendlyBlockErrorMessage(error, "block"));
+      if (error.code === "23505") {
+        setHasBlockedThem(true);
+      }
       return;
     }
 
@@ -268,7 +274,7 @@ export default function Profile() {
       .eq("blocked_id", profile.id);
 
     if (error) {
-      showError(getFriendlyErrorMessage(error));
+      showError(getFriendlyBlockErrorMessage(error, "unblock"));
       return;
     }
 
@@ -308,12 +314,18 @@ export default function Profile() {
         setIsFollowing(!!followRow);
 
         // fetch all block rows between these two users
-        const { data: blockRows } = await supabase
+        const { data: blockRows, error: blockError } = await supabase
           .from("blocks")
           .select("blocker_id, blocked_id")
           .or(
             `and(blocker_id.eq.${user.id},blocked_id.eq.${data.id}),and(blocker_id.eq.${data.id},blocked_id.eq.${user.id})`,
           );
+
+        if (blockError) {
+          showError(getFriendlyBlockErrorMessage(blockError, "check"));
+          setLoading(false);
+          return;
+        }
 
         if (blockRows && blockRows.length > 0) {
           setIsBlockedByThem(blockRows.some((b) => b.blocker_id === data.id));

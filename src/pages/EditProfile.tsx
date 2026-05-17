@@ -7,7 +7,10 @@ import Button from "../Components/Button/Button";
 import Loader from "../Components/Loader/Loader";
 import ErrorModal from "../Components/ErrorModal/ErrorModal";
 import { useToast } from "../Context/ToastContext";
-import { getFriendlyErrorMessage } from "../utils/errorUtils";
+import {
+  getFriendlyErrorMessage,
+  getFriendlyProfileSettingsErrorMessage,
+} from "../utils/errorUtils";
 
 import styles from "./EditProfilePage.module.css";
 import {
@@ -177,7 +180,10 @@ export default function EditProfilePage() {
       if (error || !data) {
         setError({
           title: "We couldn't load your profile.",
-          detail: "Refresh the page and try again.",
+          detail: getFriendlyProfileSettingsErrorMessage(
+            error,
+            "Refresh the page and try again.",
+          ),
         });
         setFetching(false);
         return;
@@ -297,7 +303,7 @@ export default function EditProfilePage() {
     } catch (err: any) {
       setError({
         title: "Save failed.",
-        detail: getFriendlyErrorMessage(err, "Try again later."),
+        detail: getFriendlyProfileSettingsErrorMessage(err),
       });
     } finally {
       setLoading(false);

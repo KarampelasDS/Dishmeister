@@ -174,8 +174,10 @@
   color: var(--text-muted);
   padding: 4px;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s, color 0.2s;
+  opacity: 1;
+  transition:
+    opacity 0.2s,
+    color 0.2s;
   border-radius: 4px;
 }
 
