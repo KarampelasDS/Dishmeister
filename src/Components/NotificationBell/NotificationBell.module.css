@@ -140,6 +140,25 @@
   background: #ff6a00;
 }
 
+.avatarButton {
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  flex: 0 0 auto;
+  line-height: 0;
+  padding: 0;
+}
+
+.avatarButton:disabled {
+  cursor: default;
+}
+
+.avatarButton:focus-visible {
+  outline: 2px solid #ff6a00;
+  outline-offset: 2px;
+}
+
 .avatar {
   width: 40px;
   height: 40px;

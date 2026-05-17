@@ -147,6 +147,14 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
     }
   };
 
+  const handleAvatarClick = (e: React.MouseEvent, sender: Profile) => {
+    e.stopPropagation();
+    if (!sender.username) return;
+
+    setIsOpen(false);
+    navigate(`/profiles/${sender.username}`);
+  };
+
   const handleNotificationClick = (notification: Notification) => {
     setIsOpen(false);
     switch (notification.type) {
@@ -205,19 +213,26 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
                   className={`${styles.item} ${!n.is_read ? styles.unread : ""}`}
                   onClick={() => handleNotificationClick(n)}
                 >
-                  <img
-                    src={
-                      n.sender.avatar_url
-                        ? avatarBucketUrl + n.sender.avatar_url
-                        : "/defaultAvatar.png"
-                    }
-                    alt={n.sender.username || "avatar"}
-                    className={styles.avatar}
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = "/defaultAvatar.png";
-                    }}
-                  />
+                  <button
+                    className={styles.avatarButton}
+                    onClick={(e) => handleAvatarClick(e, n.sender)}
+                    aria-label={`View ${n.sender.display_name || n.sender.username || "user"}'s profile`}
+                    disabled={!n.sender.username}
+                  >
+                    <img
+                      src={
+                        n.sender.avatar_url
+                          ? avatarBucketUrl + n.sender.avatar_url
+                          : "/defaultAvatar.png"
+                      }
+                      alt={n.sender.username || "avatar"}
+                      className={styles.avatar}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/defaultAvatar.png";
+                      }}
+                    />
+                  </button>
                   <div className={styles.content}>
                     <p className={styles.text}>{getNotificationText(n)}</p>
                     <span className={styles.time}>{formatRelativeTime(n.created_at)}</span>
