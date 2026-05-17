@@ -68,13 +68,25 @@ export default function BurgerMenu({
     {
       label: "Account Settings",
       link: username != null ? "/settings" : undefined,
-      onClick: username == null ? () => { closeMenu(); setIsAuthOpen(true); } : undefined,
+      onClick:
+        username == null
+          ? () => {
+              closeMenu();
+              setIsAuthOpen(true);
+            }
+          : undefined,
       icon: <Settings size={24} />,
     },
     {
       label: "Saved Recipes",
       link: username != null ? "/saved" : undefined,
-      onClick: username == null ? () => { closeMenu(); setIsAuthOpen(true); } : undefined,
+      onClick:
+        username == null
+          ? () => {
+              closeMenu();
+              setIsAuthOpen(true);
+            }
+          : undefined,
       icon: <Bookmark size={24} />,
     },
     {
@@ -124,8 +136,13 @@ export default function BurgerMenu({
               <div
                 className={styles.profileSection}
                 onClick={() => {
-                  closeMenu();
-                  navigate("/profile/" + username);
+                  if (username != null) {
+                    closeMenu();
+                    navigate("/profile/" + username);
+                  } else {
+                    closeMenu();
+                    setIsAuthOpen(true);
+                  }
                 }}
               >
                 <div className={styles.avatarWrapper}>
@@ -151,7 +168,16 @@ export default function BurgerMenu({
                   {username != null ? (
                     <span className={styles.username}>@{username}</span>
                   ) : (
-                    <span className={styles.username} onClick={(e) => { e.stopPropagation(); closeMenu(); setIsAuthOpen(true); }}>Click to log in</span>
+                    <span
+                      className={styles.username}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        closeMenu();
+                        setIsAuthOpen(true);
+                      }}
+                    >
+                      Click to log in
+                    </span>
                   )}
                 </div>
               </div>

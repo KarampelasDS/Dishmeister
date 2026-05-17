@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { supabase } from "../../supabase";
 import Button from "../Button/Button";
 import styles from "./CreateRecipe.module.css";
@@ -11,7 +12,6 @@ import { compressImage } from "../../utils/compressImage";
 import SuccessModal from "../SuccessModal/SuccessModal";
 import ErrorModal from "../ErrorModal/ErrorModal";
 import { getFriendlyErrorMessage } from "../../utils/errorUtils";
-
 
 type Category = {
   id: string;
@@ -71,6 +71,7 @@ function CreateRecipe() {
   const [compressing, setCompressing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorModal, setErrorModal] = useState({ open: false, message: "" });
+  const navigate = useNavigate();
 
   const setField = <K extends keyof typeof defaultDraft>(
     key: K,
@@ -273,7 +274,10 @@ function CreateRecipe() {
       });
 
     if (uploadError) {
-      setErrorModal({ open: true, message: getFriendlyErrorMessage(uploadError) });
+      setErrorModal({
+        open: true,
+        message: getFriendlyErrorMessage(uploadError),
+      });
       setLoading(false);
       return;
     }
@@ -330,7 +334,10 @@ function CreateRecipe() {
       {showSuccess && (
         <SuccessModal
           isOpen={showSuccess}
-          onClose={() => setShowSuccess(false)}
+          onClose={() => {
+            setShowSuccess(false);
+            navigate("/");
+          }}
           message="Your delicious recipe has been shared with the world!"
         />
       )}
