@@ -9,6 +9,7 @@ import en from "i18n-iso-countries/langs/en.json";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
 import { compressImage } from "../../utils/compressImage";
 import { getFriendlyErrorMessage } from "../../utils/errorUtils";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_RECIPE_BUCKET_URL as string;
@@ -28,6 +29,21 @@ const countryOptions = Object.entries(
 
 const difficultyOptions = ["Easy", "Medium", "Hard"] as const;
 const timeUnits = ["Min", "Hrs", "Sec"] as const;
+const TIME_INPUT_ERROR =
+  "Enter times as a single whole number, like 35. Ranges like 30-35 and letters aren't supported.";
+const timeInputControlKeys = new Set([
+  "Backspace",
+  "Delete",
+  "Tab",
+  "Enter",
+  "Escape",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+  "Home",
+  "End",
+]);
 
 type Difficulty = (typeof difficultyOptions)[number];
 type TimeUnit = (typeof timeUnits)[number];
@@ -107,6 +123,32 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
   const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
   const [fileKey, setFileKey] = useState(0);
 
+  const handleTimeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (
+      e.ctrlKey ||
+      e.metaKey ||
+      timeInputControlKeys.has(e.key) ||
+      /^[0-9]$/.test(e.key)
+    ) {
+      return;
+    }
+
+    e.preventDefault();
+    showError(TIME_INPUT_ERROR);
+  };
+
+  const updateTimeField = (
+    setter: React.Dispatch<React.SetStateAction<number | "">>,
+    value: string,
+  ) => {
+    if (!/^\d*$/.test(value)) {
+      showError(TIME_INPUT_ERROR);
+      return;
+    }
+
+    setter(value === "" ? "" : Math.min(9999, Number(value)));
+  };
+
   useEffect(() => {
     const fetchCategories = async () => {
       const { data, error } = await supabase
@@ -136,6 +178,15 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
     setIngredients(copy);
   };
 
+  const moveIngredient = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= ingredients.length) return;
+
+    const copy = [...ingredients];
+    [copy[index], copy[nextIndex]] = [copy[nextIndex], copy[index]];
+    setIngredients(copy);
+  };
+
   const removeIngredient = (index: number) => {
     if (ingredients.length === 1) return;
     setIngredients(ingredients.filter((_, i) => i !== index));
@@ -148,6 +199,15 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
   const updateInstruction = (index: number, value: string) => {
     const copy = [...instructions];
     copy[index] = value;
+    setInstructions(copy);
+  };
+
+  const moveInstruction = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= instructions.length) return;
+
+    const copy = [...instructions];
+    [copy[index], copy[nextIndex]] = [copy[nextIndex], copy[index]];
     setInstructions(copy);
   };
 
@@ -214,12 +274,17 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
       return;
     }
 
+    const preparationNumber = Number(preparationTime);
+    const cookingNumber = Number(cookingTime);
+
     if (
-      Number(preparationTime) <= 0 ||
-      Number(cookingTime) < 0 ||
+      !Number.isInteger(preparationNumber) ||
+      !Number.isInteger(cookingNumber) ||
+      preparationNumber <= 0 ||
+      cookingNumber < 0 ||
       servings <= 0
     ) {
-      showError("Invalid numeric values");
+      showError(TIME_INPUT_ERROR);
       return;
     }
 
@@ -398,14 +463,15 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
               </label>
               <div className={styles.timeInputWrapper}>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={preparationTime}
-                  min={1}
+                  onKeyDown={handleTimeKeyDown}
                   onChange={(e) =>
-                    setPreparationTime(
-                      e.target.value === "" ? "" : Number(e.target.value),
-                    )
+                    updateTimeField(setPreparationTime, e.target.value)
                   }
+                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 />
                 <select
                   value={preparationUnit}
@@ -428,14 +494,15 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
               </label>
               <div className={styles.timeInputWrapper}>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={cookingTime}
-                  min={0}
+                  onKeyDown={handleTimeKeyDown}
                   onChange={(e) =>
-                    setCookingTime(
-                      e.target.value === "" ? "" : Number(e.target.value),
-                    )
+                    updateTimeField(setCookingTime, e.target.value)
                   }
+                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 />
                 <select
                   value={cookingUnit}
@@ -545,6 +612,26 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
             </div>
             {ingredients.map((ingredient, index) => (
               <div key={index} className={styles.dynamicRow}>
+                <div className={styles.reorderControls}>
+                  <button
+                    type="button"
+                    onClick={() => moveIngredient(index, -1)}
+                    disabled={index === 0}
+                    aria-label={`Move ingredient ${index + 1} up`}
+                    title="Move up"
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveIngredient(index, 1)}
+                    disabled={index === ingredients.length - 1}
+                    aria-label={`Move ingredient ${index + 1} down`}
+                    title="Move down"
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+                </div>
                 <input
                   className={styles.input}
                   value={ingredient}
@@ -580,6 +667,26 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
             {instructions.map((instruction, index) => (
               <div key={index} className={styles.dynamicRow}>
                 <div className={styles.stepIndex}>{index + 1}</div>
+                <div className={styles.reorderControls}>
+                  <button
+                    type="button"
+                    onClick={() => moveInstruction(index, -1)}
+                    disabled={index === 0}
+                    aria-label={`Move step ${index + 1} up`}
+                    title="Move up"
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveInstruction(index, 1)}
+                    disabled={index === instructions.length - 1}
+                    aria-label={`Move step ${index + 1} down`}
+                    title="Move down"
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+                </div>
                 <textarea
                   className={styles.textarea}
                   value={instruction}

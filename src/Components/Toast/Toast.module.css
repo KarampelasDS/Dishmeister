@@ -1,4 +1,14 @@
 .toast {
+  --toast-bg: rgba(255, 255, 255, 0.92);
+  --toast-border: rgba(229, 231, 235, 0.95);
+  --toast-shadow: 0 18px 40px -12px rgba(15, 23, 42, 0.22),
+    0 8px 16px -10px rgba(15, 23, 42, 0.18);
+  --toast-message: #1f2937;
+  --toast-close: #64748b;
+  --toast-close-hover-bg: rgba(15, 23, 42, 0.07);
+  --toast-close-hover: #0f172a;
+  --toast-progress: rgba(15, 23, 42, 0.14);
+
   position: fixed;
   top: 24px;
   left: 50%;
@@ -11,13 +21,25 @@
   min-width: 280px;
   max-width: 90vw;
   border-radius: 16px;
-  background: rgba(15, 23, 42, 0.85);
+  background: var(--toast-bg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-  color: #fff;
+  border: 1px solid var(--toast-border);
+  box-shadow: var(--toast-shadow);
+  color: var(--toast-message);
   animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:global([data-theme="dark"]) .toast {
+  --toast-bg: rgba(15, 23, 42, 0.88);
+  --toast-border: rgba(255, 255, 255, 0.15);
+  --toast-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3),
+    0 8px 10px -6px rgba(0, 0, 0, 0.3);
+  --toast-message: #f8fafc;
+  --toast-close: #94a3b8;
+  --toast-close-hover-bg: rgba(255, 255, 255, 0.1);
+  --toast-close-hover: #fff;
+  --toast-progress: rgba(255, 255, 255, 0.2);
 }
 
 @keyframes slideDown {
@@ -59,13 +81,13 @@
   margin: 0;
   font-size: 0.95rem;
   font-weight: 500;
-  color: #f8fafc;
+  color: var(--toast-message);
 }
 
 .closeBtn {
   background: transparent;
   border: none;
-  color: #94a3b8;
+  color: var(--toast-close);
   cursor: pointer;
   padding: 4px;
   display: flex;
@@ -76,8 +98,8 @@
 }
 
 .closeBtn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  background: var(--toast-close-hover-bg);
+  color: var(--toast-close-hover);
 }
 
 .progressBar {
@@ -85,7 +107,7 @@
   bottom: 0;
   left: 0;
   height: 3px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--toast-progress);
   border-radius: 0 0 0 16px;
   animation: progress 3s linear forwards;
 }

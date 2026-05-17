@@ -297,6 +297,18 @@ export default function EditProfilePage() {
           .eq("path", uploadedPath);
       }
 
+      if (
+        uploadedPath &&
+        currentAvatarPath &&
+        currentAvatarPath !== uploadedPath
+      ) {
+        await supabase
+          .from("storage_objects")
+          .update({ referenced: false })
+          .eq("bucket", AVATAR_BUCKET)
+          .eq("path", currentAvatarPath);
+      }
+
       await refreshProfile();
       showToast("Profile updated successfully!", "success");
       location.href = `/profiles/${fields.username}`;

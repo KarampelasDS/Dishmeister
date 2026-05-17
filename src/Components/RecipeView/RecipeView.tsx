@@ -372,8 +372,22 @@ export default function RecipeView({
     if (error) {
       showError(getFriendlyErrorMessage(error));
       setDeleteConfirmOpen(false);
+      setIsDeleting(false);
       return;
     }
+
+    if (recipe.image_url) {
+      const { error: storageObjectError } = await supabase
+        .from("storage_objects")
+        .update({ referenced: false })
+        .eq("bucket", "recipe-images")
+        .eq("path", recipe.image_url);
+
+      if (storageObjectError) {
+        showError(getFriendlyErrorMessage(storageObjectError));
+      }
+    }
+
     if (isSaved) invalidate("savedRecipes");
     setDeleteConfirmOpen(false);
     setIsDeleting(false);

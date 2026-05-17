@@ -12,6 +12,7 @@ import { compressImage } from "../../utils/compressImage";
 import SuccessModal from "../SuccessModal/SuccessModal";
 import ErrorModal from "../ErrorModal/ErrorModal";
 import { getFriendlyErrorMessage } from "../../utils/errorUtils";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 type Category = {
   id: string;
@@ -28,6 +29,21 @@ const countryOptions = Object.entries(
 
 const difficultyOptions = ["Easy", "Medium", "Hard"] as const;
 const timeUnits = ["Min", "Hrs", "Sec"] as const;
+const TIME_INPUT_ERROR =
+  "Enter times as a single whole number, like 35. Ranges like 30-35 and letters aren't supported.";
+const timeInputControlKeys = new Set([
+  "Backspace",
+  "Delete",
+  "Tab",
+  "Enter",
+  "Escape",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+  "Home",
+  "End",
+]);
 
 type Difficulty = (typeof difficultyOptions)[number];
 type TimeUnit = (typeof timeUnits)[number];
@@ -78,6 +94,39 @@ function CreateRecipe() {
     value: (typeof defaultDraft)[K],
   ) => setDraft((prev) => ({ ...prev, [key]: value }));
 
+  const showTimeInputError = () => {
+    setErrorModal({
+      open: true,
+      message: TIME_INPUT_ERROR,
+    });
+  };
+
+  const handleTimeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (
+      e.ctrlKey ||
+      e.metaKey ||
+      timeInputControlKeys.has(e.key) ||
+      /^[0-9]$/.test(e.key)
+    ) {
+      return;
+    }
+
+    e.preventDefault();
+    showTimeInputError();
+  };
+
+  const updateTimeField = (
+    key: "preparationTime" | "cookingTime",
+    value: string,
+  ) => {
+    if (!/^\d*$/.test(value)) {
+      showTimeInputError();
+      return;
+    }
+
+    setField(key, value === "" ? "" : Math.min(9999, Number(value)));
+  };
+
   useEffect(() => {
     const fetchCategories = async () => {
       const { data, error } = await supabase
@@ -102,6 +151,15 @@ function CreateRecipe() {
     setField("ingredients", copy);
   };
 
+  const moveIngredient = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= draft.ingredients.length) return;
+
+    const copy = [...draft.ingredients];
+    [copy[index], copy[nextIndex]] = [copy[nextIndex], copy[index]];
+    setField("ingredients", copy);
+  };
+
   const removeIngredient = (index: number) => {
     if (draft.ingredients.length === 1) return;
     setField(
@@ -118,6 +176,15 @@ function CreateRecipe() {
   const updateInstruction = (index: number, value: string) => {
     const copy = [...draft.instructions];
     copy[index] = value;
+    setField("instructions", copy);
+  };
+
+  const moveInstruction = (index: number, direction: -1 | 1) => {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= draft.instructions.length) return;
+
+    const copy = [...draft.instructions];
+    [copy[index], copy[nextIndex]] = [copy[nextIndex], copy[index]];
     setField("instructions", copy);
   };
 
@@ -223,12 +290,17 @@ function CreateRecipe() {
       return;
     }
 
+    const preparationNumber = Number(draft.preparationTime);
+    const cookingNumber = Number(draft.cookingTime);
+
     if (
-      Number(draft.preparationTime) <= 0 ||
-      Number(draft.cookingTime) < 0 ||
+      !Number.isInteger(preparationNumber) ||
+      !Number.isInteger(cookingNumber) ||
+      preparationNumber <= 0 ||
+      cookingNumber < 0 ||
       draft.servings <= 0
     ) {
-      setErrorModal({ open: true, message: "Invalid numeric values" });
+      setErrorModal({ open: true, message: TIME_INPUT_ERROR });
       return;
     }
 
@@ -439,16 +511,13 @@ function CreateRecipe() {
               </label>
               <div className={styles.timeInputWrapper}>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={draft.preparationTime}
-                  min={1}
+                  onKeyDown={handleTimeKeyDown}
                   onChange={(e) =>
-                    setField(
-                      "preparationTime",
-                      e.target.value === ""
-                        ? ""
-                        : Math.min(9999, Number(e.target.value)),
-                    )
+                    updateTimeField("preparationTime", e.target.value)
                   }
                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 />
@@ -474,16 +543,13 @@ function CreateRecipe() {
               </label>
               <div className={styles.timeInputWrapper}>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={draft.cookingTime}
-                  min={0}
+                  onKeyDown={handleTimeKeyDown}
                   onChange={(e) =>
-                    setField(
-                      "cookingTime",
-                      e.target.value === ""
-                        ? ""
-                        : Math.min(9999, Number(e.target.value)),
-                    )
+                    updateTimeField("cookingTime", e.target.value)
                   }
                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 />
@@ -606,6 +672,26 @@ function CreateRecipe() {
             </div>
             {draft.ingredients.map((ingredient, index) => (
               <div key={index} className={styles.dynamicRow}>
+                <div className={styles.reorderControls}>
+                  <button
+                    type="button"
+                    onClick={() => moveIngredient(index, -1)}
+                    disabled={index === 0}
+                    aria-label={`Move ingredient ${index + 1} up`}
+                    title="Move up"
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveIngredient(index, 1)}
+                    disabled={index === draft.ingredients.length - 1}
+                    aria-label={`Move ingredient ${index + 1} down`}
+                    title="Move down"
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+                </div>
                 <div style={{ flex: 1 }}>
                   <textarea
                     className={`${styles.textarea} ${styles.ingredientTextarea}`}
@@ -648,6 +734,26 @@ function CreateRecipe() {
             {draft.instructions.map((instruction, index) => (
               <div key={index} className={styles.dynamicRow}>
                 <div className={styles.stepIndex}>{index + 1}</div>
+                <div className={styles.reorderControls}>
+                  <button
+                    type="button"
+                    onClick={() => moveInstruction(index, -1)}
+                    disabled={index === 0}
+                    aria-label={`Move step ${index + 1} up`}
+                    title="Move up"
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveInstruction(index, 1)}
+                    disabled={index === draft.instructions.length - 1}
+                    aria-label={`Move step ${index + 1} down`}
+                    title="Move down"
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+                </div>
                 <div style={{ flex: 1 }}>
                   <textarea
                     className={styles.textarea}
