@@ -48,7 +48,7 @@ const normalizeNotification = (row: NotificationRow): Notification | null => {
 const sortNotificationsNewestFirst = (notifications: Notification[]) =>
   [...notifications].sort(
     (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
   );
 
 const dedupeNotifications = (notifications: Notification[]) => {
@@ -83,11 +83,13 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
     }
   }, [userId]);
 
-  const fetchNotifications = useCallback(async (offset = 0) => {
-    setIsLoadingNotifications(true);
-    const { data, error } = await supabase
-      .from("notifications")
-      .select(`
+  const fetchNotifications = useCallback(
+    async (offset = 0) => {
+      setIsLoadingNotifications(true);
+      const { data, error } = await supabase
+        .from("notifications")
+        .select(
+          `
         id,
         type,
         is_read,
@@ -100,29 +102,37 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
           display_name,
           avatar_url
         )
-      `)
-      .eq("recipient_id", userId)
-      .order("created_at", { ascending: false })
-      .range(offset, offset + NOTIFICATIONS_PAGE_SIZE);
-
-    if (!error && data) {
-      const rows = data as unknown as NotificationRow[];
-      const nextNotifications = rows
-        .slice(0, NOTIFICATIONS_PAGE_SIZE)
-        .map(normalizeNotification)
-        .filter((notification): notification is Notification => notification !== null);
-
-      setNotifications((prev) =>
-        sortNotificationsNewestFirst(
-          dedupeNotifications(
-            offset === 0 ? nextNotifications : [...prev, ...nextNotifications]
-          )
+      `,
         )
-      );
-      setHasMoreNotifications(data.length > NOTIFICATIONS_PAGE_SIZE);
-    }
-    setIsLoadingNotifications(false);
-  }, [userId]);
+        .eq("recipient_id", userId)
+        .order("created_at", { ascending: false })
+        .range(offset, offset + NOTIFICATIONS_PAGE_SIZE);
+
+      if (!error && data) {
+        const rows = data as unknown as NotificationRow[];
+        const nextNotifications = rows
+          .slice(0, NOTIFICATIONS_PAGE_SIZE)
+          .map(normalizeNotification)
+          .filter(
+            (notification): notification is Notification =>
+              notification !== null,
+          );
+
+        setNotifications((prev) =>
+          sortNotificationsNewestFirst(
+            dedupeNotifications(
+              offset === 0
+                ? nextNotifications
+                : [...prev, ...nextNotifications],
+            ),
+          ),
+        );
+        setHasMoreNotifications(data.length > NOTIFICATIONS_PAGE_SIZE);
+      }
+      setIsLoadingNotifications(false);
+    },
+    [userId],
+  );
 
   const loadMoreNotifications = () => {
     if (isLoadingNotifications) return;
@@ -144,14 +154,18 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
           event: "*",
           schema: "public",
           table: "notifications",
-          filter: `recipient_id=eq.${userId}`,
+          // no filter
         },
-        () => {
+        (payload: any) => {
+          const record = payload.new || payload.old;
+          if (record?.recipient_id !== userId) return;
           fetchUnreadCount();
           fetchNotifications();
-        }
+        },
       )
-      .subscribe();
+      .subscribe((status, err) => {
+        console.log("Realtime status:", status, err);
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -174,8 +188,8 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
         setUnreadCount(0);
         setNotifications((prev) =>
           sortNotificationsNewestFirst(
-            prev.map((n) => ({ ...n, is_read: true }))
-          )
+            prev.map((n) => ({ ...n, is_read: true })),
+          ),
         );
       }
     }
@@ -223,13 +237,16 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
       case "like":
       case "comment":
       case "reply":
-        navigate(`/recipes/${notification.recipe_id}${notification.type !== "like" ? "#comments" : ""}`);
+        navigate(
+          `/recipes/${notification.recipe_id}${notification.type !== "like" ? "#comments" : ""}`,
+        );
         break;
     }
   };
 
   const getNotificationText = (notification: Notification) => {
-    const name = notification.sender.display_name || notification.sender.username;
+    const name =
+      notification.sender.display_name || notification.sender.username;
     switch (notification.type) {
       case "follow":
         return `${name} followed you`;
@@ -246,7 +263,11 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
 
   return (
     <div className={styles.container} ref={dropdownRef}>
-      <button className={styles.bellButton} onClick={toggleDropdown} aria-label="Notifications">
+      <button
+        className={styles.bellButton}
+        onClick={toggleDropdown}
+        aria-label="Notifications"
+      >
         <Bell size={24} />
         {unreadCount > 0 && <span className={styles.badge} />}
       </button>
@@ -256,7 +277,10 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
           <div className={styles.header}>
             <h3>Notifications</h3>
             {notifications.length > 0 && (
-              <button className={styles.clearAll} onClick={clearAllNotifications}>
+              <button
+                className={styles.clearAll}
+                onClick={clearAllNotifications}
+              >
                 Clear All
               </button>
             )}
@@ -295,7 +319,9 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
                     </button>
                     <div className={styles.content}>
                       <p className={styles.text}>{getNotificationText(n)}</p>
-                      <span className={styles.time}>{formatRelativeTime(n.created_at)}</span>
+                      <span className={styles.time}>
+                        {formatRelativeTime(n.created_at)}
+                      </span>
                     </div>
                     <button
                       className={styles.deleteButton}
@@ -312,7 +338,9 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
                     onClick={loadMoreNotifications}
                     disabled={isLoadingNotifications}
                   >
-                    {isLoadingNotifications ? "Loading..." : "Load older notifications"}
+                    {isLoadingNotifications
+                      ? "Loading..."
+                      : "Load older notifications"}
                   </button>
                 )}
               </>
