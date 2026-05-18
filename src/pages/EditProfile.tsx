@@ -12,7 +12,6 @@ import {
   getFriendlyProfileSettingsErrorMessage,
 } from "../utils/errorUtils";
 import {
-  canDecodeImageFile,
   isSupportedImageFile,
   normalizeImageFileForEditor,
   SUPPORTED_IMAGE_ACCEPT,
@@ -241,16 +240,6 @@ export default function EditProfilePage() {
       setError({
         title: "That avatar is too large.",
         detail: `Choose an image under ${MAX_FILE_MB}MB.`,
-      });
-      return;
-    }
-
-    const canDecode = await canDecodeImageFile(file);
-    if (!canDecode) {
-      setError({
-        title: "We couldn't read that image.",
-        detail:
-          "Try exporting it as JPG, PNG, or WebP, then upload it again.",
       });
       return;
     }

@@ -1,3 +1,5 @@
+import imageCompression from "browser-image-compression";
+
 const SUPPORTED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -17,7 +19,11 @@ export function isSupportedImageFile(file: File) {
   );
 }
 
-async function loadImageFile(file: File) {
+function wait(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+async function loadImageFileFromObjectUrl(file: File) {
   const url = URL.createObjectURL(file);
 
   try {
@@ -36,6 +42,58 @@ async function loadImageFile(file: File) {
   }
 }
 
+async function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error ?? new Error("File read failed"));
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+      } else {
+        reject(new Error("File read failed"));
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+async function loadImageFileFromDataUrl(file: File) {
+  const dataUrl = await readFileAsDataUrl(file);
+  const image = new Image();
+  image.decoding = "async";
+
+  await new Promise<void>((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = () => reject(new Error("Image load failed"));
+    image.src = dataUrl;
+  });
+
+  return image;
+}
+
+async function loadImageFile(file: File) {
+  const delays = [0, 250, 750, 1500];
+  let lastError: unknown = null;
+
+  for (const delay of delays) {
+    if (delay) await wait(delay);
+
+    try {
+      return await loadImageFileFromObjectUrl(file);
+    } catch (err) {
+      lastError = err;
+    }
+
+    try {
+      return await loadImageFileFromDataUrl(file);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Image load failed");
+}
+
 export async function canDecodeImageFile(file: File) {
   try {
     const image = await loadImageFile(file);
@@ -45,7 +103,39 @@ export async function canDecodeImageFile(file: File) {
   }
 }
 
-export async function normalizeImageFileForEditor(file: File) {
+function isNearlyBlackCanvas(canvas: HTMLCanvasElement) {
+  const sampleSize = 32;
+  const sampleCanvas = document.createElement("canvas");
+  sampleCanvas.width = sampleSize;
+  sampleCanvas.height = sampleSize;
+
+  const sampleContext = sampleCanvas.getContext("2d", {
+    willReadFrequently: true,
+  });
+
+  if (!sampleContext) return false;
+
+  sampleContext.drawImage(canvas, 0, 0, sampleSize, sampleSize);
+
+  const { data } = sampleContext.getImageData(0, 0, sampleSize, sampleSize);
+  let darkPixels = 0;
+  let visiblePixels = 0;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3];
+    if (alpha < 8) continue;
+
+    visiblePixels += 1;
+
+    if (data[i] < 8 && data[i + 1] < 8 && data[i + 2] < 8) {
+      darkPixels += 1;
+    }
+  }
+
+  return visiblePixels > 0 && darkPixels / visiblePixels > 0.98;
+}
+
+async function normalizeImageFileOnce(file: File) {
   const image = await loadImageFile(file);
   const sourceWidth = image.naturalWidth;
   const sourceHeight = image.naturalHeight;
@@ -76,6 +166,10 @@ export async function normalizeImageFileForEditor(file: File) {
   context.fillRect(0, 0, width, height);
   context.drawImage(image, 0, 0, width, height);
 
+  if (isNearlyBlackCanvas(canvas)) {
+    throw new Error("The selected image loaded as a blank black frame.");
+  }
+
   const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, "image/jpeg", 0.92),
   );
@@ -85,4 +179,40 @@ export async function normalizeImageFileForEditor(file: File) {
   }
 
   return new File([blob], "editor-image.jpg", { type: "image/jpeg" });
+}
+
+async function compressImageForEditor(file: File) {
+  return imageCompression(file, {
+    maxSizeMB: 2,
+    maxWidthOrHeight: 2048,
+    useWebWorker: true,
+    fileType: "image/jpeg",
+    initialQuality: 0.9,
+  });
+}
+
+export async function normalizeImageFileForEditor(file: File) {
+  const delays = [0, 250, 750, 1500];
+  let lastError: unknown = null;
+
+  for (const delay of delays) {
+    if (delay) await wait(delay);
+
+    try {
+      const compressed = await compressImageForEditor(file);
+      return await normalizeImageFileOnce(compressed);
+    } catch (err) {
+      lastError = err;
+    }
+
+    try {
+      return await normalizeImageFileOnce(file);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("We couldn't prepare that image for editing.");
 }

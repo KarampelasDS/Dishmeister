@@ -8,7 +8,6 @@ import { compressImage } from "../../utils/compressImage";
 import { getFriendlyErrorMessage } from "../../utils/errorUtils";
 import ErrorModal from "../ErrorModal/ErrorModal";
 import {
-  canDecodeImageFile,
   isSupportedImageFile,
   normalizeImageFileForEditor,
   SUPPORTED_IMAGE_ACCEPT,
@@ -87,11 +86,6 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
     }
     const maxBytes = MAX_FILE_MB * 1024 * 1024;
     if (file.size > maxBytes) return `Avatar must be under ${MAX_FILE_MB}MB.`;
-
-    const canDecode = await canDecodeImageFile(file);
-    if (!canDecode) {
-      return "We couldn't read that image. Try exporting it as JPG, PNG, or WebP.";
-    }
 
     return null;
   };

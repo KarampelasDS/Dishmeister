@@ -9,7 +9,6 @@ import en from "i18n-iso-countries/langs/en.json";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
 import { compressImage } from "../../utils/compressImage";
 import {
-  canDecodeImageFile,
   isSupportedImageFile,
   normalizeImageFileForEditor,
   SUPPORTED_IMAGE_ACCEPT,
@@ -240,14 +239,6 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
 
     if (file.size > 20 * 1024 * 1024) {
       showError("Image must be under 20MB.");
-      return;
-    }
-
-    const canDecode = await canDecodeImageFile(file);
-    if (!canDecode) {
-      showError(
-        "We couldn't read that image. Try exporting it as JPG, PNG, or WebP.",
-      );
       return;
     }
 
