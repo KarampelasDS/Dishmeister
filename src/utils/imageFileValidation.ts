@@ -135,6 +135,74 @@ function isNearlyBlackCanvas(canvas: HTMLCanvasElement) {
   return visiblePixels > 0 && darkPixels / visiblePixels > 0.98;
 }
 
+function getNormalizedDimensions(sourceWidth: number, sourceHeight: number) {
+  const maxDimension = 1600;
+  const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
+
+  return {
+    width: Math.max(1, Math.round(sourceWidth * scale)),
+    height: Math.max(1, Math.round(sourceHeight * scale)),
+  };
+}
+
+function assertCanvasIsUsable(canvas: HTMLCanvasElement) {
+  if (isNearlyBlackCanvas(canvas)) {
+    throw new Error("The selected image loaded as a blank black frame.");
+  }
+}
+
+async function canvasToEditorFile(canvas: HTMLCanvasElement) {
+  assertCanvasIsUsable(canvas);
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", 0.9),
+  );
+
+  if (!blob) {
+    throw new Error("We couldn't prepare that image for editing.");
+  }
+
+  return new File([blob], "editor-image.jpg", { type: "image/jpeg" });
+}
+
+async function normalizeImageFileWithBitmap(file: File) {
+  if (!("createImageBitmap" in window)) {
+    throw new Error("Bitmap image loading is not available.");
+  }
+
+  const bitmap = await createImageBitmap(file, {
+    imageOrientation: "from-image",
+    resizeQuality: "high",
+  });
+
+  try {
+    const { width, height } = getNormalizedDimensions(
+      bitmap.width,
+      bitmap.height,
+    );
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d", {
+      alpha: false,
+      willReadFrequently: false,
+    });
+
+    if (!context) {
+      throw new Error("We couldn't prepare that image for editing.");
+    }
+
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(bitmap, 0, 0, width, height);
+
+    return await canvasToEditorFile(canvas);
+  } finally {
+    bitmap.close();
+  }
+}
+
 async function normalizeImageFileOnce(file: File) {
   const image = await loadImageFile(file);
   const sourceWidth = image.naturalWidth;
@@ -144,10 +212,7 @@ async function normalizeImageFileOnce(file: File) {
     throw new Error("We couldn't read that image.");
   }
 
-  const maxDimension = 2048;
-  const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
-  const width = Math.max(1, Math.round(sourceWidth * scale));
-  const height = Math.max(1, Math.round(sourceHeight * scale));
+  const { width, height } = getNormalizedDimensions(sourceWidth, sourceHeight);
 
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -166,28 +231,25 @@ async function normalizeImageFileOnce(file: File) {
   context.fillRect(0, 0, width, height);
   context.drawImage(image, 0, 0, width, height);
 
-  if (isNearlyBlackCanvas(canvas)) {
-    throw new Error("The selected image loaded as a blank black frame.");
-  }
-
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, "image/jpeg", 0.92),
-  );
-
-  if (!blob) {
-    throw new Error("We couldn't prepare that image for editing.");
-  }
-
-  return new File([blob], "editor-image.jpg", { type: "image/jpeg" });
+  return await canvasToEditorFile(canvas);
 }
 
 async function compressImageForEditor(file: File) {
   return imageCompression(file, {
     maxSizeMB: 2,
-    maxWidthOrHeight: 2048,
+    maxWidthOrHeight: 1600,
     useWebWorker: false,
     fileType: "image/jpeg",
     initialQuality: 0.9,
+  });
+}
+
+async function copyFileToMemory(file: File) {
+  const buffer = await file.arrayBuffer();
+
+  return new File([buffer], file.name || "selected-image", {
+    type: file.type || "image/jpeg",
+    lastModified: file.lastModified,
   });
 }
 
@@ -217,6 +279,14 @@ function getImagePrepErrorMessage(error: unknown) {
 }
 
 export async function normalizeImageFileForEditor(file: File) {
+  let sourceFile = file;
+
+  try {
+    sourceFile = await copyFileToMemory(file);
+  } catch (err) {
+    throw new Error(getImagePrepErrorMessage(err));
+  }
+
   const delays = [0, 150, 400, 900];
   let lastError: unknown = null;
 
@@ -224,13 +294,19 @@ export async function normalizeImageFileForEditor(file: File) {
     if (delay) await wait(delay);
 
     try {
-      return await normalizeImageFileOnce(file);
+      return await normalizeImageFileWithBitmap(sourceFile);
     } catch (err) {
       lastError = err;
     }
 
     try {
-      const compressed = await compressImageForEditor(file);
+      return await normalizeImageFileOnce(sourceFile);
+    } catch (err) {
+      lastError = err;
+    }
+
+    try {
+      const compressed = await compressImageForEditor(sourceFile);
       return await normalizeImageFileOnce(compressed);
     } catch (err) {
       lastError = err;
