@@ -185,18 +185,49 @@ async function compressImageForEditor(file: File) {
   return imageCompression(file, {
     maxSizeMB: 2,
     maxWidthOrHeight: 2048,
-    useWebWorker: true,
+    useWebWorker: false,
     fileType: "image/jpeg",
     initialQuality: 0.9,
   });
 }
 
+function getImagePrepErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+
+  if (
+    /permission|could not be read|notreadable|reference to a file was acquired/i.test(
+      message,
+    )
+  ) {
+    return (
+      "Your browser couldn't read that selected image. On Android/Samsung, " +
+      "try choosing it from Files, downloading it locally first, or opening it " +
+      "in Gallery and saving a copy before uploading."
+    );
+  }
+
+  if (/blank black frame/i.test(message)) {
+    return (
+      "That image loaded as a blank frame on this device. Try saving a copy " +
+      "of it from Gallery, then upload the copy."
+    );
+  }
+
+  return message || "We couldn't prepare that image for editing.";
+}
+
 export async function normalizeImageFileForEditor(file: File) {
-  const delays = [0, 250, 750, 1500];
+  const delays = [0, 150, 400, 900];
   let lastError: unknown = null;
 
   for (const delay of delays) {
     if (delay) await wait(delay);
+
+    try {
+      return await normalizeImageFileOnce(file);
+    } catch (err) {
+      lastError = err;
+    }
 
     try {
       const compressed = await compressImageForEditor(file);
@@ -204,15 +235,7 @@ export async function normalizeImageFileForEditor(file: File) {
     } catch (err) {
       lastError = err;
     }
-
-    try {
-      return await normalizeImageFileOnce(file);
-    } catch (err) {
-      lastError = err;
-    }
   }
 
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("We couldn't prepare that image for editing.");
+  throw new Error(getImagePrepErrorMessage(lastError));
 }
