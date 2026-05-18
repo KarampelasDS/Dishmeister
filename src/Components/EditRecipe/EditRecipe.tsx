@@ -11,6 +11,7 @@ import { compressImage } from "../../utils/compressImage";
 import {
   canDecodeImageFile,
   isSupportedImageFile,
+  normalizeImageFileForEditor,
   SUPPORTED_IMAGE_ACCEPT,
 } from "../../utils/imageFileValidation";
 import { getFriendlyErrorMessage } from "../../utils/errorUtils";
@@ -250,8 +251,19 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
       return;
     }
 
+    let editorFile: File;
+    try {
+      editorFile = await normalizeImageFileForEditor(file);
+    } catch (err: any) {
+      showError(
+        err.message ||
+          "We couldn't prepare that image. Try a different JPG, PNG, or WebP.",
+      );
+      return;
+    }
+
     setFileKey((k) => k + 1);
-    setImageFile(file);
+    setImageFile(editorFile);
     setPhotoEditorOpen(true);
   };
 

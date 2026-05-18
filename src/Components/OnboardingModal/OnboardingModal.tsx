@@ -10,6 +10,7 @@ import ErrorModal from "../ErrorModal/ErrorModal";
 import {
   canDecodeImageFile,
   isSupportedImageFile,
+  normalizeImageFileForEditor,
   SUPPORTED_IMAGE_ACCEPT,
 } from "../../utils/imageFileValidation";
 
@@ -111,8 +112,22 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
       return;
     }
 
+    let editorFile: File;
+    try {
+      editorFile = await normalizeImageFileForEditor(file);
+    } catch (err: any) {
+      setAvatarFile(null);
+      setAvatarPath(null);
+      setImageErrorModal({
+        open: true,
+        message:
+          err.message || "We couldn't prepare that image. Try a different JPG, PNG, or WebP.",
+      });
+      return;
+    }
+
     setFileKey((k) => k + 1);
-    setAvatarFile(file);
+    setAvatarFile(editorFile);
     setAvatarPath(null);
     setAvatarEditorOpen(true);
   };

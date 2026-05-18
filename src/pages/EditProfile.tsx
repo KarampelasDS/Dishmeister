@@ -14,6 +14,7 @@ import {
 import {
   canDecodeImageFile,
   isSupportedImageFile,
+  normalizeImageFileForEditor,
   SUPPORTED_IMAGE_ACCEPT,
 } from "../utils/imageFileValidation";
 
@@ -254,8 +255,19 @@ export default function EditProfilePage() {
       return;
     }
 
+    let editorFile: File;
+    try {
+      editorFile = await normalizeImageFileForEditor(file);
+    } catch (err: any) {
+      setError({
+        title: "We couldn't prepare that image.",
+        detail: err.message || "Try a different JPG, PNG, or WebP image.",
+      });
+      return;
+    }
+
     setAvatarFileKey((key) => key + 1);
-    setAvatarFile(file);
+    setAvatarFile(editorFile);
     setAvatarEditorOpen(true);
   };
 
