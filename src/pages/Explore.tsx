@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { supabase } from "../supabase";
 import { useSearchParams } from "react-router";
 import RecipeCompactCard from "../Components/RecipeCompactCard/RecipeCompactCard";
@@ -185,6 +185,10 @@ function Explore() {
   const [searchCountry, setSearchCountry] = useState<string>("");
 
   const [categories, setCategories] = useState<Category[]>([]);
+  const [blockedAuthorIds, setBlockedAuthorIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [blockedAuthorIdsLoaded, setBlockedAuthorIdsLoaded] = useState(false);
 
   // ─── Local display state (populated from cache or fresh fetch) ───────────
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -228,14 +232,26 @@ function Explore() {
     searchCountry
   );
   const isSearching = normalizeSearchQuery(debouncedSearch).length >= 3;
+  const blockedAuthorIdList = useMemo(
+    () => Array.from(blockedAuthorIds),
+    [blockedAuthorIds],
+  );
+  const blockedAuthorIdsQuery = useMemo(
+    () => blockedAuthorIdList.join(","),
+    [blockedAuthorIdList],
+  );
+  const makeBlockedSearchCacheKey = useCallback(
+    (search: string) => `${search}::blocked-authors:${blockedAuthorIdsQuery}`,
+    [blockedAuthorIdsQuery],
+  );
 
   // Derived: which explore tab + filter key we're currently on
   const currentTabKey = topFilterToTabKey(topFilter);
-  const currentFilterKey = makeExploreFilterKey(
+  const currentFilterKey = `${makeExploreFilterKey(
     selectedCategory,
     selectedDifficulty,
     selectedCountry,
-  );
+  )}::blocked-authors:${blockedAuthorIdsQuery}`;
 
   const activeBadges = [
     selectedCategory && {
@@ -286,10 +302,17 @@ function Explore() {
   // ─── In search mode, bust cache + re-fetch when search filters change ───────
   useEffect(() => {
     if (!isSearching) return;
-    cache.invalidateSearch(debouncedSearch);
+    if (!blockedAuthorIdsLoaded) return;
+    cache.invalidateSearch(makeBlockedSearchCacheKey(debouncedSearch));
     resetAndFetchSearch(debouncedSearch);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchCategory, searchDifficulty, searchCountry]);
+  }, [
+    searchCategory,
+    searchDifficulty,
+    searchCountry,
+    blockedAuthorIdsLoaded,
+    makeBlockedSearchCacheKey,
+  ]);
 
   // ─── Restore filters when switching tabs ─────────────────────────────────
   const prevTopFilter = useRef<TopFilter>(initialTopFilter);
@@ -324,6 +347,38 @@ function Explore() {
       }
     };
     fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    const fetchBlockedAuthorIds = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setBlockedAuthorIds(new Set());
+        setBlockedAuthorIdsLoaded(true);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("blocks")
+        .select("blocked_id")
+        .eq("blocker_id", user.id);
+
+      if (error) {
+        console.error(getFriendlyErrorMessage(error));
+        setBlockedAuthorIds(new Set());
+      } else {
+        setBlockedAuthorIds(
+          new Set((data ?? []).map((block) => block.blocked_id)),
+        );
+      }
+
+      setBlockedAuthorIdsLoaded(true);
+    };
+
+    fetchBlockedAuthorIds();
   }, []);
 
   // ─── Overflow detection ──────────────────────────────────────────────────
@@ -408,6 +463,10 @@ function Explore() {
           .select(SHARED_SELECT, { count: "exact" })
           .range(from, to);
 
+        if (blockedAuthorIdList.length > 0) {
+          query = query.not("author_id", "in", `(${blockedAuthorIdsQuery})`);
+        }
+
         const cleanSearch = normalizeSearchQuery(search);
         if (cleanSearch.length >= 3) {
           query = query.or(
@@ -449,19 +508,25 @@ function Explore() {
         return;
       }
 
-      const transformed: Recipe[] = (data ?? []).map((recipe: any) => ({
-        ...recipe,
-        current_user_reaction:
-          recipe.recipe_reactions?.find((r: any) => r.user_id === userId)
-            ?.reaction ?? null,
-        is_saved: recipe.recipe_saves?.some((s: any) => s.saved_by === userId),
-      }));
+      const transformed: Recipe[] = (data ?? [])
+        .filter((recipe: any) => !blockedAuthorIds.has(recipe.profiles?.id))
+        .map((recipe: any) => ({
+          ...recipe,
+          current_user_reaction:
+            recipe.recipe_reactions?.find((r: any) => r.user_id === userId)
+              ?.reaction ?? null,
+          is_saved: recipe.recipe_saves?.some((s: any) => s.saved_by === userId),
+        }));
 
       const newHasMore = (data ?? []).length === PAGE_SIZE;
       hasMoreRef.current = newHasMore;
 
       const tabKey = topFilterToTabKey(top);
-      const filterKey = makeExploreFilterKey(category, difficulty, country);
+      const filterKey = `${makeExploreFilterKey(
+        category,
+        difficulty,
+        country,
+      )}::blocked-authors:${blockedAuthorIdsQuery}`;
 
       if (pageToFetch === 0) {
         setRecipes(transformed);
@@ -491,8 +556,7 @@ function Explore() {
       setHasMore(newHasMore);
       if (count !== null) setTotalCount(count);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [blockedAuthorIds, blockedAuthorIdList.length, blockedAuthorIdsQuery],
   );
 
   const resetAndFetch = useCallback(
@@ -519,18 +583,16 @@ function Explore() {
       selectedDifficulty,
       selectedCountry,
       debouncedSearch,
+      fetchRecipes,
     ],
   );
 
   useEffect(() => {
     if (isSearching) return;
+    if (!blockedAuthorIdsLoaded) return;
 
     const tabKey = topFilterToTabKey(topFilter);
-    const filterKey = makeExploreFilterKey(
-      selectedCategory,
-      selectedDifficulty,
-      selectedCountry,
-    );
+    const filterKey = currentFilterKey;
     const fetchKey = `${tabKey}::${filterKey}`;
 
     const cachedFeed = cache.getExploreFeed(tabKey, filterKey);
@@ -546,7 +608,11 @@ function Explore() {
         loadingRef.current = false;
 
         setPage(cachedFeed.page);
-        setRecipes(cachedFeed.recipes as Recipe[]);
+        const visibleRecipes = (cachedFeed.recipes as Recipe[]).filter(
+          (recipe) => !blockedAuthorIds.has(recipe.profiles?.id),
+        );
+
+        setRecipes(visibleRecipes);
         setHasMore(cachedFeed.hasMore);
         setTotalCount(cachedFeed.totalCount);
       }
@@ -570,11 +636,15 @@ function Explore() {
     selectedCountry,
     debouncedSearch,
     isSearching,
+    blockedAuthorIdsLoaded,
+    blockedAuthorIdsQuery,
+    currentFilterKey,
   ]);
 
   useEffect(() => {
     if (page === 0) return;
     if (isSearching) return;
+    if (!blockedAuthorIdsLoaded) return;
     const cachedFeed = cache.getExploreFeed(currentTabKey, currentFilterKey);
     if (cachedFeed.page >= page && cachedFeed.recipes.length > 0) return;
     fetchRecipes(
@@ -586,7 +656,7 @@ function Explore() {
       selectedCountry,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+  }, [page, blockedAuthorIdsLoaded, fetchRecipes]);
 
   // ─── Recipes sentinel ────────────────────────────────────────────────────
   useEffect(() => {
@@ -663,6 +733,10 @@ function Explore() {
             `title.ilike.%${cleanSearch}%,description.ilike.%${cleanSearch}%`,
           );
 
+        if (blockedAuthorIdList.length > 0) {
+          query = query.not("author_id", "in", `(${blockedAuthorIdsQuery})`);
+        }
+
         if (category) query = query.eq("category_id", category);
         if (difficulty) query = query.eq("difficulty", difficulty);
         if (country) query = query.eq("country_of_origin", country);
@@ -686,27 +760,35 @@ function Explore() {
         return;
       }
 
-      const transformed: Recipe[] = (data ?? []).map((recipe: any) => ({
-        ...recipe,
-        current_user_reaction:
-          recipe.recipe_reactions?.find((r: any) => r.user_id === userId)
-            ?.reaction ?? null,
-        is_saved: recipe.recipe_saves?.some((s: any) => s.saved_by === userId),
-      }));
+      const transformed: Recipe[] = (data ?? [])
+        .filter((recipe: any) => !blockedAuthorIds.has(recipe.profiles?.id))
+        .map((recipe: any) => ({
+          ...recipe,
+          current_user_reaction:
+            recipe.recipe_reactions?.find((r: any) => r.user_id === userId)
+              ?.reaction ?? null,
+          is_saved: recipe.recipe_saves?.some((s: any) => s.saved_by === userId),
+        }));
 
       const newHasMore = (data ?? []).length === PAGE_SIZE;
       hasMoreRef.current = newHasMore;
 
       if (pageToFetch === 0) {
         setRecipes(transformed);
-        cache.setSearchRecipes(search, transformed, 0, newHasMore, count);
+        cache.setSearchRecipes(
+          makeBlockedSearchCacheKey(search),
+          transformed,
+          0,
+          newHasMore,
+          count,
+        );
       } else {
         setRecipes((prev) => {
           const existingIds = new Set(prev.map((r) => r.id));
           const fresh = transformed.filter((r) => !existingIds.has(r.id));
           const merged = [...prev, ...fresh];
           cache.setSearchRecipes(
-            search,
+            makeBlockedSearchCacheKey(search),
             merged,
             pageToFetch,
             newHasMore,
@@ -719,8 +801,12 @@ function Explore() {
       setHasMore(newHasMore);
       if (count !== null) setTotalCount(count);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [
+      blockedAuthorIds,
+      blockedAuthorIdList.length,
+      blockedAuthorIdsQuery,
+      makeBlockedSearchCacheKey,
+    ],
   );
 
   const resetAndFetchSearch = useCallback(
@@ -740,13 +826,14 @@ function Explore() {
       fetchSearchRecipes(0, search, category, difficulty, country);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [searchCategory, searchDifficulty, searchCountry],
+    [searchCategory, searchDifficulty, searchCountry, fetchSearchRecipes],
   );
 
   useEffect(() => {
     if (!isSearching) return;
+    if (!blockedAuthorIdsLoaded) return;
 
-    const key = makeSearchKey(debouncedSearch);
+    const key = makeSearchKey(makeBlockedSearchCacheKey(debouncedSearch));
     const entry = cache.getSearchEntry(key);
     const stale = cache.isSearchStale(key);
 
@@ -756,7 +843,11 @@ function Explore() {
       loadingRef.current = false;
 
       setPage(entry.recipesPage);
-      setRecipes(entry.recipes as Recipe[]);
+      const visibleRecipes = (entry.recipes as Recipe[]).filter(
+        (recipe) => !blockedAuthorIds.has(recipe.profiles?.id),
+      );
+
+      setRecipes(visibleRecipes);
       setHasMore(entry.recipesHasMore);
       setTotalCount(entry.recipesTotalCount);
       return;
@@ -764,12 +855,21 @@ function Explore() {
 
     resetAndFetchSearch(debouncedSearch);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, isSearching]);
+  }, [
+    debouncedSearch,
+    isSearching,
+    blockedAuthorIdsLoaded,
+    blockedAuthorIdsQuery,
+    resetAndFetchSearch,
+  ]);
 
   useEffect(() => {
     if (page === 0) return;
     if (!isSearching) return;
-    const entry = cache.getSearchEntry(makeSearchKey(debouncedSearch));
+    if (!blockedAuthorIdsLoaded) return;
+    const entry = cache.getSearchEntry(
+      makeSearchKey(makeBlockedSearchCacheKey(debouncedSearch)),
+    );
     if (entry && entry.recipesPage >= page) return;
 
     fetchSearchRecipes(
@@ -780,7 +880,7 @@ function Explore() {
       searchCountry,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, isSearching]);
+  }, [page, isSearching, blockedAuthorIdsLoaded, fetchSearchRecipes]);
 
   // ─── Search recipe sentinel ───────────────────────────────────────────────
   useEffect(() => {

@@ -1,10 +1,20 @@
 import styles from "./AppLogo.module.css";
-import { useNavigate } from "react-router";
+import { useLocation } from "react-router";
 
 export default function AppLogo() {
-  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogoClick = () => {
+    if (location.pathname === "/") {
+      window.location.reload();
+      return;
+    }
+
+    window.location.assign("/");
+  };
+
   return (
-    <div onClick={() => navigate("/")} className={styles.title}>
+    <div onClick={handleLogoClick} className={styles.title}>
       <div className={styles.iconWrapper}>
         <div className={styles.iconBadge}>
           <svg
