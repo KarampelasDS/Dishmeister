@@ -778,6 +778,7 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
             onChangePhoto={() => {
               if (!compressing) fileInputRef.current?.click();
             }}
+            onError={showError}
             imageFile={imageFile}
           />
         </div>

@@ -873,6 +873,9 @@ export default function EditProfilePage() {
           onChangePhoto={() => {
             if (!compressingAvatar) fileInputRef.current?.click();
           }}
+          onError={(message) =>
+            setError({ title: "Image editor failed.", detail: message })
+          }
           imageFile={avatarFile}
         />
       )}

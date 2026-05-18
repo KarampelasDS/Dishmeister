@@ -287,6 +287,9 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
               onChangePhoto={() => {
                 if (!compressing) fileInputRef.current?.click();
               }}
+              onError={(message) =>
+                setImageErrorModal({ open: true, message })
+              }
               imageFile={avatarFile}
             />
           )}

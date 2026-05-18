@@ -853,6 +853,7 @@ function CreateRecipe() {
             onChangePhoto={() => {
               if (!compressing) fileInputRef.current?.click();
             }}
+            onError={(message) => setErrorModal({ open: true, message })}
             imageFile={imageFile}
           />
         </div>
