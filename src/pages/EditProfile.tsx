@@ -11,6 +11,11 @@ import {
   getFriendlyErrorMessage,
   getFriendlyProfileSettingsErrorMessage,
 } from "../utils/errorUtils";
+import {
+  canDecodeImageFile,
+  isSupportedImageFile,
+  SUPPORTED_IMAGE_ACCEPT,
+} from "../utils/imageFileValidation";
 
 import styles from "./EditProfilePage.module.css";
 import {
@@ -94,6 +99,8 @@ export default function EditProfilePage() {
     null,
   );
   const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
+  const [avatarFileKey, setAvatarFileKey] = useState(0);
+  const [compressingAvatar, setCompressingAvatar] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -213,18 +220,22 @@ export default function EditProfilePage() {
     return () => URL.revokeObjectURL(url);
   }, [avatarFile]);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
+    e.target.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    if (!isSupportedImageFile(file)) {
       setError({
-        title: "That file isn't an image.",
-        detail: "Choose a JPG, PNG, WebP, or another image file.",
+        title: "That image format isn't supported.",
+        detail: "Choose a JPG, PNG, or WebP image.",
       });
       return;
     }
+
     if (file.size > MAX_FILE_MB * 1024 * 1024) {
       setError({
         title: "That avatar is too large.",
@@ -233,7 +244,17 @@ export default function EditProfilePage() {
       return;
     }
 
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    const canDecode = await canDecodeImageFile(file);
+    if (!canDecode) {
+      setError({
+        title: "We couldn't read that image.",
+        detail:
+          "Try exporting it as JPG, PNG, or WebP, then upload it again.",
+      });
+      return;
+    }
+
+    setAvatarFileKey((key) => key + 1);
     setAvatarFile(file);
     setAvatarEditorOpen(true);
   };
@@ -802,22 +823,38 @@ export default function EditProfilePage() {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept={SUPPORTED_IMAGE_ACCEPT}
         style={{ display: "none" }}
         onChange={handleAvatarChange}
       />
 
       {avatarEditorOpen && avatarFile && (
         <PhotoEditor
+          key={avatarFileKey}
           mode="profile"
-          onClose={() => setAvatarEditorOpen(false)}
+          onClose={() => {
+            if (!compressingAvatar) setAvatarEditorOpen(false);
+          }}
           onSave={async (canvas) => {
-            if (!canvas) return;
+            if (!canvas) {
+              setError({
+                title: "Image processing failed.",
+                detail: "Try a different image.",
+              });
+              return;
+            }
+            setCompressingAvatar(true);
             try {
               const blob = await new Promise<Blob | null>((r) =>
                 canvas.toBlob(r, "image/png", 0.9),
               );
-              if (!blob) return;
+              if (!blob) {
+                setError({
+                  title: "Image processing failed.",
+                  detail: "Try a different image.",
+                });
+                return;
+              }
               const compressed = await compressImage(
                 new File([blob], "avatar.png", { type: "image/png" }),
                 "profile",
@@ -829,7 +866,12 @@ export default function EditProfilePage() {
                 title: "Image processing failed.",
                 detail: err.message || "Try a different image.",
               });
+            } finally {
+              setCompressingAvatar(false);
             }
+          }}
+          onChangePhoto={() => {
+            if (!compressingAvatar) fileInputRef.current?.click();
           }}
           imageFile={avatarFile}
         />

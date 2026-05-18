@@ -6,6 +6,12 @@ import { useAuth } from "../../Context/AuthProvider";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
 import { compressImage } from "../../utils/compressImage";
 import { getFriendlyErrorMessage } from "../../utils/errorUtils";
+import ErrorModal from "../ErrorModal/ErrorModal";
+import {
+  canDecodeImageFile,
+  isSupportedImageFile,
+  SUPPORTED_IMAGE_ACCEPT,
+} from "../../utils/imageFileValidation";
 
 
 const AVATAR_BUCKET = "avatars";
@@ -35,6 +41,10 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageErrorModal, setImageErrorModal] = useState({
+    open: false,
+    message: "",
+  });
   const [compressing, setCompressing] = useState(false);
 
   useEffect(() => {
@@ -70,31 +80,36 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
   }
 
 
-  const validateAvatar = (file: File) => {
-    const isImage = file.type.startsWith("image/");
-    if (!isImage) return "Avatar must be an image file.";
-
+  const validateAvatar = async (file: File) => {
+    if (!isSupportedImageFile(file)) {
+      return "Only JPG, PNG, and WebP files are allowed.";
+    }
     const maxBytes = MAX_FILE_MB * 1024 * 1024;
     if (file.size > maxBytes) return `Avatar must be under ${MAX_FILE_MB}MB.`;
+
+    const canDecode = await canDecodeImageFile(file);
+    if (!canDecode) {
+      return "We couldn't read that image. Try exporting it as JPG, PNG, or WebP.";
+    }
 
     return null;
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setError(null);
     const file = e.target.files?.[0] ?? null;
     if (!file) return;
 
-    const validationError = validateAvatar(file);
+    e.target.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    const validationError = await validateAvatar(file);
     if (validationError) {
       setAvatarFile(null);
       setAvatarPath(null);
-      setError(validationError);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setImageErrorModal({ open: true, message: validationError });
       return;
     }
-
-    if (fileInputRef.current) fileInputRef.current.value = "";
 
     setFileKey((k) => k + 1);
     setAvatarFile(file);
@@ -195,7 +210,7 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
                 Upload Photo
                 <input
                   type="file"
-                  accept="image/*"
+                  accept={SUPPORTED_IMAGE_ACCEPT}
                   onChange={handleAvatarChange}
                   className={styles.fileInput}
                   ref={fileInputRef}
@@ -229,22 +244,45 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
                 if (!compressing) setAvatarEditorOpen(false);
               }}
               onSave={async (canvas) => {
-                if (!canvas) return;
+                if (!canvas) {
+                  setImageErrorModal({
+                    open: true,
+                    message: "Image processing failed. Try a different image.",
+                  });
+                  return;
+                }
 
                 const blob = await new Promise<Blob | null>((resolve) =>
                   canvas.toBlob(resolve, "image/png", 0.9),
                 );
 
-                if (!blob) return;
-                setCompressing(true);
-                const raw = new File([blob], "avatar.png", {
-                  type: "image/png",
-                });
-                const compressed = await compressImage(raw, "profile");
-                setCompressing(false);
+                if (!blob) {
+                  setImageErrorModal({
+                    open: true,
+                    message: "Image processing failed. Try a different image.",
+                  });
+                  return;
+                }
 
-                setAvatarFile(compressed);
-                setAvatarEditorOpen(false);
+                try {
+                  setCompressing(true);
+                  const raw = new File([blob], "avatar.png", {
+                    type: "image/png",
+                  });
+                  const compressed = await compressImage(raw, "profile");
+
+                  setAvatarFile(compressed);
+                  setAvatarEditorOpen(false);
+                } catch (err: any) {
+                  setImageErrorModal({
+                    open: true,
+                    message:
+                      err.message ||
+                      "Image processing failed. Try a different image.",
+                  });
+                } finally {
+                  setCompressing(false);
+                }
               }}
               onChangePhoto={() => {
                 if (!compressing) fileInputRef.current?.click();
@@ -319,6 +357,12 @@ export default function OnboardingModal({ isOpen, onClose }: Props) {
             </Button>
           </div>
         </form>
+
+        <ErrorModal
+          isOpen={imageErrorModal.open}
+          onClose={() => setImageErrorModal({ open: false, message: "" })}
+          message={imageErrorModal.message}
+        />
       </div>
     </div>
   );

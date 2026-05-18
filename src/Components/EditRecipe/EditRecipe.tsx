@@ -8,6 +8,11 @@ import countries from "i18n-iso-countries";
 import en from "i18n-iso-countries/langs/en.json";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
 import { compressImage } from "../../utils/compressImage";
+import {
+  canDecodeImageFile,
+  isSupportedImageFile,
+  SUPPORTED_IMAGE_ACCEPT,
+} from "../../utils/imageFileValidation";
 import { getFriendlyErrorMessage } from "../../utils/errorUtils";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
@@ -220,24 +225,30 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
 
   const openFilePicker = () => fileInputRef.current?.click();
 
-  const onFilePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFilePicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!["image/png", "image/jpeg"].includes(file.type)) {
-      showError("Only PNG and JPEG files are allowed.");
-      e.target.value = "";
+    e.target.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    if (!isSupportedImageFile(file)) {
+      showError("Only JPG, PNG, and WebP files are allowed.");
       return;
     }
 
     if (file.size > 20 * 1024 * 1024) {
       showError("Image must be under 20MB.");
-      e.target.value = "";
       return;
     }
 
-    e.target.value = "";
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    const canDecode = await canDecodeImageFile(file);
+    if (!canDecode) {
+      showError(
+        "We couldn't read that image. Try exporting it as JPG, PNG, or WebP.",
+      );
+      return;
+    }
 
     setFileKey((k) => k + 1);
     setImageFile(file);
@@ -423,7 +434,7 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
               ref={fileInputRef}
               key={fileKey}
               type="file"
-              accept="image/png, image/jpeg"
+              accept={SUPPORTED_IMAGE_ACCEPT}
               className={styles.hiddenFileInput}
               onChange={onFilePicked}
             />
@@ -736,20 +747,33 @@ function EditRecipe({ recipe, onBack, onSaved }: EditRecipeProps) {
               if (!compressing) setPhotoEditorOpen(false);
             }}
             onSave={async (canvas) => {
-              if (!canvas) return;
+              if (!canvas) {
+                showError("Image processing failed. Try a different image.");
+                return;
+              }
 
               const blob = await new Promise<Blob | null>((resolve) =>
                 canvas.toBlob(resolve, "image/png", 0.9),
               );
-              if (!blob) return;
+              if (!blob) {
+                showError("Image processing failed. Try a different image.");
+                return;
+              }
 
-              setCompressing(true);
-              const raw = new File([blob], "recipe.png", { type: "image/png" });
-              const compressed = await compressImage(raw, "recipe");
-              setCompressing(false);
+              try {
+                setCompressing(true);
+                const raw = new File([blob], "recipe.png", { type: "image/png" });
+                const compressed = await compressImage(raw, "recipe");
 
-              setImageFile(compressed);
-              setPhotoEditorOpen(false);
+                setImageFile(compressed);
+                setPhotoEditorOpen(false);
+              } catch (err: any) {
+                showError(
+                  err.message || "Image processing failed. Try a different image.",
+                );
+              } finally {
+                setCompressing(false);
+              }
             }}
             onChangePhoto={() => {
               if (!compressing) fileInputRef.current?.click();

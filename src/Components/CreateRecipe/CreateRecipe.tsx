@@ -9,6 +9,11 @@ import en from "i18n-iso-countries/langs/en.json";
 import PhotoEditor from "../PhotoEditor/PhotoEditor";
 import { useLocalDraft } from "../../Hooks/useLocalDraft";
 import { compressImage } from "../../utils/compressImage";
+import {
+  canDecodeImageFile,
+  isSupportedImageFile,
+  SUPPORTED_IMAGE_ACCEPT,
+} from "../../utils/imageFileValidation";
 import SuccessModal from "../SuccessModal/SuccessModal";
 import ErrorModal from "../ErrorModal/ErrorModal";
 import { getFriendlyErrorMessage } from "../../utils/errorUtils";
@@ -218,27 +223,35 @@ function CreateRecipe() {
 
   const openFilePicker = () => fileInputRef.current?.click();
 
-  const onFilePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onFilePicked = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+    e.target.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    if (!isSupportedImageFile(file)) {
       setErrorModal({
         open: true,
-        message: "Only PNG, JPEG, and WebP files are allowed.",
+        message: "Only JPG, PNG, and WebP files are allowed.",
       });
-      e.target.value = "";
       return;
     }
 
     if (file.size > 20 * 1024 * 1024) {
       setErrorModal({ open: true, message: "Image must be under 20MB." });
-      e.target.value = "";
       return;
     }
 
-    e.target.value = "";
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    const canDecode = await canDecodeImageFile(file);
+    if (!canDecode) {
+      setErrorModal({
+        open: true,
+        message:
+          "We couldn't read that image. Try exporting it as JPG, PNG, or WebP.",
+      });
+      return;
+    }
 
     setFileKey((k) => k + 1);
     setImageFile(file);
@@ -463,7 +476,7 @@ function CreateRecipe() {
               ref={fileInputRef}
               key={fileKey}
               type="file"
-              accept="image/png, image/jpeg"
+              accept={SUPPORTED_IMAGE_ACCEPT}
               className={styles.hiddenFileInput}
               onChange={onFilePicked}
             />
@@ -802,20 +815,40 @@ function CreateRecipe() {
               if (!compressing) setPhotoEditorOpen(false);
             }}
             onSave={async (canvas) => {
-              if (!canvas) return;
+              if (!canvas) {
+                setErrorModal({
+                  open: true,
+                  message: "Image processing failed. Try a different image.",
+                });
+                return;
+              }
 
               const blob = await new Promise<Blob | null>((resolve) =>
                 canvas.toBlob(resolve, "image/png", 0.9),
               );
-              if (!blob) return;
+              if (!blob) {
+                setErrorModal({
+                  open: true,
+                  message: "Image processing failed. Try a different image.",
+                });
+                return;
+              }
 
-              setCompressing(true);
-              const raw = new File([blob], "recipe.png", { type: "image/png" });
-              const compressed = await compressImage(raw, "recipe");
-              setCompressing(false);
+              try {
+                setCompressing(true);
+                const raw = new File([blob], "recipe.png", { type: "image/png" });
+                const compressed = await compressImage(raw, "recipe");
 
-              setImageFile(compressed);
-              setPhotoEditorOpen(false);
+                setImageFile(compressed);
+                setPhotoEditorOpen(false);
+              } catch (err: any) {
+                setErrorModal({
+                  open: true,
+                  message: err.message || "Image processing failed. Try a different image.",
+                });
+              } finally {
+                setCompressing(false);
+              }
             }}
             onChangePhoto={() => {
               if (!compressing) fileInputRef.current?.click();
