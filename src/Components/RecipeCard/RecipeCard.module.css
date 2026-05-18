@@ -383,19 +383,60 @@
     font-size: 1.2rem;
   }
   .badges {
-    gap: 0rem;
+    flex-wrap: nowrap;
+    gap: 0.25rem;
   }
   .badge {
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .badge svg {
+    width: 17px;
+    height: 17px;
   }
   .reactionBadge {
     padding: 0.4rem 0.6rem;
     min-width: 40px;
   }
+  .reactionButton {
+    width: 22px !important;
+    height: 22px !important;
+  }
   .reactionButtons {
     margin-left: auto;
     width: auto;
     margin-top: 0;
+    flex-shrink: 0;
+    gap: 0.25rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .headerOverlay {
+    padding: 0.7rem 0.8rem;
+  }
+  .title {
+    font-size: 1.05rem;
+  }
+  .badges {
+    gap: 0.2rem;
+  }
+  .badge {
+    font-size: 0.68rem;
+    padding: 0.22rem 0.38rem;
+  }
+  .badge svg {
+    width: 15px;
+    height: 15px;
+  }
+  .reactionBadge {
+    min-width: 34px;
+    padding: 0.34rem 0.45rem;
+  }
+  .reactionButton {
+    width: 19px !important;
+    height: 19px !important;
   }
 }
