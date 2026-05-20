@@ -429,6 +429,12 @@
   font-weight: 700;
 }
 
+.confirmButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 /* ── Responsive ── */
 
 @media only screen and (max-width: 768px) {
