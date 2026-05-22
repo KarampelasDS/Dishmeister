@@ -6,7 +6,7 @@ import Loader from "../Components/Loader/Loader";
 
 import styles from "./Explore.module.css";
 import { useFeedCache } from "../Context/FeedCacheContext";
-import { ArrowLeft, Heart, Bookmark } from "lucide-react";
+import { ArrowLeft, ThumbsUp, Bookmark } from "lucide-react";
 import { getFriendlyErrorMessage } from "../utils/errorUtils";
 import type { LucideIcon } from "lucide-react";
 
@@ -315,7 +315,7 @@ function SavedRecipes() {
         {(
           [
             { id: "saved", label: "Saved Recipes", Icon: Bookmark },
-            { id: "liked", label: "Liked Recipes", Icon: Heart },
+            { id: "liked", label: "Liked Recipes", Icon: ThumbsUp },
           ] as { id: Tab; label: string; Icon: LucideIcon }[]
         ).map((tab) => {
           const IconComponent = tab.Icon;
