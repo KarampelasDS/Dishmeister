@@ -4,6 +4,7 @@ import {
   User,
   Users,
   Utensils,
+  ThumbsUp,
   UtensilsCrossed,
   MessageCircle,
 } from "lucide-react";
@@ -25,7 +26,7 @@ export default function ProfileStat(props: any) {
           {props.stat === "Recipes" && <Utensils color={props.iconColor} />}
           {props.stat === "Total Likes" && <Heart color={props.iconColor} />}
           {props.stat === "Servings" && <Users color={props.iconColor} />}
-          {props.stat === "Rating" && <Heart color={props.iconColor} />}
+          {props.stat === "Rating" && <ThumbsUp color={props.iconColor} />}
           {props.stat === "Category" && (
             <UtensilsCrossed color={props.iconColor} />
           )}

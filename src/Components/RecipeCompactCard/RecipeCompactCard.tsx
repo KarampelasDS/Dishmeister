@@ -14,7 +14,7 @@ import { useToast } from "../../Context/ToastContext";
 
 import { getFriendlyErrorMessage } from "../../utils/errorUtils";
 import {
-  Heart,
+  ThumbsUp,
   Clock,
   ChefHat,
   EllipsisVertical,
@@ -276,10 +276,7 @@ export default function RecipeCompactCard({ recipe }: RecipeCardProps) {
                   {isSaved ? <BookmarkCheck color="#f59e0b" /> : <Bookmark />}
                   {isSaved ? "Unsave" : "Save"}
                 </button>
-                <button
-                  className={styles.menuItem}
-                  onClick={handleShare}
-                >
+                <button className={styles.menuItem} onClick={handleShare}>
                   <Forward />
                   Share
                 </button>
@@ -315,7 +312,7 @@ export default function RecipeCompactCard({ recipe }: RecipeCardProps) {
                 <ChefHat size={20} /> {difficulty}
               </span>
               <span className={styles.badge}>
-                <Heart size={20} /> {rating}%
+                <ThumbsUp size={20} /> {rating}%
               </span>
             </div>
           </div>
