@@ -144,18 +144,30 @@
 /* BACK ROW */
 .backRow {
   display: flex;
-  gap: 6px;
-  align-items: center;
   margin: 12px auto;
-  font-size: 14px;
   max-width: 65rem;
-  color: var(--text);
+  width: 100%;
 }
 
 .backRow span {
   display: flex;
   align-items: center;
+  gap: 8px;
   cursor: pointer;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  transition: all 0.2s;
+  background: var(--color-background-primary);
+  padding: 8px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-tertiary);
+  font-size: 0.9rem;
+}
+
+.backRow span:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-border-secondary);
+  transform: translateX(-4px);
 }
 
 .topRightMenu {

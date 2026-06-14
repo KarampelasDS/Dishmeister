@@ -440,22 +440,16 @@ export default function EditProfilePage() {
         <div className={styles.cardBody}>
           <div className={styles.avatarColumn}>
             <div className={styles.avatarWrap}>
-              {avatarDisplayUrl ? (
-                <img
-                  src={avatarDisplayUrl}
-                  alt="Avatar"
-                  className={styles.avatar}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.onerror = null;
-                    target.src = "/defaultAvatar.png";
-                  }}
-                />
-              ) : (
-                <div className={styles.avatarFallback}>
-                  {fields.display_name?.[0]?.toUpperCase() ?? "?"}
-                </div>
-              )}
+              <img
+                src={avatarDisplayUrl ?? "/defaultAvatar.png"}
+                alt="Avatar"
+                className={styles.avatar}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null;
+                  target.src = "/defaultAvatar.png";
+                }}
+              />
               <button
                 className={styles.avatarEditBtn}
                 onClick={() => fileInputRef.current?.click()}
