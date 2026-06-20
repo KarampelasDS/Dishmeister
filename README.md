@@ -18,6 +18,7 @@
   <img alt="Vite" src="https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
   <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Backend-3FCF8E?style=for-the-badge&logo=supabase&logoColor=0f172a" />
   <img alt="Vercel" src="https://img.shields.io/badge/Vercel-Edge-000000?style=for-the-badge&logo=vercel&logoColor=white" />
+  <img alt="PWA" src="https://img.shields.io/badge/PWA-Installable-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white" />
 </p>
 
 ---
@@ -43,6 +44,7 @@ The app is designed to feel more like a social food platform than a static recip
 - **Responsive navigation** with a header, search bar, user menu, burger menu, and bottom dock.
 - **Open Graph image generation** through Vercel Edge functions for rich social previews.
 - **Light/dark theme support** with app-wide CSS variables and a dedicated theme hook.
+- **Installable PWA** — can be added to the home screen or desktop via Chrome's install prompt, with a native standalone app experience.
 
 ## Tech Stack
 
@@ -55,6 +57,7 @@ The app is designed to feel more like a social food platform than a static recip
 | Media      | Browser image compression, React Avatar Editor |
 | Metadata   | Vercel OG / Edge runtime                       |
 | Deployment | Vercel-ready configuration                     |
+| PWA        | vite-plugin-pwa, Web App Manifest, Service Worker |
 
 ## App Structure
 
